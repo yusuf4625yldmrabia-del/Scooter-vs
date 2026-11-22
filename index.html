@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Scooter VS Arena</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: #0d1321;
+      color: #f8fafc;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      overflow-x: hidden;
+    }
+
+    .app {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .top-bar {
+      background: #151e32;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      padding: 10px 12px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .brand {
+      font-weight: 800;
+      font-size: 16px;
+      letter-spacing: 0.3px;
+      color: #38bdf8;
+    }
+
+    .selectors {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      width: 100%;
+    }
+
+    .select-box {
+      background: #1e293b;
+      border-radius: 10px;
+      padding: 6px 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .select-box label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #94a3b8;
+    }
+
+    select, button, input[type="range"] {
+      font-family: inherit;
+    }
+
+    select {
+      width: 100%;
+      background: #0f172a;
+      color: #f8fafc;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 8px;
+      padding: 7px 8px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .arena-wrap {
+      position: relative;
+      width: 100%;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: #7dd3fc;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 300px;
+    }
+
+    .controls {
+      background: #151e32;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .mode-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+    }
+
+    .mode-btn {
+      background: #1e293b;
+      color: #cbd5e1;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 9px;
+      padding: 8px 6px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .mode-btn.active {
+      background: #0284c7;
+      color: #ffffff;
+      border-color: #38bdf8;
+    }
+
+    .sliders {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .slider-card {
+      background: #1e293b;
+      border-radius: 10px;
+      padding: 8px 10px;
+    }
+
+    .slider-head {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      font-weight: 600;
+      color: #cbd5e1;
+      margin-bottom: 4px;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: #38bdf8;
+    }
+
+    .action-row {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 8px;
+    }
+
+    .start-btn {
+      background: linear-gradient(135deg, #16a34a, #22c55e);
+      color: #ffffff;
+      border: none;
+      border-radius: 11px;
+      padding: 11px 14px;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .reset-btn {
+      background: #334155;
+      color: #f8fafc;
+      border: none;
+      border-radius: 11px;
+      padding: 11px 14px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .result-card {
+      background: #151e32;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      padding: 12px;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .result-title {
+      font-size: 15px;
+      font-weight: 800;
+      color: #4ade80;
+      margin-bottom: 6px;
+    }
+
+    .specs-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .spec-box {
+      background: #1e293b;
+      border-radius: 10px;
+      padding: 8px 10px;
+      font-size: 12px;
+      color: #e2e8f0;
+    }
+
+    .spec-name {
+      font-weight: 800;
+      color: #38bdf8;
+      margin-bottom: 2px;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="top-bar">
+      <div class="brand">SCOOTER VS ARENA</div>
+      <div class="selectors">
+        <div class="select-box">
+          <label for="s1">1. Scooter</label>
+          <select id="s1"></select>
+        </div>
+        <div class="select-box">
+          <label for="s2">2. Scooter</label>
+          <select id="s2"></select>
+        </div>
+      </div>
+    </div>
+
+    <div class="arena-wrap">
+      <canvas id="gameCanvas"></canvas>
+    </div>
+
+    <div class="controls">
+      <div class="mode-row">
+        <button class="mode-btn active" data-mode="flat">Düz Yol (0°)</button>
+        <button class="mode-btn" data-mode="hill">Dik Yokuş (18°)</button>
+        <button class="mode-btn" data-mode="heavy">Yüklü Yokuş (22°)</button>
+      </div>
+
+      <div class="sliders">
+        <div class="slider-card">
+          <div class="slider-head">
+            <span>Eğim</span>
+            <span id="slopeVal">0°</span>
+          </div>
+          <input id="slopeInput" type="range" min="0" max="28" value="0" />
+        </div>
+        <div class="slider-card">
+          <div class="slider-head">
+            <span>Sürücü + Yük</span>
+            <span id="loadVal">80 kg</span>
+          </div>
+          <input id="loadInput" type="range" min="50" max="160" value="80" />
+        </div>
+      </div>
+
+      <div class="action-row">
+        <button id="startBtn" class="start-btn">YARIŞI BAŞLAT</button>
+        <button id="resetBtn" class="reset-btn">SIFIRLA</button>
+      </div>
+    </div>
+
+    <div id="resultBox" class="result-card">
+      <div class="result-title">Hazır! İstediğin 2 scooter'ı seç ve yarışı başlat.</div>
+      <div>Pist uzunluğu: <strong>200 m</strong>. Güç (W), maksimum hız ve yük/eğim etkisi yarış sonucunu belirler.</div>
+      <div id="specsGrid" class="specs-grid"></div>
+    </div>
+  </div>
+
+  <script>
+    const SCOOTERS = [
+      {
+        id: "rx04",
+        name: "Onvo RX-04",
+        powerW: 2400,
+        topSpeedKmh: 65,
+        battery: "52V 21Ah",
+        color: "#ef4444",
+        accent: "#fca5a5"
+      },
+      {
+        id: "sonic",
+        name: "Dualtron Sonic Alien",
+        powerW: 11800,
+        topSpeedKmh: 120,
+        battery: "72V 40Ah",
+        color: "#f97316",
+        accent: "#fed7aa"
+      },
+      {
+        id: "rx10",
+        name: "ONVO RX-10",
+        powerW: 3000,
+        topSpeedKmh: 80,
+        battery: "60.8V 21.8Ah",
+        color: "#38bdf8",
+        accent: "#bae6fd"
+      },
+      {
+        id: "mx02",
+        name: "ONVO Mx-02",
+        powerW: 1600,
+        topSpeedKmh: 55,
+        battery: "52V 15Ah",
+        color: "#a855f7",
+        accent: "#e9d5ff"
+      },
+      {
+        id: "achilleus",
+        name: "Dualtron Achilleus",
+        powerW: 4650,
+        topSpeedKmh: 80,
+        battery: "60V 35Ah",
+        color: "#22c55e",
+        accent: "#bbf7d0"
+      },
+      {
+        id: "tiger",
+        name: "Hiley Tiger Supra",
+        powerW: 5200,
+        topSpeedKmh: 100,
+        battery: "60V 31.5Ah",
+        color: "#eab308",
+        accent: "#fef08a"
+      }
+    ];
+
+    const TRACK_METERS = 200;
+    const s1Select = document.getElementById("s1");
+    const s2Select = document.getElementById("s2");
+    const slopeInput = document.getElementById("slopeInput");
+    const loadInput = document.getElementById("loadInput");
+    const slopeVal = document.getElementById("slopeVal");
+    const loadVal = document.getElementById("loadVal");
+    const startBtn = document.getElementById("startBtn");
+    const resetBtn = document.getElementById("resetBtn");
+    const resultBox = document.getElementById("resultBox");
+    const specsGrid = document.getElementById("specsGrid");
+    const modeBtns = document.querySelectorAll(".mode-btn");
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    SCOOTERS.forEach((sc, idx) => {
+      const opt1 = new Option(`${sc.name} (${sc.powerW}W • ${sc.topSpeedKmh} km/h)`, sc.id);
+      const opt2 = new Option(`${sc.name} (${sc.powerW}W • ${sc.topSpeedKmh} km/h)`, sc.id);
+      s1Select.add(opt1);
+      s2Select.add(opt2);
+      if (idx === 0) s1Select.value = sc.id;
+      if (idx === 1) s2Select.value = sc.id;
+    });
+
+    let raceState = {
+      running: false,
+      finished: false,
+      elapsed: 0,
+      winnerText: "",
+      racers: [
+        { posM: 0, speedKmh: 0, finishTime: null },
+        { posM: 0, speedKmh: 0, finishTime: null }
+      ]
+    };
+
+    function getSelectedPair() {
+      const a = SCOOTERS.find(x => x.id === s1Select.value) || SCOOTERS[0];
+      const b = SCOOTERS.find(x => x.id === s2Select.value) || SCOOTERS[1];
+      return [a, b];
+    }
+
+    function renderSpecsSummary() {
+      const [a, b] = getSelectedPair();
+      specsGrid.innerHTML = [a, b].map((sc, i) => `
+        <div class="spec-box">
+          <div class="spec-name">${i + 1}. ${sc.name}</div>
+          <div>Güç: <strong>${sc.powerW}W</strong> • Hız: <strong>${sc.topSpeedKmh} km/h</strong></div>
+          <div>Pil: ${sc.battery}</div>
+        </div>
+      `).join("");
+    }
+
+    function syncLabels() {
+      slopeVal.textContent = `${slopeInput.value}°`;
+      loadVal.textContent = `${loadInput.value} kg`;
+    }
+
+    function resetRace(keepMessage = false) {
+      raceState.running = false;
+      raceState.finished = false;
+      raceState.elapsed = 0;
+      raceState.racers = [
+        { posM: 0, speedKmh: 0, finishTime: null },
+        { posM: 0, speedKmh: 0, finishTime: null }
+      ];
+      startBtn.textContent = "YARIŞI BAŞLAT";
+      if (!keepMessage) {
+        resultBox.innerHTML = `
+          <div class="result-title">Hazır! İstediğin 2 scooter'ı seç ve yarışı başlat.</div>
+          <div>Pist uzunluğu: <strong>200 m</strong>. Eğim: <strong>${slopeInput.value}°</strong> • Yük: <strong>${loadInput.value} kg</strong></div>
+          <div id="specsGrid" class="specs-grid"></div>
+        `;
+        renderSpecsSummary();
+      }
+    }
+
+    modeBtns.forEach(btn => {
+      btn.addEventListener("click", () => {
+        modeBtns.forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        const mode = btn.dataset.mode;
+        if (mode === "flat") {
+          slopeInput.value = 0;
+          loadInput.value = 80;
+        } else if (mode === "hill") {
+          slopeInput.value = 18;
+          loadInput.value = 85;
+        } else if (mode === "heavy") {
+          slopeInput.value = 22;
+          loadInput.value = 135;
+        }
+        syncLabels();
+        resetRace();
+      });
+    });
+
+    slopeInput.addEventListener("input", () => {
+      syncLabels();
+      resetRace();
+    });
+
+    loadInput.addEventListener("input", () => {
+      syncLabels();
+      resetRace();
+    });
+
+    s1Select.addEventListener("change", () => resetRace());
+    s2Select.addEventListener("change", () => resetRace());
+    resetBtn.addEventListener("click", () => resetRace());
+
+    startBtn.addEventListener("click", () => {
+      if (raceState.running) return;
+      resetRace(true);
+      raceState.running = true;
+      startBtn.textContent = "YARIŞ SÜRÜYOR...";
+    });
+
+    function computeTargetSpeed(scooter, slopeDeg, loadKg) {
+      const loadFactor = Math.max(0.58, 1 - Math.max(0, loadKg - 70) * 0.0028);
+      const powerClimbBonus = Math.min(0.32, (scooter.powerW / 12000) * 0.32);
+      const slopePenalty = (slopeDeg / 28) * Math.max(0.14, 0.46 - powerClimbBonus);
+      const factor = Math.max(0.35, loadFactor * (1 - slopePenalty));
+      return scooter.topSpeedKmh * factor;
+    }
+
+    function stepPhysics(dt) {
+      if (!raceState.running) return;
+      raceState.elapsed += dt;
+
+      const pair = getSelectedPair();
+      const slopeDeg = Number(slopeInput.value);
+      const loadKg = Number(loadInput.value);
+
+      pair.forEach((sc, idx) => {
+        const r = raceState.racers[idx];
+        if (r.finishTime !== null) return;
+
+        const targetKmh = computeTargetSpeed(sc, slopeDeg, loadKg);
+        const accelKmhPerSec = (14 + (sc.powerW / 12000) * 28) * Math.max(0.55, 1 - slopeDeg * 0.015);
+        r.speedKmh = Math.min(targetKmh, r.speedKmh + accelKmhPerSec * dt);
+
+        const metersPerSec = (r.speedKmh * 1000) / 3600;
+        r.posM += metersPerSec * dt;
+
+        if (r.posM >= TRACK_METERS) {
+          r.posM = TRACK_METERS;
+          r.finishTime = raceState.elapsed;
+        }
+      });
+
+      const [r1, r2] = raceState.racers;
+      if (r1.finishTime !== null && r2.finishTime !== null) {
+        raceState.running = false;
+        raceState.finished = true;
+        startBtn.textContent = "TEKRAR YARIŞTIR";
+
+        const [a, b] = pair;
+        const firstIsA = r1.finishTime <= r2.finishTime;
+        const winner = firstIsA ? a : b;
+        const loser = firstIsA ? b : a;
+        const diff = Math.abs(r1.finishTime - r2.finishTime).toFixed(2);
+
+        resultBox.innerHTML = `
+          <div class="result-title">Kazanan: ${winner.name} (${diff} sn farkla)</div>
+          <div>
+            <strong>1. ${winner.name}:</strong> ${(firstIsA ? r1.finishTime : r2.finishTime).toFixed(2)} sn •
+            <strong>2. ${loser.name}:</strong> ${(firstIsA ? r2.finishTime : r1.finishTime).toFixed(2)} sn
+          </div>
+          <div id="specsGrid" class="specs-grid"></div>
+        `;
+        renderSpecsSummary();
+      }
+    }
+
+    function drawScooterIcon(x, y, scooter, labelNum) {
+      ctx.save();
+      ctx.translate(x, y);
+
+      // Gölge
+      ctx.fillStyle = "rgba(0,0,0,0.28)";
+      ctx.beginPath();
+      ctx.ellipse(0, 12, 26, 5, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Tekerlekler
+      ctx.fillStyle = "#0f172a";
+      ctx.strokeStyle = "#94a3b8";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(-16, 6, 7, 0, Math.PI * 2);
+      ctx.arc(17, 6, 7, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // Taban
+      ctx.fillStyle = scooter.color;
+      ctx.beginPath();
+      ctx.roundRect(-18, -2, 36, 6, 3);
+      ctx.fill();
+
+      // Direksiyon gövdesi ve gidon
+      ctx.strokeStyle = scooter.accent;
+      ctx.lineWidth = 4;
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(13, 0);
+      ctx.lineTo(9, -22);
+      ctx.lineTo(15, -22);
+      ctx.stroke();
+
+      // Numara rozeti
+      ctx.fillStyle = "#0f172a";
+      ctx.beginPath();
+      ctx.arc(-10, -16, 9, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 11px sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(String(labelNum), -10, -16);
+
+      ctx.restore();
+    }
+
+    function resizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.max(1, Math.floor(rect.width * dpr));
+      canvas.height = Math.max(1, Math.floor(rect.height * dpr));
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    function renderScene() {
+      const rect = canvas.getBoundingClientRect();
+      const w = rect.width;
+      const h = rect.height;
+      const slopeDeg = Number(slopeInput.value);
+      const pair = getSelectedPair();
+
+      // Gökyüzü
+      const sky = ctx.createLinearGradient(0, 0, 0, h * 0.62);
+      sky.addColorStop(0, "#38bdf8");
+      sky.addColorStop(1, "#bae6fd");
+      ctx.fillStyle = sky;
+      ctx.fillRect(0, 0, w, h * 0.62);
+
+      // Uzak tepeler
+      ctx.fillStyle = "#0284c7";
+      ctx.beginPath();
+      ctx.moveTo(0, h * 0.62);
+      ctx.lineTo(w * 0.25, h * 0.44);
+      ctx.lineTo(w * 0.55, h * 0.58);
+      ctx.lineTo(w * 0.82, h * 0.42);
+      ctx.lineTo(w, h * 0.56);
+      ctx.lineTo(w, h * 0.62);
+      ctx.closePath();
+      ctx.fill();
+
+      // Asfalt pist (eğime göre hafif eğimlendirme)
+      const tilt = Math.tan((slopeDeg * Math.PI) / 180) * 35;
+      ctx.fillStyle = "#1e293b";
+      ctx.beginPath();
+      ctx.moveTo(0, h * 0.58 + tilt * 0.4);
+      ctx.lineTo(w, h * 0.58 - tilt * 0.4);
+      ctx.lineTo(w, h);
+      ctx.lineTo(0, h);
+      ctx.closePath();
+      ctx.fill();
+
+      // Şerit çizgileri
+      const lane1Y = h * 0.71;
+      const lane2Y = h * 0.87;
+
+      ctx.strokeStyle = "#475569";
+      ctx.lineWidth = 2;
+      ctx.setLineDash([12, 10]);
+      ctx.beginPath();
+      ctx.moveTo(16, (lane1Y + lane2Y) / 2);
+      ctx.lineTo(w - 16, (lane1Y + lane2Y) / 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Başlangıç ve bitiş çizgileri
+      const startX = 48;
+      const finishX = w - 36;
+      const trackSpan = Math.max(40, finishX - startX);
+
+      ctx.strokeStyle = "#f8fafc";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(startX, h * 0.61);
+      ctx.lineTo(startX, h - 8);
+      ctx.stroke();
+
+      ctx.strokeStyle = "#facc15";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(finishX, h * 0.61);
+      ctx.lineTo(finishX, h - 8);
+      ctx.stroke();
+
+      // Üst bilgi şeridi
+      ctx.fillStyle = "rgba(15, 23, 42, 0.78)";
+      ctx.fillRect(10, 10, w - 20, 30);
+      ctx.fillStyle = "#f8fafc";
+      ctx.font = "bold 12px sans-serif";
+      ctx.textAlign = "left";
+      ctx.textBaseline = "middle";
+      ctx.fillText(
+        `Süre: ${raceState.elapsed.toFixed(1)}s  |  Eğim: ${slopeDeg}°  |  Yük: ${loadInput.value} kg`,
+        18,
+        25
+      );
+
+      // Scooterları çiz
+      [lane1Y, lane2Y].forEach((laneY, idx) => {
+        const r = raceState.racers[idx];
+        const ratio = Math.min(1, r.posM / TRACK_METERS);
+        const x = startX + ratio * trackSpan;
+
+        ctx.fillStyle = "#cbd5e1";
+        ctx.font = "bold 11px sans-serif";
+        ctx.textAlign = "left";
+        ctx.fillText(`${pair[idx].name} • ${Math.round(r.speedKmh)} km/h • ${Math.round(r.posM)}m`, 14, laneY - 28);
+
+        drawScooterIcon(x, laneY, pair[idx], idx + 1);
+      });
+    }
+
+    let lastTime = performance.now();
+    function loop(now) {
+      const dt = Math.min(0.05, (now - lastTime) / 1000);
+      lastTime = now;
+      stepPhysics(dt);
+      renderScene();
+      requestAnimationFrame(loop);
+    }
+
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
+    syncLabels();
+    renderSpecsSummary();
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>
