@@ -287,62 +287,249 @@
   </div>
 
   <script>
-    const SCOOTERS = [
-      {
-        id: "rx04",
-        name: "Onvo RX-04",
-        powerW: 2400,
-        topSpeedKmh: 65,
-        battery: "52V 21Ah",
-        color: "#ef4444",
-        accent: "#fca5a5"
-      },
-      {
-        id: "sonic",
-        name: "Dualtron Sonic Alien",
-        powerW: 11800,
-        topSpeedKmh: 120,
-        battery: "72V 40Ah",
-        color: "#f97316",
-        accent: "#fed7aa"
-      },
-      {
-        id: "rx10",
-        name: "ONVO RX-10",
-        powerW: 3000,
-        topSpeedKmh: 80,
-        battery: "60.8V 21.8Ah",
-        color: "#38bdf8",
-        accent: "#bae6fd"
-      },
-      {
-        id: "mx02",
-        name: "ONVO Mx-02",
-        powerW: 1600,
-        topSpeedKmh: 55,
-        battery: "52V 15Ah",
-        color: "#a855f7",
-        accent: "#e9d5ff"
-      },
-      {
-        id: "achilleus",
-        name: "Dualtron Achilleus",
-        powerW: 4650,
-        topSpeedKmh: 80,
-        battery: "60V 35Ah",
-        color: "#22c55e",
-        accent: "#bbf7d0"
-      },
-      {
-        id: "tiger",
-        name: "Hiley Tiger Supra",
-        powerW: 5200,
-        topSpeedKmh: 100,
-        battery: "60V 31.5Ah",
-        color: "#eab308",
-        accent: "#fef08a"
-      }
-    ];
+    const scooters = [
+  {
+    id: "onvo-rx-07",
+    name: "Onvo RX-07 Elektrikli",
+    brand: "Onvo",
+    powerW: 4000,
+    topSpeedKmh: 80,
+    rangeKm: 70,
+    battery: "60V 25A",
+    priceTry: 53000
+  },
+  {
+    id: "onvo-rx-09-3000w",
+    name: "ONVO RX-09 3000W",
+    brand: "Onvo",
+    powerW: 3000,
+    topSpeedKmh: 65,
+    rangeKm: 8,
+    battery: "60V 20A",
+    priceTry: 64999
+  },
+  {
+    id: "hiley-tiger-10-v3",
+    name: "Hiley Tiger 10 V3",
+    brand: "Hiley",
+    powerW: 2000,
+    topSpeedKmh: 65,
+    rangeKm: 75,
+    battery: "52V/20.8Ah",
+    priceTry: 71999
+  },
+  {
+    id: "hiley-tiger-max-gtr",
+    name: "Hiley Tiger Max Gtr",
+    brand: "Hiley",
+    powerW: 1600,
+    topSpeedKmh: 55,
+    rangeKm: 60,
+    battery: "48V/18.2Ah",
+    priceTry: 58000
+  },
+  {
+    id: "dualtron-togo-limited",
+    name: "Dualtron Togo Limited",
+    brand: "Dualtron",
+    powerW: 2900,
+    topSpeedKmh: 60,
+    rangeKm: 60,
+    battery: "60V 15A",
+    priceTry: null
+  },
+  {
+    id: "hiley-tiger-10-v4",
+    name: "Hiley Tiger 10 V4",
+    brand: "Hiley",
+    powerW: 3000,
+    topSpeedKmh: 70,
+    rangeKm: 80,
+    battery: "52V 21A",
+    priceTry: 104999
+  },
+  {
+    id: "onvo-mx-03-2400w",
+    name: "ONVO Mx-03 2400W",
+    brand: "Onvo",
+    powerW: 2400,
+    topSpeedKmh: 65,
+    rangeKm: 70,
+    battery: "52V 20A",
+    priceTry: 53999
+  },
+  {
+    id: "onvo-mx-01-800w",
+    name: "ONVO Mx-01 800W",
+    brand: "Onvo",
+    powerW: 800,
+    topSpeedKmh: 50,
+    rangeKm: 55,
+    battery: "48V 13A",
+    priceTry: 28999
+  },
+  {
+    id: "onvo-rx-05",
+    name: "Onvo RX-05 Elektrikli",
+    brand: "Onvo",
+    powerW: 2400,
+    topSpeedKmh: 75,
+    rangeKm: 60,
+    battery: "60V 25A",
+    priceTry: 47000
+  },
+  {
+    id: "hiley-tiger-10-gtr",
+    name: "Hiley Tiger 10 GTR",
+    brand: "Hiley",
+    powerW: 4000,
+    topSpeedKmh: 90,
+    rangeKm: 90,
+    battery: "60V/23.4Ah",
+    priceTry: 95000
+  },
+  {
+    id: "dualtron-x-limited",
+    name: "Dualtron X Limited",
+    brand: "Dualtron",
+    powerW: 13000,
+    topSpeedKmh: 130,
+    rangeKm: 170,
+    battery: "84V 60A",
+    priceTry: 339900
+  },
+  {
+    id: "dualtron-togo-plus",
+    name: "Dualtron Togo Plus",
+    brand: "Dualtron",
+    powerW: 1350,
+    topSpeedKmh: 40,
+    rangeKm: 40,
+    battery: "48V 15A",
+    priceTry: null
+  },
+  {
+    id: "dualtron-thunder-3",
+    name: "Dualtron Thunder 3",
+    brand: "Dualtron",
+    powerW: 10800,
+    topSpeedKmh: 110,
+    rangeKm: 120,
+    battery: "72V 40A",
+    priceTry: 231900
+  },
+  {
+    id: "dualtron-city-new",
+    name: "Dualtron City New",
+    brand: "Dualtron",
+    powerW: 4000,
+    topSpeedKmh: 70,
+    rangeKm: 70,
+    battery: "60V 25A",
+    priceTry: 134900
+  },
+  {
+    id: "dualtron-victor-limited",
+    name: "Dualtron Victor Limited",
+    brand: "Dualtron",
+    powerW: 4300,
+    topSpeedKmh: 80,
+    rangeKm: 100,
+    battery: "60V 35A",
+    priceTry: 139900
+  },
+  {
+    id: "onvo-kx-01k-150w",
+    name: "ONVO KX-01K 150W",
+    brand: "Onvo",
+    powerW: 150,
+    topSpeedKmh: 15,
+    rangeKm: 8,
+    battery: "21.6V 2.4A",
+    priceTry: 9999
+  },
+  {
+    id: "onvo-kx-02",
+    name: "Onvo KX-02 Elektrikli",
+    brand: "Onvo",
+    powerW: 200,
+    topSpeedKmh: 16,
+    rangeKm: 15,
+    battery: "21.6V 5.2A",
+    priceTry: 14900
+  },
+  {
+    id: "onvo-ov-008-500w",
+    name: "ONVO OV-008 500W",
+    brand: "Onvo",
+    powerW: 500,
+    topSpeedKmh: 35,
+    rangeKm: 30,
+    battery: null,
+    priceTry: 23999
+  },
+  {
+    id: "onvo-ov-012-x-plus",
+    name: "Onvo OV-012 X Plus",
+    brand: "Onvo",
+    powerW: 1600,
+    topSpeedKmh: 50,
+    rangeKm: 50,
+    battery: "48V 15A",
+    priceTry: 36999
+  },
+  {
+    id: "onvo-ov-013-x-plus",
+    name: "ONVO OV-013 X-Plus",
+    brand: "Onvo",
+    powerW: 2000,
+    topSpeedKmh: 65,
+    rangeKm: 60,
+    battery: "48V 18A",
+    priceTry: 41990
+  },
+  {
+    id: "dualtron-aminia-long",
+    name: "Dualtron Aminia Long",
+    brand: "Dualtron",
+    powerW: 2900,
+    topSpeedKmh: 60,
+    rangeKm: 60,
+    battery: "52V 21A",
+    priceTry: 72900
+  },
+  {
+    id: "onvo-ov-12",
+    name: "Onvo OV-12 Elektrikli",
+    brand: "Onvo",
+    powerW: 800,
+    topSpeedKmh: 50,
+    rangeKm: 40,
+    battery: "48V 10A",
+    priceTry: 28500
+  },
+  {
+    id: "onvo-ov-007-x",
+    name: "Onvo Ov-007 X Elektrikli",
+    brand: "Onvo",
+    powerW: 500,
+    topSpeedKmh: 35,
+    rangeKm: 30,
+    battery: null,
+    priceTry: 22500
+  },
+  {
+    id: "rovoron-r7",
+    name: "Rovoron R7 Elektrikli",
+    brand: "Dualtron",
+    powerW: 3000,
+    topSpeedKmh: 80,
+    rangeKm: 120,
+    battery: "60V 42.4A",
+    priceTry: 98900
+  }
+];
+
 
     const TRACK_METERS = 200;
     const s1Select = document.getElementById("s1");
