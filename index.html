@@ -287,250 +287,308 @@
   </div>
 
   <script>
-    const scooters = [
-  },
-  {
-    id: "onvo-rx-07",
-    name: "Onvo RX-07 Elektrikli",
-    brand: "Onvo",
-    powerW: 4000,
-    topSpeedKmh: 80,
-    rangeKm: 70,
-    battery: "60V 25A",
-    priceTry: 53000
-  },
-  {
-    id: "onvo-rx-09-3000w",
-    name: "ONVO RX-09 3000W",
-    brand: "Onvo",
-    powerW: 3000,
-    topSpeedKmh: 65,
-    rangeKm: 8,
-    battery: "60V 20A",
-    priceTry: 64999
-  },
-  {
-    id: "hiley-tiger-10-v3",
-    name: "Hiley Tiger 10 V3",
-    brand: "Hiley",
-    powerW: 2000,
-    topSpeedKmh: 65,
-    rangeKm: 75,
-    battery: "52V/20.8Ah",
-    priceTry: 71999
-  },
-  {
-    id: "hiley-tiger-max-gtr",
-    name: "Hiley Tiger Max Gtr",
-    brand: "Hiley",
-    powerW: 1600,
-    topSpeedKmh: 55,
-    rangeKm: 60,
-    battery: "48V/18.2Ah",
-    priceTry: 58000
-  },
-  {
-    id: "dualtron-togo-limited",
-    name: "Dualtron Togo Limited",
-    brand: "Dualtron",
-    powerW: 2900,
-    topSpeedKmh: 60,
-    rangeKm: 60,
-    battery: "60V 15A",
-    priceTry: null
-  },
-  {
-    id: "hiley-tiger-10-v4",
-    name: "Hiley Tiger 10 V4",
-    brand: "Hiley",
-    powerW: 3000,
-    topSpeedKmh: 70,
-    rangeKm: 80,
-    battery: "52V 21A",
-    priceTry: 104999
-  },
-  {
-    id: "onvo-mx-03-2400w",
-    name: "ONVO Mx-03 2400W",
-    brand: "Onvo",
-    powerW: 2400,
-    topSpeedKmh: 65,
-    rangeKm: 70,
-    battery: "52V 20A",
-    priceTry: 53999
-  },
-  {
-    id: "onvo-mx-01-800w",
-    name: "ONVO Mx-01 800W",
-    brand: "Onvo",
-    powerW: 800,
-    topSpeedKmh: 50,
-    rangeKm: 55,
-    battery: "48V 13A",
-    priceTry: 28999
-  },
-  {
-    id: "onvo-rx-05",
-    name: "Onvo RX-05 Elektrikli",
-    brand: "Onvo",
-    powerW: 2400,
-    topSpeedKmh: 75,
-    rangeKm: 60,
-    battery: "60V 25A",
-    priceTry: 47000
-  },
-  {
-    id: "hiley-tiger-10-gtr",
-    name: "Hiley Tiger 10 GTR",
-    brand: "Hiley",
-    powerW: 4000,
-    topSpeedKmh: 90,
-    rangeKm: 90,
-    battery: "60V/23.4Ah",
-    priceTry: 95000
-  },
-  {
-    id: "dualtron-x-limited",
-    name: "Dualtron X Limited",
-    brand: "Dualtron",
-    powerW: 13000,
-    topSpeedKmh: 130,
-    rangeKm: 170,
-    battery: "84V 60A",
-    priceTry: 339900
-  },
-  {
-    id: "dualtron-togo-plus",
-    name: "Dualtron Togo Plus",
-    brand: "Dualtron",
-    powerW: 1350,
-    topSpeedKmh: 40,
-    rangeKm: 40,
-    battery: "48V 15A",
-    priceTry: null
-  },
-  {
-    id: "dualtron-thunder-3",
-    name: "Dualtron Thunder 3",
-    brand: "Dualtron",
-    powerW: 10800,
-    topSpeedKmh: 110,
-    rangeKm: 120,
-    battery: "72V 40A",
-    priceTry: 231900
-  },
-  {
-    id: "dualtron-city-new",
-    name: "Dualtron City New",
-    brand: "Dualtron",
-    powerW: 4000,
-    topSpeedKmh: 70,
-    rangeKm: 70,
-    battery: "60V 25A",
-    priceTry: 134900
-  },
-  {
-    id: "dualtron-victor-limited",
-    name: "Dualtron Victor Limited",
-    brand: "Dualtron",
-    powerW: 4300,
-    topSpeedKmh: 80,
-    rangeKm: 100,
-    battery: "60V 35A",
-    priceTry: 139900
-  },
-  {
-    id: "onvo-kx-01k-150w",
-    name: "ONVO KX-01K 150W",
-    brand: "Onvo",
-    powerW: 150,
-    topSpeedKmh: 15,
-    rangeKm: 8,
-    battery: "21.6V 2.4A",
-    priceTry: 9999
-  },
-  {
-    id: "onvo-kx-02",
-    name: "Onvo KX-02 Elektrikli",
-    brand: "Onvo",
-    powerW: 200,
-    topSpeedKmh: 16,
-    rangeKm: 15,
-    battery: "21.6V 5.2A",
-    priceTry: 14900
-  },
-  {
-    id: "onvo-ov-008-500w",
-    name: "ONVO OV-008 500W",
-    brand: "Onvo",
-    powerW: 500,
-    topSpeedKmh: 35,
-    rangeKm: 30,
-    battery: null,
-    priceTry: 23999
-  },
-  {
-    id: "onvo-ov-012-x-plus",
-    name: "Onvo OV-012 X Plus",
-    brand: "Onvo",
-    powerW: 1600,
-    topSpeedKmh: 50,
-    rangeKm: 50,
-    battery: "48V 15A",
-    priceTry: 36999
-  },
-  {
-    id: "onvo-ov-013-x-plus",
-    name: "ONVO OV-013 X-Plus",
-    brand: "Onvo",
-    powerW: 2000,
-    topSpeedKmh: 65,
-    rangeKm: 60,
-    battery: "48V 18A",
-    priceTry: 41990
-  },
-  {
-    id: "dualtron-aminia-long",
-    name: "Dualtron Aminia Long",
-    brand: "Dualtron",
-    powerW: 2900,
-    topSpeedKmh: 60,
-    rangeKm: 60,
-    battery: "52V 21A",
-    priceTry: 72900
-  },
-  {
-    id: "onvo-ov-12",
-    name: "Onvo OV-12 Elektrikli",
-    brand: "Onvo",
-    powerW: 800,
-    topSpeedKmh: 50,
-    rangeKm: 40,
-    battery: "48V 10A",
-    priceTry: 28500
-  },
-  {
-    id: "onvo-ov-007-x",
-    name: "Onvo Ov-007 X Elektrikli",
-    brand: "Onvo",
-    powerW: 500,
-    topSpeedKmh: 35,
-    rangeKm: 30,
-    battery: null,
-    priceTry: 22500
-  },
-  {
-    id: "rovoron-r7",
-    name: "Rovoron R7 Elektrikli",
-    brand: "Dualtron",
-    powerW: 3000,
-    topSpeedKmh: 80,
-    rangeKm: 120,
-    battery: "60V 42.4A",
-    priceTry: 98900
-  }
-];
-
+    const SCOOTERS = [
+      {
+        id: "rx07",
+        name: "Onvo RX-07 Elektrikli",
+        powerW: 4000,
+        topSpeedKmh: 80,
+        battery: "60V 25A",
+        rangeKm: 70,
+        color: "#ef4444",
+        accent: "#fca5a5"
+      },
+      {
+        id: "rx09-3000",
+        name: "ONVO RX-09 3000W",
+        powerW: 3000,
+        topSpeedKmh: 65,
+        battery: "60V 20A",
+        rangeKm: 8,
+        color: "#38bdf8",
+        accent: "#bae6fd"
+      },
+      {
+        id: "tiger-10-v3",
+        name: "Hiley Tiger 10 V3",
+        powerW: 2000,
+        topSpeedKmh: 65,
+        battery: "52V/20.8Ah",
+        rangeKm: 75,
+        color: "#eab308",
+        accent: "#fef08a"
+      },
+      {
+        id: "tiger-max-gtr",
+        name: "Hiley Tiger Max Gtr",
+        powerW: 1600,
+        topSpeedKmh: 55,
+        battery: "48V/18.2Ah",
+        rangeKm: 60,
+        color: "#a855f7",
+        accent: "#e9d5ff"
+      },
+      {
+        id: "rx05",
+        name: "Onvo RX-05 Elektrikli",
+        powerW: 2400,
+        topSpeedKmh: 75,
+        battery: "60V 25A",
+        rangeKm: 60,
+        color: "#22c55e",
+        accent: "#bbf7d0"
+      },
+      {
+        id: "tiger-10-gtr",
+        name: "Hiley Tiger 10 GTR",
+        powerW: 4000,
+        topSpeedKmh: 90,
+        battery: "60V/23.4Ah",
+        rangeKm: 90,
+        color: "#f97316",
+        accent: "#fed7aa"
+      },
+      {
+        id: "mx03",
+        name: "ONVO Mx-03 2400W",
+        powerW: 2400,
+        topSpeedKmh: 65,
+        battery: "52V 20A",
+        rangeKm: 70,
+        color: "#06b6d4",
+        accent: "#a5f3fc"
+      },
+      {
+        id: "mx01",
+        name: "ONVO Mx-01 800W",
+        powerW: 800,
+        topSpeedKmh: 50,
+        battery: "48V 13A",
+        rangeKm: 55,
+        color: "#ec4899",
+        accent: "#fbcfe8"
+      },
+      {
+        id: "togo-limited",
+        name: "Dualtron Togo Limited",
+        powerW: 2900,
+        topSpeedKmh: 60,
+        battery: "60V 15A",
+        rangeKm: 60,
+        color: "#14b8a6",
+        accent: "#99f6e4"
+      },
+      {
+        id: "tiger-10-v4",
+        name: "Hiley Tiger 10 V4",
+        powerW: 3000,
+        topSpeedKmh: 70,
+        battery: "52V 21A",
+        rangeKm: 80,
+        color: "#f59e0b",
+        accent: "#fde68a"
+      },
+      {
+        id: "x-limited",
+        name: "Dualtron X Limited",
+        powerW: 13000,
+        topSpeedKmh: 130,
+        battery: "84V 60A",
+        rangeKm: 170,
+        color: "#8b5cf6",
+        accent: "#ddd6fe"
+      },
+      {
+        id: "togo-plus",
+        name: "Dualtron Togo Plus",
+        powerW: 1350,
+        topSpeedKmh: 40,
+        battery: "48V 15A",
+        rangeKm: 40,
+        color: "#84cc16",
+        accent: "#d9f99d"
+      },
+      {
+        id: "achilleus",
+        name: "Dualtron Achilleus",
+        powerW: 4650,
+        topSpeedKmh: 80,
+        battery: "60V 35A",
+        rangeKm: 100,
+        color: "#10b981",
+        accent: "#a7f3d0"
+      },
+      {
+        id: "thunder-3",
+        name: "Dualtron Thunder 3",
+        powerW: 10800,
+        topSpeedKmh: 110,
+        battery: "72V 40A",
+        rangeKm: 120,
+        color: "#6366f1",
+        accent: "#c7d2fe"
+      },
+      {
+        id: "city-new",
+        name: "Dualtron City New",
+        powerW: 4000,
+        topSpeedKmh: 70,
+        battery: "60V 25A",
+        rangeKm: 70,
+        color: "#f43f5e",
+        accent: "#fecdd3"
+      },
+      {
+        id: "victor-limited",
+        name: "Dualtron Victor Limited",
+        powerW: 4300,
+        topSpeedKmh: 80,
+        battery: "60V 35A",
+        rangeKm: 100,
+        color: "#0ea5e9",
+        accent: "#bae6fd"
+      },
+      {
+        id: "ov-013-x-plus",
+        name: "ONVO OV-013 X-Plus",
+        powerW: 2000,
+        topSpeedKmh: 65,
+        battery: "48V 18A",
+        rangeKm: 60,
+        color: "#eab308",
+        accent: "#fef08a"
+      },
+      {
+        id: "aminia-long",
+        name: "Dualtron Aminia Long",
+        powerW: 2900,
+        topSpeedKmh: 60,
+        battery: "52V 21A",
+        rangeKm: 60,
+        color: "#22c55e",
+        accent: "#bbf7d0"
+      },
+      {
+        id: "rx04",
+        name: "Onvo RX-04 Elektrikli",
+        powerW: 2400,
+        topSpeedKmh: 65,
+        battery: "52V 21A",
+        rangeKm: 60,
+        color: "#ef4444",
+        accent: "#fca5a5"
+      },
+      {
+        id: "sonic-alien",
+        name: "Dualtron Sonic Alien",
+        powerW: 11800,
+        topSpeedKmh: 120,
+        battery: "72V 40A",
+        rangeKm: 120,
+        color: "#f97316",
+        accent: "#fed7aa"
+      },
+      {
+        id: "ov-008",
+        name: "ONVO OV-008 500W",
+        powerW: 500,
+        topSpeedKmh: 35,
+        battery: "Belirtilmemiş",
+        rangeKm: 30,
+        color: "#38bdf8",
+        accent: "#bae6fd"
+      },
+      {
+        id: "ov-012-x-plus",
+        name: "Onvo OV-012 X Plus",
+        powerW: 1600,
+        topSpeedKmh: 50,
+        battery: "48V 15A",
+        rangeKm: 50,
+        color: "#a855f7",
+        accent: "#e9d5ff"
+      },
+      {
+        id: "kx-01k",
+        name: "ONVO KX-01K 150W",
+        powerW: 150,
+        topSpeedKmh: 15,
+        battery: "21.6V 2.4A",
+        rangeKm: 8,
+        color: "#f43f5e",
+        accent: "#fecdd3"
+      },
+      {
+        id: "kx-02",
+        name: "Onvo KX-02 Elektrikli",
+        powerW: 200,
+        topSpeedKmh: 16,
+        battery: "21.6V 5.2A",
+        rangeKm: 15,
+        color: "#e11d48",
+        accent: "#fda4af"
+      },
+      {
+        id: "rx10",
+        name: "ONVO RX-10 3000W",
+        powerW: 3000,
+        topSpeedKmh: 80,
+        battery: "60.8V 21.8A",
+        rangeKm: 80,
+        color: "#06b6d4",
+        accent: "#a5f3fc"
+      },
+      {
+        id: "mx02",
+        name: "ONVO Mx-02 1600W",
+        powerW: 1600,
+        topSpeedKmh: 55,
+        battery: "52V 15A",
+        rangeKm: 60,
+        color: "#f59e0b",
+        accent: "#fde68a"
+      },
+      {
+        id: "ov-12",
+        name: "Onvo OV-12 Elektrikli",
+        powerW: 800,
+        topSpeedKmh: 50,
+        battery: "48V 10A",
+        rangeKm: 40,
+        color: "#10b981",
+        accent: "#a7f3d0"
+      },
+      {
+        id: "ov-007-x",
+        name: "Onvo Ov-007 X Elektrikli",
+        powerW: 500,
+        topSpeedKmh: 35,
+        battery: "Belirtilmemiş",
+        rangeKm: 30,
+        color: "#6366f1",
+        accent: "#c7d2fe"
+      },
+      {
+        id: "rovoron-r7",
+        name: "Rovoron R7 Elektrikli",
+        powerW: 3000,
+        topSpeedKmh: 80,
+        battery: "60V 42.4A",
+        rangeKm: 120,
+        color: "#14b8a6",
+        accent: "#99f6e4"
+      },
+      {
+        id: "tiger-supra",
+        name: "Hiley Tiger Supra",
+        powerW: 5200,
+        topSpeedKmh: 100,
+        battery: "60V/31.5Ah",
+        rangeKm: 120,
+        color: "#eab308",
+        accent: "#fef08a"
+      }
+    ];
 
     const TRACK_METERS = 200;
     const s1Select = document.getElementById("s1");
@@ -560,7 +618,6 @@
       running: false,
       finished: false,
       elapsed: 0,
-      winnerText: "",
       racers: [
         { posM: 0, speedKmh: 0, finishTime: null },
         { posM: 0, speedKmh: 0, finishTime: null }
@@ -575,11 +632,13 @@
 
     function renderSpecsSummary() {
       const [a, b] = getSelectedPair();
-      specsGrid.innerHTML = [a, b].map((sc, i) => `
+      const currentGrid = document.getElementById("specsGrid");
+      if (!currentGrid) return;
+      currentGrid.innerHTML = [a, b].map((sc, i) => `
         <div class="spec-box">
           <div class="spec-name">${i + 1}. ${sc.name}</div>
           <div>Güç: <strong>${sc.powerW}W</strong> • Hız: <strong>${sc.topSpeedKmh} km/h</strong></div>
-          <div>Pil: ${sc.battery}</div>
+          <div>Pil: ${sc.battery} • Menzil: ${sc.rangeKm} km</div>
         </div>
       `).join("");
     }
@@ -650,10 +709,10 @@
     });
 
     function computeTargetSpeed(scooter, slopeDeg, loadKg) {
-      const loadFactor = Math.max(0.58, 1 - Math.max(0, loadKg - 70) * 0.0028);
-      const powerClimbBonus = Math.min(0.32, (scooter.powerW / 12000) * 0.32);
-      const slopePenalty = (slopeDeg / 28) * Math.max(0.14, 0.46 - powerClimbBonus);
-      const factor = Math.max(0.35, loadFactor * (1 - slopePenalty));
+      const loadFactor = Math.max(0.55, 1 - Math.max(0, loadKg - 70) * 0.003);
+      const powerClimbBonus = Math.min(0.35, (scooter.powerW / 13000) * 0.35);
+      const slopePenalty = (slopeDeg / 28) * Math.max(0.14, 0.52 - powerClimbBonus);
+      const factor = Math.max(0.3, loadFactor * (1 - slopePenalty));
       return scooter.topSpeedKmh * factor;
     }
 
@@ -670,7 +729,7 @@
         if (r.finishTime !== null) return;
 
         const targetKmh = computeTargetSpeed(sc, slopeDeg, loadKg);
-        const accelKmhPerSec = (14 + (sc.powerW / 12000) * 28) * Math.max(0.55, 1 - slopeDeg * 0.015);
+        const accelKmhPerSec = (12 + (sc.powerW / 13000) * 30) * Math.max(0.5, 1 - slopeDeg * 0.016);
         r.speedKmh = Math.min(targetKmh, r.speedKmh + accelKmhPerSec * dt);
 
         const metersPerSec = (r.speedKmh * 1000) / 3600;
@@ -710,13 +769,11 @@
       ctx.save();
       ctx.translate(x, y);
 
-      // Gölge
       ctx.fillStyle = "rgba(0,0,0,0.28)";
       ctx.beginPath();
       ctx.ellipse(0, 12, 26, 5, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      // Tekerlekler
       ctx.fillStyle = "#0f172a";
       ctx.strokeStyle = "#94a3b8";
       ctx.lineWidth = 2;
@@ -726,13 +783,11 @@
       ctx.fill();
       ctx.stroke();
 
-      // Taban
       ctx.fillStyle = scooter.color;
       ctx.beginPath();
       ctx.roundRect(-18, -2, 36, 6, 3);
       ctx.fill();
 
-      // Direksiyon gövdesi ve gidon
       ctx.strokeStyle = scooter.accent;
       ctx.lineWidth = 4;
       ctx.lineCap = "round";
@@ -742,7 +797,6 @@
       ctx.lineTo(15, -22);
       ctx.stroke();
 
-      // Numara rozeti
       ctx.fillStyle = "#0f172a";
       ctx.beginPath();
       ctx.arc(-10, -16, 9, 0, Math.PI * 2);
@@ -771,14 +825,12 @@
       const slopeDeg = Number(slopeInput.value);
       const pair = getSelectedPair();
 
-      // Gökyüzü
       const sky = ctx.createLinearGradient(0, 0, 0, h * 0.62);
       sky.addColorStop(0, "#38bdf8");
       sky.addColorStop(1, "#bae6fd");
       ctx.fillStyle = sky;
       ctx.fillRect(0, 0, w, h * 0.62);
 
-      // Uzak tepeler
       ctx.fillStyle = "#0284c7";
       ctx.beginPath();
       ctx.moveTo(0, h * 0.62);
@@ -790,7 +842,6 @@
       ctx.closePath();
       ctx.fill();
 
-      // Asfalt pist (eğime göre hafif eğimlendirme)
       const tilt = Math.tan((slopeDeg * Math.PI) / 180) * 35;
       ctx.fillStyle = "#1e293b";
       ctx.beginPath();
@@ -801,7 +852,6 @@
       ctx.closePath();
       ctx.fill();
 
-      // Şerit çizgileri
       const lane1Y = h * 0.71;
       const lane2Y = h * 0.87;
 
@@ -814,7 +864,6 @@
       ctx.stroke();
       ctx.setLineDash([]);
 
-      // Başlangıç ve bitiş çizgileri
       const startX = 48;
       const finishX = w - 36;
       const trackSpan = Math.max(40, finishX - startX);
@@ -833,7 +882,6 @@
       ctx.lineTo(finishX, h - 8);
       ctx.stroke();
 
-      // Üst bilgi şeridi
       ctx.fillStyle = "rgba(15, 23, 42, 0.78)";
       ctx.fillRect(10, 10, w - 20, 30);
       ctx.fillStyle = "#f8fafc";
@@ -846,7 +894,6 @@
         25
       );
 
-      // Scooterları çiz
       [lane1Y, lane2Y].forEach((laneY, idx) => {
         const r = raceState.racers[idx];
         const ratio = Math.min(1, r.posM / TRACK_METERS);
