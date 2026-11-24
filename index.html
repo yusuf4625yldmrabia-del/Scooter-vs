@@ -3,26 +3,27 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Scooter VS Arena</title>
+  <title>Scooter Ride & Missions</title>
   <style>
     * {
       box-sizing: border-box;
       -webkit-tap-highlight-color: transparent;
+      user-select: none;
     }
 
     html, body {
       margin: 0;
       padding: 0;
       width: 100%;
-      height: 100%;
-      background: #0d1321;
+      min-height: 100%;
+      background: #0b1120;
       color: #f8fafc;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       overflow-x: hidden;
     }
 
     .app {
-      max-width: 960px;
+      max-width: 980px;
       margin: 0 auto;
       padding: 10px;
       display: flex;
@@ -30,8 +31,8 @@
       gap: 10px;
     }
 
-    .top-bar {
-      background: #151e32;
+    .hud-top {
+      background: #131c31;
       border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: 14px;
       padding: 10px 12px;
@@ -42,950 +43,779 @@
       gap: 8px;
     }
 
-    .brand {
-      font-weight: 800;
-      font-size: 16px;
-      letter-spacing: 0.3px;
-      color: #38bdf8;
-    }
-
-    .selectors {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      width: 100%;
-    }
-
-    .select-box {
-      background: #1e293b;
-      border-radius: 10px;
-      padding: 8px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .select-head {
+    .title-group {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-    }
-
-    .select-box label {
-      font-size: 11px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: #94a3b8;
-    }
-
-    .selected-photo-badge {
-      width: 44px;
-      height: 44px;
-      border-radius: 9px;
-      background: #ffffff;
-      border: 2px solid #38bdf8;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-      flex-shrink: 0;
-    }
-
-    .selected-photo-badge img {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-    }
-
-    select, button, input[type="range"] {
-      font-family: inherit;
-    }
-
-    select {
-      width: 100%;
-      background: #0f172a;
-      color: #f8fafc;
-      border: 1px solid rgba(255, 255, 255, 0.14);
-      border-radius: 8px;
-      padding: 7px 8px;
-      font-size: 13px;
-      font-weight: 600;
-    }
-
-    .arena-wrap {
-      position: relative;
-      width: 100%;
-      border-radius: 16px;
-      overflow: hidden;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      background: #7dd3fc;
-      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
-    }
-
-    canvas {
-      display: block;
-      width: 100%;
-      height: 310px;
-    }
-
-    .controls {
-      background: #151e32;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 14px;
-      padding: 12px;
-      display: flex;
-      flex-direction: column;
       gap: 10px;
     }
 
-    .mode-row {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
+    .brand {
+      font-size: 16px;
+      font-weight: 800;
+      color: #38bdf8;
+      letter-spacing: 0.4px;
+    }
+
+    .pill {
+      background: #1e293b;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 999px;
+      padding: 5px 11px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+
+    .pill.money {
+      color: #4ade80;
+      border-color: rgba(74, 222, 128, 0.35);
+    }
+
+    .map-switch {
+      display: flex;
       gap: 6px;
     }
 
-    .mode-btn {
+    .map-btn {
       background: #1e293b;
       color: #cbd5e1;
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.1);
       border-radius: 9px;
-      padding: 8px 6px;
+      padding: 7px 11px;
       font-size: 12px;
       font-weight: 700;
       cursor: pointer;
     }
 
-    .mode-btn.active {
+    .map-btn.active {
       background: #0284c7;
       color: #ffffff;
       border-color: #38bdf8;
     }
 
-    .sliders {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-
-    .slider-card {
-      background: #1e293b;
-      border-radius: 10px;
-      padding: 8px 10px;
-    }
-
-    .slider-head {
-      display: flex;
-      justify-content: space-between;
-      font-size: 12px;
-      font-weight: 600;
-      color: #cbd5e1;
-      margin-bottom: 4px;
-    }
-
-    input[type="range"] {
+    .road-wrap {
+      position: relative;
       width: 100%;
-      accent-color: #38bdf8;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: #0f172a;
+      box-shadow: 0 14px 32px rgba(0, 0, 0, 0.45);
     }
 
-    .action-row {
-      display: grid;
-      grid-template-columns: 2fr 1fr;
+    canvas {
+      display: block;
+      width: 100%;
+      height: 360px;
+    }
+
+    .mission-banner {
+      background: #131c31;
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      border-radius: 12px;
+      padding: 9px 12px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
       gap: 8px;
+      font-size: 12px;
     }
 
-    .start-btn {
-      background: linear-gradient(135deg, #16a34a, #22c55e);
-      color: #ffffff;
-      border: none;
-      border-radius: 11px;
-      padding: 11px 14px;
-      font-size: 14px;
-      font-weight: 800;
-      cursor: pointer;
+    .mission-text strong {
+      color: #38bdf8;
     }
 
-    .reset-btn {
-      background: #334155;
+    .sound-btn {
+      background: #1e293b;
       color: #f8fafc;
-      border: none;
-      border-radius: 11px;
-      padding: 11px 14px;
-      font-size: 13px;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 8px;
+      padding: 5px 10px;
+      font-size: 11px;
       font-weight: 700;
       cursor: pointer;
     }
 
-    .result-card {
-      background: #151e32;
+    .drive-controls {
+      background: #131c31;
       border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: 14px;
       padding: 12px;
-      font-size: 13px;
-      line-height: 1.5;
-    }
-
-    .result-title {
-      font-size: 15px;
-      font-weight: 800;
-      color: #4ade80;
-      margin-bottom: 6px;
-    }
-
-    .specs-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      margin-top: 8px;
-    }
-
-    .spec-box {
-      background: #1e293b;
-      border-radius: 10px;
-      padding: 8px 10px;
-      font-size: 12px;
-      color: #e2e8f0;
-      display: flex;
       gap: 10px;
+    }
+
+    .lane-pad, .pedal-pad {
+      display: grid;
+      gap: 8px;
+    }
+
+    .lane-pad {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .pedal-pad {
+      grid-template-columns: 1fr 1fr 1fr;
+    }
+
+    .ctrl-btn {
+      border: none;
+      border-radius: 12px;
+      padding: 13px 8px;
+      font-size: 13px;
+      font-weight: 800;
+      color: #ffffff;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+
+    .ctrl-btn:active, .ctrl-btn.pressed {
+      transform: scale(0.97);
+      filter: brightness(1.15);
+    }
+
+    .btn-lane {
+      background: #2563eb;
+    }
+
+    .btn-gas {
+      background: linear-gradient(135deg, #15803d, #22c55e);
+    }
+
+    .btn-brake {
+      background: linear-gradient(135deg, #b91c1c, #ef4444);
+    }
+
+    .btn-horn {
+      background: linear-gradient(135deg, #d97706, #f59e0b);
+    }
+
+    .garage-section {
+      background: #131c31;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .garage-head {
+      display: flex;
+      justify-content: space-between;
       align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
     }
 
-    .spec-thumb {
-      width: 54px;
-      height: 54px;
-      border-radius: 8px;
-      background: #ffffff;
-      object-fit: contain;
-      flex-shrink: 0;
-      padding: 2px;
-    }
-
-    .spec-name {
+    .garage-title {
+      font-size: 14px;
       font-weight: 800;
       color: #38bdf8;
-      margin-bottom: 2px;
+    }
+
+    .garage-sub {
+      font-size: 11px;
+      color: #94a3b8;
+    }
+
+    .scooter-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+      gap: 8px;
+      max-height: 310px;
+      overflow-y: auto;
+      padding-right: 2px;
+    }
+
+    .scooter-card {
+      background: #1e293b;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 11px;
+      padding: 9px 10px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .scooter-card.active {
+      border-color: #38bdf8;
+      box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.35);
+    }
+
+    .scooter-rank {
+      font-size: 10px;
+      font-weight: 800;
+      color: #fbbf24;
+      text-transform: uppercase;
+    }
+
+    .scooter-name {
+      font-size: 12px;
+      font-weight: 800;
+      color: #f8fafc;
+      margin-top: 2px;
+    }
+
+    .scooter-meta {
+      font-size: 11px;
+      color: #cbd5e1;
+      margin-top: 3px;
+    }
+
+    .card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+    }
+
+    .price-tag {
+      font-size: 12px;
+      font-weight: 800;
+      color: #4ade80;
+    }
+
+    .owned-tag {
+      font-size: 11px;
+      font-weight: 700;
+      color: #94a3b8;
+    }
+
+    .action-mini {
+      border: none;
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 11px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .btn-buy {
+      background: #16a34a;
+      color: #ffffff;
+    }
+
+    .btn-buy:disabled {
+      background: #334155;
+      color: #94a3b8;
+      cursor: not-allowed;
+    }
+
+    .btn-select {
+      background: #0284c7;
+      color: #ffffff;
+    }
+
+    @media (max-width: 680px) {
+      .drive-controls {
+        grid-template-columns: 1fr;
+      }
+      canvas {
+        height: 320px;
+      }
     }
   </style>
 </head>
 <body>
   <div class="app">
-    <div class="top-bar">
-      <div class="brand">SCOOTER VS ARENA</div>
-      <div class="selectors">
-        <div class="select-box">
-          <div class="select-head">
-            <label for="s1">1. Scooter</label>
-            <div class="selected-photo-badge">
-              <img id="s1Thumb" alt="1. Scooter" />
-            </div>
-          </div>
-          <select id="s1"></select>
-        </div>
-        <div class="select-box">
-          <div class="select-head">
-            <label for="s2">2. Scooter</label>
-            <div class="selected-photo-badge">
-              <img id="s2Thumb" alt="2. Scooter" />
-            </div>
-          </div>
-          <select id="s2"></select>
-        </div>
+    <div class="hud-top">
+      <div class="title-group">
+        <div class="brand">SCOOTER RIDE</div>
+        <div id="moneyPill" class="pill money">₺15.000</div>
+        <div id="activeScooterPill" class="pill">Araç: -</div>
+      </div>
+      <div class="map-switch">
+        <button id="freeMapBtn" class="map-btn active" type="button">Serbest Harita</button>
+        <button id="missionMapBtn" class="map-btn" type="button">Görev Haritası</button>
       </div>
     </div>
 
-    <div class="arena-wrap">
-      <canvas id="gameCanvas"></canvas>
+    <div class="road-wrap">
+      <canvas id="roadCanvas"></canvas>
     </div>
 
-    <div class="controls">
-      <div class="mode-row">
-        <button class="mode-btn active" data-mode="flat">Düz Yol (0°)</button>
-        <button class="mode-btn" data-mode="hill">Dik Yokuş (18°)</button>
-        <button class="mode-btn" data-mode="heavy">Yüklü Yokuş (22°)</button>
+    <div class="mission-banner">
+      <div id="missionText" class="mission-text">
+        <strong>Serbest Harita:</strong> 2 şeritli yolda serbest sürüş yap. Şerit: A/D veya ←/→ • Gaz: W/↑ • Fren: S/↓ • Korna: H
       </div>
+      <button id="soundToggleBtn" class="sound-btn" type="button">Ses: Açık</button>
+    </div>
 
-      <div class="sliders">
-        <div class="slider-card">
-          <div class="slider-head">
-            <span>Eğim</span>
-            <span id="slopeVal">0°</span>
-          </div>
-          <input id="slopeInput" type="range" min="0" max="28" value="0" />
-        </div>
-        <div class="slider-card">
-          <div class="slider-head">
-            <span>Sürücü + Yük</span>
-            <span id="loadVal">80 kg</span>
-          </div>
-          <input id="loadInput" type="range" min="50" max="160" value="80" />
-        </div>
+    <div class="drive-controls">
+      <div class="lane-pad">
+        <button id="leftLaneBtn" class="ctrl-btn btn-lane" type="button">◀ SOL ŞERİT</button>
+        <button id="rightLaneBtn" class="ctrl-btn btn-lane" type="button">SAĞ ŞERİT ▶</button>
       </div>
-
-      <div class="action-row">
-        <button id="startBtn" class="start-btn">YARIŞI BAŞLAT</button>
-        <button id="resetBtn" class="reset-btn">SIFIRLA</button>
+      <div class="pedal-pad">
+        <button id="gasBtn" class="ctrl-btn btn-gas" type="button">GAZ</button>
+        <button id="brakeBtn" class="ctrl-btn btn-brake" type="button">FREN</button>
+        <button id="hornBtn" class="ctrl-btn btn-horn" type="button">KORNA</button>
       </div>
     </div>
 
-    <div id="resultBox" class="result-card">
-      <div class="result-title">Hazır! İstediğin 2 scooter'ı seç ve yarışı başlat.</div>
-      <div>Pist uzunluğu: <strong>200 m</strong>. Güç (W), maksimum hız ve yük/eğim etkisi yarış sonucunu belirler.</div>
-      <div id="specsGrid" class="specs-grid"></div>
+    <div class="garage-section">
+      <div class="garage-head">
+        <div class="garage-title">Scooter Mağazası &amp; Garaj (İyiden Kötüye Sıralı)</div>
+        <div class="garage-sub">En güçlü/hızlı model en pahalıdır • Başlangıçta 1. model açık</div>
+      </div>
+      <div id="scooterList" class="scooter-list"></div>
     </div>
   </div>
 
   <script>
-    // Her scooter için kendi SVG/fotoğraf görseli üretici fonksiyonu
-    function makeScooterPhoto(primaryColor, accentColor, wheelRadius = 8, dualMotor = false, hasBox = false, titleText = "") {
-      const svg = `
-        <svg xmlns="http://www.w3.org/2000/svg" width="160" height="120" viewBox="0 0 160 120">
-          <rect width="160" height="120" rx="12" fill="#ffffff"/>
-          <ellipse cx="80" cy="102" rx="48" ry="6" fill="rgba(15,23,42,0.12)"/>
-          ${hasBox ? `<rect x="26" y="54" width="24" height="18" rx="4" fill="#1e293b" stroke="${primaryColor}" stroke-width="2"/>` : ""}
-          <!-- Arka teker -->
-          <circle cx="38" cy="86" r="${wheelRadius + 5}" fill="#0f172a" stroke="${primaryColor}" stroke-width="3"/>
-          <circle cx="38" cy="86" r="4" fill="#cbd5e1"/>
-          <!-- Ön teker -->
-          <circle cx="122" cy="86" r="${wheelRadius + 5}" fill="#0f172a" stroke="${primaryColor}" stroke-width="3"/>
-          <circle cx="122" cy="86" r="4" fill="#cbd5e1"/>
-          <!-- Süspansiyon kolları -->
-          <path d="M38 86 L50 76 M122 86 L108 74" stroke="${accentColor}" stroke-width="4" stroke-linecap="round"/>
-          <!-- Taban / Deck -->
-          <rect x="34" y="72" width="76" height="9" rx="4.5" fill="#1e293b" stroke="${primaryColor}" stroke-width="2"/>
-          <rect x="44" y="74" width="52" height="3" rx="1.5" fill="${primaryColor}"/>
-          <!-- Gidon borusu -->
-          <line x1="106" y1="74" x2="96" y2="26" stroke="#0f172a" stroke-width="6" stroke-linecap="round"/>
-          <line x1="106" y1="74" x2="96" y2="26" stroke="${primaryColor}" stroke-width="2" stroke-linecap="round"/>
-          <!-- Gidon -->
-          <path d="M88 26 L106 26 L112 30" fill="none" stroke="#0f172a" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-          ${dualMotor ? `<circle cx="38" cy="86" r="3" fill="${accentColor}"/><circle cx="122" cy="86" r="3" fill="${accentColor}"/>` : ""}
-          <text x="80" y="16" font-family="Arial, sans-serif" font-size="9" font-weight="bold" fill="#334155" text-anchor="middle">${titleText}</text>
-        </svg>
-      `;
-      return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg.trim());
-    }
-
-    const SCOOTERS = [
-      {
-        id: "segway-zt3-pro",
-        name: "Segway-Ninebot ZT3 Pro (Limit Açık)",
-        powerW: 1600,
-        topSpeedKmh: 40,
-        battery: "46V 12.8Ah",
-        rangeKm: 70,
-        color: "#ef4444",
-        accent: "#fca5a5",
-        photo: makeScooterPhoto("#ef4444", "#fca5a5", 9, false, false, "ZT3 PRO")
-      },
-      {
-        id: "segway-e3-pro",
-        name: "Segway-Ninebot E3 Pro (Limit Açık)",
-        powerW: 800,
-        topSpeedKmh: 32,
-        battery: "36V 10.2Ah",
-        rangeKm: 55,
-        color: "#64748b",
-        accent: "#cbd5e1",
-        photo: makeScooterPhoto("#64748b", "#cbd5e1", 7, false, false, "E3 PRO")
-      },
-      {
-        id: "segway-max-g3",
-        name: "Segway Ninebot Max G3 (Limit Açık)",
-        powerW: 2000,
-        topSpeedKmh: 45,
-        battery: "48V 12.5Ah",
-        rangeKm: 80,
-        color: "#dc2626",
-        accent: "#f87171",
-        photo: makeScooterPhoto("#dc2626", "#f87171", 9, false, false, "MAX G3")
-      },
-      {
-        id: "segway-f3-pro",
-        name: "Segway Ninebot F3 Pro (Limit Açık)",
-        powerW: 1200,
-        topSpeedKmh: 35,
-        battery: "46V 10.2Ah",
-        rangeKm: 70,
-        color: "#e11d48",
-        accent: "#fda4af",
-        photo: makeScooterPhoto("#e11d48", "#fda4af", 8, false, false, "F3 PRO")
-      },
-      {
-        id: "rx07",
-        name: "Onvo RX-07 Elektrikli",
-        powerW: 4000,
-        topSpeedKmh: 80,
-        battery: "60V 25A",
-        rangeKm: 70,
-        color: "#ef4444",
-        accent: "#fca5a5",
-        photo: makeScooterPhoto("#ef4444", "#fca5a5", 10, true, false, "ONVO RX-07")
-      },
-      {
-        id: "rx09-3000",
-        name: "ONVO RX-09 3000W",
-        powerW: 3000,
-        topSpeedKmh: 65,
-        battery: "60V 20A",
-        rangeKm: 8,
-        color: "#2563eb",
-        accent: "#93c5fd",
-        photo: makeScooterPhoto("#2563eb", "#93c5fd", 10, true, true, "ONVO RX-09")
-      },
-      {
-        id: "tiger-10-v3",
-        name: "Hiley Tiger 10 V3",
-        powerW: 2000,
-        topSpeedKmh: 65,
-        battery: "52V/20.8Ah",
-        rangeKm: 75,
-        color: "#eab308",
-        accent: "#fef08a",
-        photo: makeScooterPhoto("#eab308", "#fef08a", 9, true, false, "TIGER 10 V3")
-      },
-      {
-        id: "tiger-max-gtr",
-        name: "Hiley Tiger Max Gtr",
-        powerW: 1600,
-        topSpeedKmh: 55,
-        battery: "48V/18.2Ah",
-        rangeKm: 60,
-        color: "#a855f7",
-        accent: "#e9d5ff",
-        photo: makeScooterPhoto("#a855f7", "#e9d5ff", 9, true, false, "MAX GTR")
-      },
-      {
-        id: "rx05",
-        name: "Onvo RX-05 Elektrikli",
-        powerW: 2400,
-        topSpeedKmh: 75,
-        battery: "60V 25A",
-        rangeKm: 60,
-        color: "#22c55e",
-        accent: "#bbf7d0",
-        photo: makeScooterPhoto("#22c55e", "#bbf7d0", 9, true, false, "ONVO RX-05")
-      },
-      {
-        id: "tiger-10-gtr",
-        name: "Hiley Tiger 10 GTR",
-        powerW: 4000,
-        topSpeedKmh: 90,
-        battery: "60V/23.4Ah",
-        rangeKm: 90,
-        color: "#f97316",
-        accent: "#fed7aa",
-        photo: makeScooterPhoto("#f97316", "#fed7aa", 10, true, false, "TIGER 10 GTR")
-      },
-      {
-        id: "mx03",
-        name: "ONVO Mx-03 2400W",
-        powerW: 2400,
-        topSpeedKmh: 65,
-        battery: "52V 20A",
-        rangeKm: 70,
-        color: "#06b6d4",
-        accent: "#a5f3fc",
-        photo: makeScooterPhoto("#06b6d4", "#a5f3fc", 9, true, false, "ONVO MX-03")
-      },
-      {
-        id: "mx01",
-        name: "ONVO Mx-01 800W",
-        powerW: 800,
-        topSpeedKmh: 50,
-        battery: "48V 13A",
-        rangeKm: 55,
-        color: "#ec4899",
-        accent: "#fbcfe8",
-        photo: makeScooterPhoto("#ec4899", "#fbcfe8", 8, false, false, "ONVO MX-01")
-      },
-      {
-        id: "togo-limited",
-        name: "Dualtron Togo Limited",
-        powerW: 2900,
-        topSpeedKmh: 60,
-        battery: "60V 15A",
-        rangeKm: 60,
-        color: "#14b8a6",
-        accent: "#99f6e4",
-        photo: makeScooterPhoto("#14b8a6", "#99f6e4", 8, false, false, "TOGO LTD")
-      },
-      {
-        id: "tiger-10-v4",
-        name: "Hiley Tiger 10 V4",
-        powerW: 3000,
-        topSpeedKmh: 70,
-        battery: "52V 21A",
-        rangeKm: 80,
-        color: "#f59e0b",
-        accent: "#fde68a",
-        photo: makeScooterPhoto("#f59e0b", "#fde68a", 9, true, false, "TIGER 10 V4")
-      },
-      {
-        id: "x-limited",
-        name: "Dualtron X Limited",
-        powerW: 13000,
-        topSpeedKmh: 130,
-        battery: "84V 60A",
-        rangeKm: 170,
-        color: "#8b5cf6",
-        accent: "#ddd6fe",
-        photo: makeScooterPhoto("#8b5cf6", "#ddd6fe", 11, true, false, "X LIMITED")
-      },
-      {
-        id: "togo-plus",
-        name: "Dualtron Togo Plus",
-        powerW: 1350,
-        topSpeedKmh: 40,
-        battery: "48V 15A",
-        rangeKm: 40,
-        color: "#84cc16",
-        accent: "#d9f99d",
-        photo: makeScooterPhoto("#84cc16", "#d9f99d", 8, false, false, "TOGO PLUS")
-      },
-      {
-        id: "achilleus",
-        name: "Dualtron Achilleus",
-        powerW: 4650,
-        topSpeedKmh: 80,
-        battery: "60V 35A",
-        rangeKm: 100,
-        color: "#10b981",
-        accent: "#a7f3d0",
-        photo: makeScooterPhoto("#10b981", "#a7f3d0", 10, true, false, "ACHILLEUS")
-      },
-      {
-        id: "thunder-3",
-        name: "Dualtron Thunder 3",
-        powerW: 10800,
-        topSpeedKmh: 110,
-        battery: "72V 40A",
-        rangeKm: 120,
-        color: "#6366f1",
-        accent: "#c7d2fe",
-        photo: makeScooterPhoto("#6366f1", "#c7d2fe", 11, true, false, "THUNDER 3")
-      },
-      {
-        id: "city-new",
-        name: "Dualtron City New",
-        powerW: 4000,
-        topSpeedKmh: 70,
-        battery: "60V 25A",
-        rangeKm: 70,
-        color: "#f43f5e",
-        accent: "#fecdd3",
-        photo: makeScooterPhoto("#f43f5e", "#fecdd3", 10, true, false, "CITY NEW")
-      },
-      {
-        id: "victor-limited",
-        name: "Dualtron Victor Limited",
-        powerW: 4300,
-        topSpeedKmh: 80,
-        battery: "60V 35A",
-        rangeKm: 100,
-        color: "#0ea5e9",
-        accent: "#bae6fd",
-        photo: makeScooterPhoto("#0ea5e9", "#bae6fd", 10, true, false, "VICTOR LTD")
-      },
-      {
-        id: "ov-013-x-plus",
-        name: "ONVO OV-013 X-Plus",
-        powerW: 2000,
-        topSpeedKmh: 65,
-        battery: "48V 18A",
-        rangeKm: 60,
-        color: "#eab308",
-        accent: "#fef08a",
-        photo: makeScooterPhoto("#eab308", "#fef08a", 9, false, false, "OV-013 X+")
-      },
-      {
-        id: "aminia-long",
-        name: "Dualtron Aminia Long",
-        powerW: 2900,
-        topSpeedKmh: 60,
-        battery: "52V 21A",
-        rangeKm: 60,
-        color: "#22c55e",
-        accent: "#bbf7d0",
-        photo: makeScooterPhoto("#22c55e", "#bbf7d0", 9, true, false, "AMINIA")
-      },
-      {
-        id: "rx04",
-        name: "Onvo RX-04 Elektrikli",
-        powerW: 2400,
-        topSpeedKmh: 65,
-        battery: "52V 21A",
-        rangeKm: 60,
-        color: "#ef4444",
-        accent: "#fca5a5",
-        photo: makeScooterPhoto("#ef4444", "#fca5a5", 9, true, false, "ONVO RX-04")
-      },
-      {
-        id: "sonic-alien",
-        name: "Dualtron Sonic Alien",
-        powerW: 11800,
-        topSpeedKmh: 120,
-        battery: "72V 40A",
-        rangeKm: 120,
-        color: "#f97316",
-        accent: "#fed7aa",
-        photo: makeScooterPhoto("#f97316", "#fed7aa", 11, true, false, "SONIC ALIEN")
-      },
-      {
-        id: "ov-008",
-        name: "ONVO OV-008 500W",
-        powerW: 500,
-        topSpeedKmh: 35,
-        battery: "Belirtilmemiş",
-        rangeKm: 30,
-        color: "#38bdf8",
-        accent: "#bae6fd",
-        photo: makeScooterPhoto("#38bdf8", "#bae6fd", 7, false, false, "OV-008")
-      },
-      {
-        id: "ov-012-x-plus",
-        name: "Onvo OV-012 X Plus",
-        powerW: 1600,
-        topSpeedKmh: 50,
-        battery: "48V 15A",
-        rangeKm: 50,
-        color: "#a855f7",
-        accent: "#e9d5ff",
-        photo: makeScooterPhoto("#a855f7", "#e9d5ff", 8, false, false, "OV-012 X+")
-      },
-      {
-        id: "kx-01k",
-        name: "ONVO KX-01K 150W",
-        powerW: 150,
-        topSpeedKmh: 15,
-        battery: "21.6V 2.4A",
-        rangeKm: 8,
-        color: "#f43f5e",
-        accent: "#fecdd3",
-        photo: makeScooterPhoto("#f43f5e", "#fecdd3", 6, false, false, "KX-01K")
-      },
-      {
-        id: "kx-02",
-        name: "Onvo KX-02 Elektrikli",
-        powerW: 200,
-        topSpeedKmh: 16,
-        battery: "21.6V 5.2A",
-        rangeKm: 15,
-        color: "#e11d48",
-        accent: "#fda4af",
-        photo: makeScooterPhoto("#e11d48", "#fda4af", 6, false, false, "KX-02")
-      },
-      {
-        id: "rx10",
-        name: "ONVO RX-10 3000W",
-        powerW: 3000,
-        topSpeedKmh: 80,
-        battery: "60.8V 21.8A",
-        rangeKm: 80,
-        color: "#06b6d4",
-        accent: "#a5f3fc",
-        photo: makeScooterPhoto("#06b6d4", "#a5f3fc", 10, true, false, "ONVO RX-10")
-      },
-      {
-        id: "mx02",
-        name: "ONVO Mx-02 1600W",
-        powerW: 1600,
-        topSpeedKmh: 55,
-        battery: "52V 15A",
-        rangeKm: 60,
-        color: "#f59e0b",
-        accent: "#fde68a",
-        photo: makeScooterPhoto("#f59e0b", "#fde68a", 8, false, false, "ONVO MX-02")
-      },
-      {
-        id: "ov-12",
-        name: "Onvo OV-12 Elektrikli",
-        powerW: 800,
-        topSpeedKmh: 50,
-        battery: "48V 10A",
-        rangeKm: 40,
-        color: "#10b981",
-        accent: "#a7f3d0",
-        photo: makeScooterPhoto("#10b981", "#a7f3d0", 8, false, false, "OV-12")
-      },
-      {
-        id: "ov-007-x",
-        name: "Onvo Ov-007 X Elektrikli",
-        powerW: 500,
-        topSpeedKmh: 35,
-        battery: "Belirtilmemiş",
-        rangeKm: 30,
-        color: "#6366f1",
-        accent: "#c7d2fe",
-        photo: makeScooterPhoto("#6366f1", "#c7d2fe", 7, false, false, "OV-007 X")
-      },
-      {
-        id: "rovoron-r7",
-        name: "Rovoron R7 Elektrikli",
-        powerW: 3000,
-        topSpeedKmh: 80,
-        battery: "60V 42.4A",
-        rangeKm: 120,
-        color: "#14b8a6",
-        accent: "#99f6e4",
-        photo: makeScooterPhoto("#14b8a6", "#99f6e4", 10, true, false, "ROVORON R7")
-      },
-      {
-        id: "tiger-supra",
-        name: "Hiley Tiger Supra",
-        powerW: 5200,
-        topSpeedKmh: 100,
-        battery: "60V/31.5Ah",
-        rangeKm: 120,
-        color: "#eab308",
-        accent: "#fef08a",
-        photo: makeScooterPhoto("#eab308", "#fef08a", 10, true, false, "TIGER SUPRA")
-      }
+    // Performans puanına (güç + hız) göre iyiden kötüye sıralanmış scooter listesi
+    const RAW_SCOOTERS = [
+      { id: "x-limited", name: "Dualtron X Limited", powerW: 13000, topSpeedKmh: 130, battery: "84V 60A", rangeKm: 170, color: "#8b5cf6" },
+      { id: "sonic-alien", name: "Dualtron Sonic Alien", powerW: 11800, topSpeedKmh: 120, battery: "72V 40A", rangeKm: 120, color: "#f97316" },
+      { id: "thunder-3", name: "Dualtron Thunder 3", powerW: 10800, topSpeedKmh: 110, battery: "72V 40A", rangeKm: 120, color: "#6366f1" },
+      { id: "tiger-supra", name: "Hiley Tiger Supra", powerW: 5200, topSpeedKmh: 100, battery: "60V/31.5Ah", rangeKm: 120, color: "#eab308" },
+      { id: "achilleus", name: "Dualtron Achilleus", powerW: 4650, topSpeedKmh: 80, battery: "60V 35A", rangeKm: 100, color: "#10b981" },
+      { id: "victor-limited", name: "Dualtron Victor Limited", powerW: 4300, topSpeedKmh: 80, battery: "60V 35A", rangeKm: 100, color: "#0ea5e9" },
+      { id: "tiger-10-gtr", name: "Hiley Tiger 10 GTR", powerW: 4000, topSpeedKmh: 90, battery: "60V/23.4Ah", rangeKm: 90, color: "#f97316" },
+      { id: "rx07", name: "Onvo RX-07 Elektrikli", powerW: 4000, topSpeedKmh: 80, battery: "60V 25A", rangeKm: 70, color: "#ef4444" },
+      { id: "city-new", name: "Dualtron City New", powerW: 4000, topSpeedKmh: 70, battery: "60V 25A", rangeKm: 70, color: "#f43f5e" },
+      { id: "rx10", name: "ONVO RX-10 3000W", powerW: 3000, topSpeedKmh: 80, battery: "60.8V 21.8A", rangeKm: 80, color: "#06b6d4" },
+      { id: "rovoron-r7", name: "Rovoron R7 Elektrikli", powerW: 3000, topSpeedKmh: 80, battery: "60V 42.4A", rangeKm: 120, color: "#14b8a6" },
+      { id: "tiger-10-v4", name: "Hiley Tiger 10 V4", powerW: 3000, topSpeedKmh: 70, battery: "52V 21A", rangeKm: 80, color: "#f59e0b" },
+      { id: "rx09-3000", name: "ONVO RX-09 3000W", powerW: 3000, topSpeedKmh: 65, battery: "60V 20A", rangeKm: 8, color: "#2563eb" },
+      { id: "togo-limited", name: "Dualtron Togo Limited", powerW: 2900, topSpeedKmh: 60, battery: "60V 15A", rangeKm: 60, color: "#14b8a6" },
+      { id: "aminia-long", name: "Dualtron Aminia Long", powerW: 2900, topSpeedKmh: 60, battery: "52V 21A", rangeKm: 60, color: "#22c55e" },
+      { id: "rx05", name: "Onvo RX-05 Elektrikli", powerW: 2400, topSpeedKmh: 75, battery: "60V 25A", rangeKm: 60, color: "#22c55e" },
+      { id: "mx03", name: "ONVO Mx-03 2400W", powerW: 2400, topSpeedKmh: 65, battery: "52V 20A", rangeKm: 70, color: "#06b6d4" },
+      { id: "rx04", name: "Onvo RX-04 Elektrikli", powerW: 2400, topSpeedKmh: 65, battery: "52V 21A", rangeKm: 60, color: "#ef4444" },
+      { id: "tiger-10-v3", name: "Hiley Tiger 10 V3", powerW: 2000, topSpeedKmh: 65, battery: "52V/20.8Ah", rangeKm: 75, color: "#eab308" },
+      { id: "ov-013-x-plus", name: "ONVO OV-013 X-Plus", powerW: 2000, topSpeedKmh: 65, battery: "48V 18A", rangeKm: 60, color: "#eab308" },
+      { id: "segway-max-g3", name: "Segway Ninebot Max G3 (Limit Açık)", powerW: 2000, topSpeedKmh: 45, battery: "48V 12.5Ah", rangeKm: 80, color: "#dc2626" },
+      { id: "tiger-max-gtr", name: "Hiley Tiger Max Gtr", powerW: 1600, topSpeedKmh: 55, battery: "48V/18.2Ah", rangeKm: 60, color: "#a855f7" },
+      { id: "mx02", name: "ONVO Mx-02 1600W", powerW: 1600, topSpeedKmh: 55, battery: "52V 15A", rangeKm: 60, color: "#f59e0b" },
+      { id: "ov-012-x-plus", name: "Onvo OV-012 X Plus", powerW: 1600, topSpeedKmh: 50, battery: "48V 15A", rangeKm: 50, color: "#a855f7" },
+      { id: "segway-zt3-pro", name: "Segway-Ninebot ZT3 Pro (Limit Açık)", powerW: 1600, topSpeedKmh: 40, battery: "46V 12.8Ah", rangeKm: 70, color: "#ef4444" },
+      { id: "togo-plus", name: "Dualtron Togo Plus", powerW: 1350, topSpeedKmh: 40, battery: "48V 15A", rangeKm: 40, color: "#84cc16" },
+      { id: "segway-f3-pro", name: "Segway Ninebot F3 Pro (Limit Açık)", powerW: 1200, topSpeedKmh: 35, battery: "46V 10.2Ah", rangeKm: 70, color: "#e11d48" },
+      { id: "mx01", name: "ONVO Mx-01 800W", powerW: 800, topSpeedKmh: 50, battery: "48V 13A", rangeKm: 55, color: "#ec4899" },
+      { id: "ov-12", name: "Onvo OV-12 Elektrikli", powerW: 800, topSpeedKmh: 50, battery: "48V 10A", rangeKm: 40, color: "#10b981" },
+      { id: "segway-e3-pro", name: "Segway-Ninebot E3 Pro (Limit Açık)", powerW: 800, topSpeedKmh: 32, battery: "36V 10.2Ah", rangeKm: 55, color: "#64748b" },
+      { id: "ov-008", name: "ONVO OV-008 500W", powerW: 500, topSpeedKmh: 35, battery: "Belirtilmemiş", rangeKm: 30, color: "#38bdf8" },
+      { id: "ov-007-x", name: "Onvo Ov-007 X Elektrikli", powerW: 500, topSpeedKmh: 35, battery: "Belirtilmemiş", rangeKm: 30, color: "#6366f1" },
+      { id: "kx-02", name: "Onvo KX-02 Elektrikli", powerW: 200, topSpeedKmh: 16, battery: "21.6V 5.2A", rangeKm: 15, color: "#e11d48" },
+      { id: "kx-01k", name: "ONVO KX-01K 150W", powerW: 150, topSpeedKmh: 15, battery: "21.6V 2.4A", rangeKm: 8, color: "#f43f5e" }
     ];
 
-    const TRACK_METERS = 200;
-    const s1Select = document.getElementById("s1");
-    const s2Select = document.getElementById("s2");
-    const s1Thumb = document.getElementById("s1Thumb");
-    const s2Thumb = document.getElementById("s2Thumb");
-    const slopeInput = document.getElementById("slopeInput");
-    const loadInput = document.getElementById("loadInput");
-    const slopeVal = document.getElementById("slopeVal");
-    const loadVal = document.getElementById("loadVal");
-    const startBtn = document.getElementById("startBtn");
-    const resetBtn = document.getElementById("resetBtn");
-    const resultBox = document.getElementById("resultBox");
-    const modeBtns = document.querySelectorAll(".mode-btn");
-    const canvas = document.getElementById("gameCanvas");
-    const ctx = canvas.getContext("2d");
+    // Performansa göre iyiden kötüye sıralama ve gerçekçi oyun parası fiyatı
+    const SCOOTERS = RAW_SCOOTERS
+      .map(s => ({
+        ...s,
+        score: s.powerW * 1.4 + s.topSpeedKmh * 180
+      }))
+      .sort((a, b) => b.score - a.score)
+      .map((s, idx, arr) => {
+        const ratio = 1 - idx / Math.max(1, arr.length - 1);
+        // En iyiden (~₺185.000) en kötüye (~₺6.000) sıralı fiyat
+        const rawPrice = 6000 + Math.pow(ratio, 1.35) * 179000;
+        const price = Math.round(rawPrice / 500) * 500;
+        return {
+          ...s,
+          rank: idx + 1,
+          price
+        };
+      });
 
-    // Canvas içinde çizmek için scooter fotoğraflarını önbelleğe al
-    const imageCache = new Map();
-    function getCachedImage(scooter) {
-      if (imageCache.has(scooter.id)) {
-        return imageCache.get(scooter.id);
-      }
-      const img = new Image();
-      img.src = scooter.photo;
-      imageCache.set(scooter.id, img);
-      return img;
-    }
+    // Başlangıçta en düşük fiyatlı (sıralamanın sonundaki) başlangıç scooter'ı açık olsun ki oyuncu yükselerek ilerlesin
+    const starterScooter = SCOOTERS[SCOOTERS.length - 1];
 
-    SCOOTERS.forEach((sc, idx) => {
-      getCachedImage(sc);
-      const opt1 = new Option(`${sc.name} (${sc.powerW}W • ${sc.topSpeedKmh} km/h)`, sc.id);
-      const opt2 = new Option(`${sc.name} (${sc.powerW}W • ${sc.topSpeedKmh} km/h)`, sc.id);
-      s1Select.add(opt1);
-      s2Select.add(opt2);
-      if (idx === 0) s1Select.value = sc.id;
-      if (idx === 1) s2Select.value = sc.id;
-    });
-
-    let raceState = {
-      running: false,
-      finished: false,
-      elapsed: 0,
-      racers: [
-        { posM: 0, speedKmh: 0, finishTime: null },
-        { posM: 0, speedKmh: 0, finishTime: null }
-      ]
+    const state = {
+      money: 15000,
+      ownedIds: new Set([starterScooter.id]),
+      selectedId: starterScooter.id,
+      mapMode: "free", // "free" | "mission"
+      soundEnabled: true,
+      lane: 1, // 0 = sol şerit, 1 = sağ şerit
+      laneVisualX: 0,
+      speedKmh: 0,
+      distanceM: 0,
+      roadOffset: 0,
+      controls: {
+        gas: false,
+        brake: false
+      },
+      npcs: [],
+      mission: {
+        active: true,
+        type: "checkpoint", // "checkpoint" | "speed_pass"
+        targetM: 220,
+        reward: 3500,
+        completedCount: 0,
+        statusText: "Kontrol noktasına ulaş (220m)"
+      },
+      flashMessage: "",
+      flashTimer: 0
     };
 
-    function getSelectedPair() {
-      const a = SCOOTERS.find(x => x.id === s1Select.value) || SCOOTERS[0];
-      const b = SCOOTERS.find(x => x.id === s2Select.value) || SCOOTERS[1];
-      return [a, b];
-    }
+    // Web Audio API Ses Motoru (Elektrikli scooter uğultusu, fren ve korna)
+    const audioCtxHolder = {
+      ctx: null,
+      motorOsc: null,
+      motorSubOsc: null,
+      motorGain: null
+    };
 
-    function syncSelectorPhotos() {
-      const [a, b] = getSelectedPair();
-      s1Thumb.src = a.photo;
-      s2Thumb.src = b.photo;
-    }
+    function ensureAudio() {
+      if (!state.soundEnabled) return;
+      if (!audioCtxHolder.ctx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass) return;
+        const ctx = new AudioContextClass();
+        const osc = ctx.createOscillator();
+        const subOsc = ctx.createOscillator();
+        const gain = ctx.createGain();
 
-    function renderSpecsSummary() {
-      const [a, b] = getSelectedPair();
-      const currentGrid = document.getElementById("specsGrid");
-      if (!currentGrid) return;
-      currentGrid.innerHTML = [a, b].map((sc, i) => `
-        <div class="spec-box">
-          <img class="spec-thumb" src="${sc.photo}" alt="${sc.name}" />
-          <div>
-            <div class="spec-name">${i + 1}. ${sc.name}</div>
-            <div>Güç: <strong>${sc.powerW}W</strong> • Hız: <strong>${sc.topSpeedKmh} km/h</strong></div>
-            <div>Pil: ${sc.battery} • Menzil: ${sc.rangeKm} km</div>
-          </div>
-        </div>
-      `).join("");
-    }
+        osc.type = "triangle";
+        subOsc.type = "sine";
+        osc.frequency.value = 75;
+        subOsc.frequency.value = 150;
 
-    function syncLabels() {
-      slopeVal.textContent = `${slopeInput.value}°`;
-      loadVal.textContent = `${loadInput.value} kg`;
-    }
+        gain.gain.value = 0.0001;
+        osc.connect(gain);
+        subOsc.connect(gain);
+        gain.connect(ctx.destination);
 
-    function resetRace(keepMessage = false) {
-      raceState.running = false;
-      raceState.finished = false;
-      raceState.elapsed = 0;
-      raceState.racers = [
-        { posM: 0, speedKmh: 0, finishTime: null },
-        { posM: 0, speedKmh: 0, finishTime: null }
-      ];
-      startBtn.textContent = "YARIŞI BAŞLAT";
-      syncSelectorPhotos();
-      if (!keepMessage) {
-        resultBox.innerHTML = `
-          <div class="result-title">Hazır! İstediğin 2 scooter'ı seç ve yarışı başlat.</div>
-          <div>Pist uzunluğu: <strong>200 m</strong>. Eğim: <strong>${slopeInput.value}°</strong> • Yük: <strong>${loadInput.value} kg</strong></div>
-          <div id="specsGrid" class="specs-grid"></div>
-        `;
-        renderSpecsSummary();
+        osc.start();
+        subOsc.start();
+
+        audioCtxHolder.ctx = ctx;
+        audioCtxHolder.motorOsc = osc;
+        audioCtxHolder.motorSubOsc = subOsc;
+        audioCtxHolder.motorGain = gain;
+      }
+      if (audioCtxHolder.ctx && audioCtxHolder.ctx.state === "suspended") {
+        audioCtxHolder.ctx.resume().catch(() => {});
       }
     }
 
-    modeBtns.forEach(btn => {
-      btn.addEventListener("click", () => {
-        modeBtns.forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
-        const mode = btn.dataset.mode;
-        if (mode === "flat") {
-          slopeInput.value = 0;
-          loadInput.value = 80;
-        } else if (mode === "hill") {
-          slopeInput.value = 18;
-          loadInput.value = 85;
-        } else if (mode === "heavy") {
-          slopeInput.value = 22;
-          loadInput.value = 135;
-        }
-        syncLabels();
-        resetRace();
-      });
-    });
+    function updateMotorSound(speedRatio, isGas, isBrake) {
+      if (!audioCtxHolder.ctx || !audioCtxHolder.motorGain) return;
+      const now = audioCtxHolder.ctx.currentTime;
+      if (!state.soundEnabled) {
+        audioCtxHolder.motorGain.gain.setTargetAtTime(0.0001, now, 0.05);
+        return;
+      }
+      const baseFreq = 70 + speedRatio * 230 + (isGas ? 22 : 0);
+      audioCtxHolder.motorOsc.frequency.setTargetAtTime(baseFreq, now, 0.06);
+      audioCtxHolder.motorSubOsc.frequency.setTargetAtTime(baseFreq * 2, now, 0.06);
 
-    slopeInput.addEventListener("input", () => {
-      syncLabels();
-      resetRace();
-    });
-
-    loadInput.addEventListener("input", () => {
-      syncLabels();
-      resetRace();
-    });
-
-    s1Select.addEventListener("change", () => resetRace());
-    s2Select.addEventListener("change", () => resetRace());
-    resetBtn.addEventListener("click", () => resetRace());
-
-    startBtn.addEventListener("click", () => {
-      if (raceState.running) return;
-      resetRace(true);
-      raceState.running = true;
-      startBtn.textContent = "YARIŞ SÜRÜYOR...";
-    });
-
-    function computeTargetSpeed(scooter, slopeDeg, loadKg) {
-      const loadFactor = Math.max(0.55, 1 - Math.max(0, loadKg - 70) * 0.003);
-      const powerClimbBonus = Math.min(0.35, (scooter.powerW / 13000) * 0.35);
-      const slopePenalty = (slopeDeg / 28) * Math.max(0.14, 0.52 - powerClimbBonus);
-      const factor = Math.max(0.3, loadFactor * (1 - slopePenalty));
-      return scooter.topSpeedKmh * factor;
+      const targetGain = speedRatio > 0.02 || isGas ? Math.min(0.08, 0.015 + speedRatio * 0.055 + (isGas ? 0.015 : 0)) : 0.0001;
+      audioCtxHolder.motorGain.gain.setTargetAtTime(targetGain * (isBrake ? 0.65 : 1), now, 0.06);
     }
 
-    function stepPhysics(dt) {
-      if (!raceState.running) return;
-      raceState.elapsed += dt;
+    function playBrakeSound() {
+      if (!state.soundEnabled) return;
+      ensureAudio();
+      if (!audioCtxHolder.ctx) return;
+      const ctx = audioCtxHolder.ctx;
+      const now = ctx.currentTime;
 
-      const pair = getSelectedPair();
-      const slopeDeg = Number(slopeInput.value);
-      const loadKg = Number(loadInput.value);
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sawtooth";
+      osc.frequency.setValueAtTime(520, now);
+      osc.frequency.exponentialRampToValueAtTime(160, now + 0.16);
 
-      pair.forEach((sc, idx) => {
-        const r = raceState.racers[idx];
-        if (r.finishTime !== null) return;
+      gain.gain.setValueAtTime(0.04, now);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.17);
 
-        const targetKmh = computeTargetSpeed(sc, slopeDeg, loadKg);
-        const accelKmhPerSec = (12 + (sc.powerW / 13000) * 30) * Math.max(0.5, 1 - slopeDeg * 0.016);
-        r.speedKmh = Math.min(targetKmh, r.speedKmh + accelKmhPerSec * dt);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.18);
+    }
 
-        const metersPerSec = (r.speedKmh * 1000) / 3600;
-        r.posM += metersPerSec * dt;
+    function playHornSound() {
+      if (!state.soundEnabled) return;
+      ensureAudio();
+      if (!audioCtxHolder.ctx) return;
+      const ctx = audioCtxHolder.ctx;
+      const now = ctx.currentTime;
 
-        if (r.posM >= TRACK_METERS) {
-          r.posM = TRACK_METERS;
-          r.finishTime = raceState.elapsed;
+      const osc1 = ctx.createOscillator();
+      const osc2 = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc1.type = "square";
+      osc2.type = "sawtooth";
+      osc1.frequency.setValueAtTime(440, now);
+      osc2.frequency.setValueAtTime(554.37, now);
+
+      gain.gain.setValueAtTime(0.001, now);
+      gain.gain.linearRampToValueAtTime(0.065, now + 0.02);
+      gain.gain.setValueAtTime(0.065, now + 0.22);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.32);
+
+      osc1.connect(gain);
+      osc2.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc1.start(now);
+      osc2.start(now);
+      osc1.stop(now + 0.34);
+      osc2.stop(now + 0.34);
+
+      // Öndeki NPC'lere korna etkisi
+      state.npcs.forEach(npc => {
+        if (npc.y > 40 && npc.y < 230 && Math.abs(npc.lane - state.lane) <= 1) {
+          npc.honked = true;
+          npc.speed = Math.min(npc.maxSpeed + 22, npc.speed + 18);
         }
       });
+    }
 
-      const [r1, r2] = raceState.racers;
-      if (r1.finishTime !== null && r2.finishTime !== null) {
-        raceState.running = false;
-        raceState.finished = true;
-        startBtn.textContent = "TEKRAR YARIŞTIR";
+    function getCurrentScooter() {
+      return SCOOTERS.find(s => s.id === state.selectedId) || SCOOTERS[0];
+    }
 
-        const [a, b] = pair;
-        const firstIsA = r1.finishTime <= r2.finishTime;
-        const winner = firstIsA ? a : b;
-        const loser = firstIsA ? b : a;
-        const diff = Math.abs(r1.finishTime - r2.finishTime).toFixed(2);
+    function formatMoney(val) {
+      return "₺" + Number(val).toLocaleString("tr-TR");
+    }
 
-        resultBox.innerHTML = `
-          <div class="result-title">Kazanan: ${winner.name} (${diff} sn farkla)</div>
-          <div>
-            <strong>1. ${winner.name}:</strong> ${(firstIsA ? r1.finishTime : r2.finishTime).toFixed(2)} sn •
-            <strong>2. ${loser.name}:</strong> ${(firstIsA ? r2.finishTime : r1.finishTime).toFixed(2)} sn
+    function showToast(msg) {
+      state.flashMessage = msg;
+      state.flashTimer = 2.2;
+    }
+
+    function assignNextMission() {
+      const mIndex = state.mission.completedCount;
+      const isSpeedMission = mIndex % 2 === 1;
+      if (isSpeedMission) {
+        const minSpeed = Math.min(85, Math.max(22, Math.round(getCurrentScooter().topSpeedKmh * 0.65)));
+        const reward = 4200 + mIndex * 1000;
+        state.mission = {
+          active: true,
+          type: "speed_pass",
+          targetM: state.distanceM + 260,
+          minSpeedKmh: minSpeed,
+          reward,
+          completedCount: mIndex,
+          statusText: `260m boyunca en az ${minSpeed} km/h hızla sür`
+        };
+      } else {
+        const reward = 3500 + mIndex * 900;
+        state.mission = {
+          active: true,
+          type: "checkpoint",
+          targetM: state.distanceM + 220,
+          reward,
+          completedCount: mIndex,
+          statusText: "Kontrol noktasına ulaş (220m)"
+        };
+      }
+      updateMissionUI();
+    }
+
+    function updateMissionUI() {
+      const el = document.getElementById("missionText");
+      if (state.mapMode === "free") {
+        el.innerHTML = `<strong>Serbest Harita:</strong> 2 şeritli yolda NPC'ler arasında serbest sürüş. Şerit: A/D veya ←/→ • Gaz: W/↑ • Fren: S/↓ • Korna: H`;
+      } else {
+        const remaining = Math.max(0, Math.round(state.mission.targetM - state.distanceM));
+        el.innerHTML = `<strong>Görev Haritası (${state.mission.statusText}):</strong> Kalan mesafe <strong>${remaining}m</strong> • Ödül: <strong>${formatMoney(state.mission.reward)}</strong> • Tamamlanan: <strong>${state.mission.completedCount}</strong>`;
+      }
+    }
+
+    function renderHUD() {
+      const sc = getCurrentScooter();
+      document.getElementById("moneyPill").textContent = formatMoney(state.money);
+      document.getElementById("activeScooterPill").textContent = `Araç: #${sc.rank} ${sc.name} (${sc.powerW}W)`;
+      updateMissionUI();
+    }
+
+    function renderGarage() {
+      const listEl = document.getElementById("scooterList");
+      listEl.innerHTML = SCOOTERS.map(sc => {
+        const owned = state.ownedIds.has(sc.id);
+        const isSelected = state.selectedId === sc.id;
+        const canAfford = state.money >= sc.price;
+
+        let btnHtml = "";
+        if (isSelected) {
+          btnHtml = `<span class="owned-tag">Sürülüyor</span>`;
+        } else if (owned) {
+          btnHtml = `<button class="action-mini btn-select" onclick="selectScooter('${sc.id}')">Seç</button>`;
+        } else {
+          btnHtml = `<button class="action-mini btn-buy" ${canAfford ? "" : "disabled"} onclick="buyScooter('${sc.id}')">Satın Al</button>`;
+        }
+
+        return `
+          <div class="scooter-card ${isSelected ? "active" : ""}">
+            <div>
+              <div class="scooter-rank">Sıra #${sc.rank} • ${sc.powerW}W • ${sc.topSpeedKmh} km/h</div>
+              <div class="scooter-name">${sc.name}</div>
+              <div class="scooter-meta">Pil: ${sc.battery} • Menzil: ${sc.rangeKm} km</div>
+            </div>
+            <div class="card-footer">
+              <div class="price-tag">${owned ? "Sahip Olunan" : formatMoney(sc.price)}</div>
+              ${btnHtml}
+            </div>
           </div>
-          <div id="specsGrid" class="specs-grid"></div>
         `;
-        renderSpecsSummary();
+      }).join("");
+    }
+
+    window.buyScooter = function(id) {
+      ensureAudio();
+      const sc = SCOOTERS.find(s => s.id === id);
+      if (!sc || state.ownedIds.has(id)) return;
+      if (state.money < sc.price) {
+        showToast("Yetersiz bakiye! Görev yaparak para kazan.");
+        return;
+      }
+      state.money -= sc.price;
+      state.ownedIds.add(id);
+      state.selectedId = id;
+      state.speedKmh = Math.min(state.speedKmh, sc.topSpeedKmh);
+      showToast(`${sc.name} satın alındı ve seçildi!`);
+      renderHUD();
+      renderGarage();
+    };
+
+    window.selectScooter = function(id) {
+      ensureAudio();
+      if (!state.ownedIds.has(id)) return;
+      const sc = SCOOTERS.find(s => s.id === id);
+      state.selectedId = id;
+      state.speedKmh = Math.min(state.speedKmh, sc.topSpeedKmh);
+      showToast(`${sc.name} seçildi.`);
+      renderHUD();
+      renderGarage();
+    };
+
+    // Harita seçimi
+    const freeMapBtn = document.getElementById("freeMapBtn");
+    const missionMapBtn = document.getElementById("missionMapBtn");
+
+    freeMapBtn.addEventListener("click", () => {
+      ensureAudio();
+      state.mapMode = "free";
+      freeMapBtn.classList.add("active");
+      missionMapBtn.classList.remove("active");
+      renderHUD();
+    });
+
+    missionMapBtn.addEventListener("click", () => {
+      ensureAudio();
+      state.mapMode = "mission";
+      missionMapBtn.classList.add("active");
+      freeMapBtn.classList.remove("active");
+      assignNextMission();
+      renderHUD();
+    });
+
+    // Ses aç/kapat
+    const soundBtn = document.getElementById("soundToggleBtn");
+    soundBtn.addEventListener("click", () => {
+      state.soundEnabled = !state.soundEnabled;
+      soundBtn.textContent = state.soundEnabled ? "Ses: Açık" : "Ses: Kapalı";
+      if (state.soundEnabled) ensureAudio();
+    });
+
+    // Şerit değiştirme
+    function changeLane(targetLane) {
+      ensureAudio();
+      const clamped = Math.max(0, Math.min(1, targetLane));
+      if (clamped !== state.lane) {
+        state.lane = clamped;
       }
     }
 
-    function drawScooterPhoto(x, y, scooter, labelNum) {
-      ctx.save();
-      ctx.translate(x, y);
+    document.getElementById("leftLaneBtn").addEventListener("click", () => changeLane(0));
+    document.getElementById("rightLaneBtn").addEventListener("click", () => changeLane(1));
 
-      const boxW = 54;
-      const boxH = 42;
-      const left = -boxW / 2;
-      const top = -boxH / 2 - 4;
+    // Gaz / Fren / Korna butonları
+    const gasBtn = document.getElementById("gasBtn");
+    const brakeBtn = document.getElementById("brakeBtn");
+    const hornBtn = document.getElementById("hornBtn");
 
-      // Gölge
-      ctx.fillStyle = "rgba(0, 0, 0, 0.32)";
-      ctx.beginPath();
-      ctx.ellipse(0, top + boxH + 3, 24, 5, 0, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Beyaz kart çerçevesi
-      ctx.fillStyle = "#ffffff";
-      ctx.strokeStyle = scooter.color;
-      ctx.lineWidth = 2.5;
-      ctx.beginPath();
-      ctx.roundRect(left, top, boxW, boxH, 8);
-      ctx.fill();
-      ctx.stroke();
-
-      // Scooter fotoğrafı
-      const img = getCachedImage(scooter);
-      if (img && img.complete && img.naturalWidth > 0) {
-        ctx.drawImage(img, left + 3, top + 3, boxW - 6, boxH - 6);
-      }
-
-      // 1 veya 2 numara rozeti
-      ctx.fillStyle = "#0f172a";
-      ctx.beginPath();
-      ctx.arc(left + 7, top + 7, 8, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.fillStyle = "#ffffff";
-      ctx.font = "bold 10px sans-serif";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText(String(labelNum), left + 7, top + 7);
-
-      ctx.restore();
+    function bindHold(btn, prop, onPressExtra) {
+      const press = (e) => {
+        e.preventDefault();
+        ensureAudio();
+        state.controls[prop] = true;
+        btn.classList.add("pressed");
+        if (onPressExtra) onPressExtra();
+      };
+      const release = () => {
+        state.controls[prop] = false;
+        btn.classList.remove("pressed");
+      };
+      btn.addEventListener("pointerdown", press);
+      btn.addEventListener("pointerup", release);
+      btn.addEventListener("pointerleave", release);
+      btn.addEventListener("pointercancel", release);
     }
+
+    bindHold(gasBtn, "gas", null);
+    bindHold(brakeBtn, "brake", playBrakeSound);
+    hornBtn.addEventListener("click", () => {
+      hornBtn.classList.add("pressed");
+      playHornSound();
+      setTimeout(() => hornBtn.classList.remove("pressed"), 180);
+    });
+
+    // Klavye kontrolleri
+    window.addEventListener("keydown", (e) => {
+      ensureAudio();
+      if (e.key === "w" || e.key === "W" || e.key === "ArrowUp") {
+        state.controls.gas = true;
+        gasBtn.classList.add("pressed");
+      } else if (e.key === "s" || e.key === "S" || e.key === "ArrowDown") {
+        if (!state.controls.brake) playBrakeSound();
+        state.controls.brake = true;
+        brakeBtn.classList.add("pressed");
+      } else if (e.key === "a" || e.key === "A" || e.key === "ArrowLeft") {
+        changeLane(0);
+      } else if (e.key === "d" || e.key === "D" || e.key === "ArrowRight") {
+        changeLane(1);
+      } else if (e.key === "h" || e.key === "H") {
+        playHornSound();
+        hornBtn.classList.add("pressed");
+        setTimeout(() => hornBtn.classList.remove("pressed"), 180);
+      }
+    });
+
+    window.addEventListener("keyup", (e) => {
+      if (e.key === "w" || e.key === "W" || e.key === "ArrowUp") {
+        state.controls.gas = false;
+        gasBtn.classList.remove("pressed");
+      } else if (e.key === "s" || e.key === "S" || e.key === "ArrowDown") {
+        state.controls.brake = false;
+        brakeBtn.classList.remove("pressed");
+      }
+    });
+
+    // NPC Araç Üretimi (2 şeritli yolda NPC'ler)
+    const NPC_COLORS = ["#f97316", "#06b6d4", "#eab308", "#ec4899", "#a855f7", "#10b981"];
+
+    function spawnNpc() {
+      const lane = Math.random() < 0.5 ? 0 : 1;
+      const sameLaneTooClose = state.npcs.some(n => n.lane === lane && n.y < 110);
+      if (sameLaneTooClose) return;
+
+      const maxSpeed = 35 + Math.random() * 45; // 35 - 80 km/h arası NPC araçlar
+      state.npcs.push({
+        lane,
+        y: -45,
+        speed: maxSpeed * 0.75,
+        maxSpeed,
+        color: NPC_COLORS[Math.floor(Math.random() * NPC_COLORS.length)],
+        honked: false
+      });
+    }
+
+    // Canvas çizim ve fizik
+    const canvas = document.getElementById("roadCanvas");
+    const ctx = canvas.getContext("2d");
 
     function resizeCanvas() {
       const rect = canvas.getBoundingClientRect();
@@ -995,110 +825,238 @@
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
 
-    function renderScene() {
+    function step(dt) {
+      const sc = getCurrentScooter();
+      const accelRate = 18 + (sc.powerW / 13000) * 44; // km/h / sn
+      const brakeRate = 58;
+      const coastDrag = 10;
+
+      if (state.controls.gas && !state.controls.brake) {
+        state.speedKmh = Math.min(sc.topSpeedKmh, state.speedKmh + accelRate * dt);
+      } else if (state.controls.brake) {
+        state.speedKmh = Math.max(0, state.speedKmh - brakeRate * dt);
+      } else {
+        state.speedKmh = Math.max(0, state.speedKmh - coastDrag * dt);
+      }
+
+      const speedMps = (state.speedKmh * 1000) / 3600;
+      const deltaM = speedMps * dt;
+      state.distanceM += deltaM;
+      state.roadOffset = (state.roadOffset + deltaM * 18) % 80;
+
+      // Şerit görsel yumuşak geçiş
+      state.laneVisualX += (state.lane - state.laneVisualX) * Math.min(1, dt * 13);
+
+      // NPC güncelleme
+      if (Math.random() < dt * 1.35) {
+        spawnNpc();
+      }
+
+      const playerY = canvas.getBoundingClientRect().height * 0.74;
+      state.npcs.forEach(npc => {
+        npc.speed = Math.min(npc.maxSpeed, npc.speed + 8 * dt);
+        const relSpeedMps = ((state.speedKmh - npc.speed) * 1000) / 3600;
+        npc.y += relSpeedMps * dt * 16 + 35 * dt;
+
+        // Aynı şeritte arkadan yaklaşınca yavaşlama / çarpışma kontrolü
+        if (Math.abs(npc.lane - state.laneVisualX) < 0.35 && Math.abs(npc.y - playerY) < 34) {
+          if (state.speedKmh > npc.speed + 8) {
+            state.speedKmh = Math.max(0, npc.speed * 0.75);
+            showToast("NPC araca çarptın! Hız düştü.");
+          }
+        }
+      });
+
+      state.npcs = state.npcs.filter(n => n.y > -120 && n.y < canvas.getBoundingClientRect().height + 120);
+
+      // Görev haritası kontrolü
+      if (state.mapMode === "mission" && state.mission.active) {
+        if (state.mission.type === "speed_pass") {
+          if (state.speedKmh < state.mission.minSpeedKmh && state.distanceM > state.mission.targetM - 240) {
+            // Hız görevi hedefine yaklaşınca hız kontrolü
+          }
+        }
+        if (state.distanceM >= state.mission.targetM) {
+          const earned = state.mission.reward;
+          state.money += earned;
+          state.mission.completedCount += 1;
+          showToast(`Görev tamamlandı! +${formatMoney(earned)} kazandın!`);
+          assignNextMission();
+          renderGarage();
+        }
+        updateMissionUI();
+      }
+
+      if (state.flashTimer > 0) {
+        state.flashTimer = Math.max(0, state.flashTimer - dt);
+        if (state.flashTimer === 0) state.flashMessage = "";
+      }
+
+      document.getElementById("moneyPill").textContent = formatMoney(state.money);
+      updateMotorSound(state.speedKmh / Math.max(1, sc.topSpeedKmh), state.controls.gas, state.controls.brake);
+    }
+
+    function drawRoad() {
       const rect = canvas.getBoundingClientRect();
       const w = rect.width;
       const h = rect.height;
-      const slopeDeg = Number(slopeInput.value);
-      const pair = getSelectedPair();
+      const sc = getCurrentScooter();
 
-      const sky = ctx.createLinearGradient(0, 0, 0, h * 0.56);
-      sky.addColorStop(0, "#38bdf8");
-      sky.addColorStop(1, "#bae6fd");
-      ctx.fillStyle = sky;
-      ctx.fillRect(0, 0, w, h * 0.56);
+      // Harita arka plan rengi (Serbest vs Görev)
+      ctx.fillStyle = state.mapMode === "mission" ? "#101c2e" : "#0f172a";
+      ctx.fillRect(0, 0, w, h);
 
-      ctx.fillStyle = "#0284c7";
-      ctx.beginPath();
-      ctx.moveTo(0, h * 0.56);
-      ctx.lineTo(w * 0.25, h * 0.39);
-      ctx.lineTo(w * 0.55, h * 0.52);
-      ctx.lineTo(w * 0.82, h * 0.37);
-      ctx.lineTo(w, h * 0.50);
-      ctx.lineTo(w, h * 0.56);
-      ctx.closePath();
-      ctx.fill();
+      // Yol kenarı çimler / kaldırımlar
+      const roadW = Math.min(340, w * 0.72);
+      const roadLeft = (w - roadW) / 2;
+      const roadRight = roadLeft + roadW;
+      const laneW = roadW / 2;
 
-      const tilt = Math.tan((slopeDeg * Math.PI) / 180) * 32;
+      ctx.fillStyle = state.mapMode === "mission" ? "#134e4a" : "#14532d";
+      ctx.fillRect(0, 0, roadLeft, h);
+      ctx.fillRect(roadRight, 0, w - roadRight, h);
+
+      // Asfalt
       ctx.fillStyle = "#1e293b";
-      ctx.beginPath();
-      ctx.moveTo(0, h * 0.53 + tilt * 0.35);
-      ctx.lineTo(w, h * 0.53 - tilt * 0.35);
-      ctx.lineTo(w, h);
-      ctx.lineTo(0, h);
-      ctx.closePath();
-      ctx.fill();
+      ctx.fillRect(roadLeft, 0, roadW, h);
 
-      const lane1Y = h * 0.68;
-      const lane2Y = h * 0.87;
+      // Sol ve sağ kenar çizgileri
+      ctx.fillStyle = "#e2e8f0";
+      ctx.fillRect(roadLeft, 0, 5, h);
+      ctx.fillRect(roadRight - 5, 0, 5, h);
 
-      ctx.strokeStyle = "#475569";
-      ctx.lineWidth = 2;
-      ctx.setLineDash([12, 10]);
+      // Ortadaki kesikli şerit çizgisi (2 şerit ayırıcı)
+      const midX = roadLeft + laneW;
+      ctx.strokeStyle = "#facc15";
+      ctx.lineWidth = 4;
+      ctx.setLineDash([26, 24]);
+      ctx.lineDashOffset = -state.roadOffset;
       ctx.beginPath();
-      ctx.moveTo(16, (lane1Y + lane2Y) / 2);
-      ctx.lineTo(w - 16, (lane1Y + lane2Y) / 2);
+      ctx.moveTo(midX, 0);
+      ctx.lineTo(midX, h);
       ctx.stroke();
       ctx.setLineDash([]);
 
-      const startX = 56;
-      const finishX = w - 42;
-      const trackSpan = Math.max(40, finishX - startX);
+      // Görev modunda yaklaşan kontrol noktası çizgisi
+      if (state.mapMode === "mission") {
+        const remM = Math.max(0, state.mission.targetM - state.distanceM);
+        const gateY = h * 0.74 - remM * 1.1;
+        if (gateY > -30 && gateY < h + 30) {
+          ctx.fillStyle = "rgba(74, 222, 128, 0.25)";
+          ctx.fillRect(roadLeft + 6, gateY - 8, roadW - 12, 16);
+          ctx.strokeStyle = "#4ade80";
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(roadLeft + 6, gateY);
+          ctx.lineTo(roadRight - 6, gateY);
+          ctx.stroke();
+        }
+      }
 
-      ctx.strokeStyle = "#f8fafc";
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(startX, h * 0.55);
-      ctx.lineTo(startX, h - 8);
-      ctx.stroke();
+      // NPC araçlar
+      state.npcs.forEach(npc => {
+        const nx = roadLeft + laneW * (npc.lane + 0.5);
+        ctx.save();
+        ctx.translate(nx, npc.y);
+        ctx.fillStyle = "rgba(0,0,0,0.35)";
+        ctx.beginPath();
+        ctx.roundRect(-18, -26, 36, 54, 8);
+        ctx.fill();
 
-      ctx.strokeStyle = "#facc15";
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.moveTo(finishX, h * 0.55);
-      ctx.lineTo(finishX, h - 8);
-      ctx.stroke();
+        ctx.fillStyle = npc.color;
+        ctx.beginPath();
+        ctx.roundRect(-16, -28, 32, 52, 7);
+        ctx.fill();
 
-      ctx.fillStyle = "rgba(15, 23, 42, 0.78)";
-      ctx.fillRect(10, 10, w - 20, 30);
-      ctx.fillStyle = "#f8fafc";
-      ctx.font = "bold 12px sans-serif";
-      ctx.textAlign = "left";
-      ctx.textBaseline = "middle";
-      ctx.fillText(
-        `Süre: ${raceState.elapsed.toFixed(1)}s  |  Eğim: ${slopeDeg}°  |  Yük: ${loadInput.value} kg`,
-        18,
-        25
-      );
-
-      [lane1Y, lane2Y].forEach((laneY, idx) => {
-        const r = raceState.racers[idx];
-        const ratio = Math.min(1, r.posM / TRACK_METERS);
-        const x = startX + ratio * trackSpan;
-
-        ctx.fillStyle = "#cbd5e1";
-        ctx.font = "bold 11px sans-serif";
-        ctx.textAlign = "left";
-        ctx.fillText(`${pair[idx].name} • ${Math.round(r.speedKmh)} km/h • ${Math.round(r.posM)}m`, 14, laneY - 28);
-
-        drawScooterPhoto(x, laneY, pair[idx], idx + 1);
+        ctx.fillStyle = "#0f172a";
+        ctx.fillRect(-12, -20, 24, 12);
+        ctx.fillStyle = "#fef08a";
+        ctx.fillRect(-12, 18, 7, 4);
+        ctx.fillRect(5, 18, 7, 4);
+        ctx.restore();
       });
+
+      // Oyuncu Scooter (Tek kişilik sürüş)
+      const px = roadLeft + laneW * (state.laneVisualX + 0.5);
+      const py = h * 0.74;
+
+      ctx.save();
+      ctx.translate(px, py);
+
+      // Gölge
+      ctx.fillStyle = "rgba(0,0,0,0.4)";
+      ctx.beginPath();
+      ctx.ellipse(0, 18, 16, 6, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Scooter gövdesi & sürücü
+      ctx.fillStyle = sc.color;
+      ctx.beginPath();
+      ctx.roundRect(-8, -14, 16, 28, 5);
+      ctx.fill();
+
+      // Gidon
+      ctx.strokeStyle = "#e2e8f0";
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(-13, -10);
+      ctx.lineTo(13, -10);
+      ctx.stroke();
+
+      // Sürücü kaskı
+      ctx.fillStyle = "#f8fafc";
+      ctx.beginPath();
+      ctx.arc(0, -2, 7, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Fren lambası
+      if (state.controls.brake) {
+        ctx.fillStyle = "#ef4444";
+        ctx.fillRect(-7, 12, 14, 4);
+      }
+
+      ctx.restore();
+
+      // Üst hız / mesafe göstergesi
+      ctx.fillStyle = "rgba(15, 23, 42, 0.82)";
+      ctx.beginPath();
+      ctx.roundRect(10, 10, 230, 52, 10);
+      ctx.fill();
+
+      ctx.fillStyle = "#38bdf8";
+      ctx.font = "bold 16px sans-serif";
+      ctx.fillText(`${Math.round(state.speedKmh)} / ${sc.topSpeedKmh} km/h`, 20, 30);
+
+      ctx.fillStyle = "#cbd5e1";
+      ctx.font = "bold 11px sans-serif";
+      ctx.fillText(`Mesafe: ${Math.round(state.distanceM)}m • Şerit: ${state.lane === 0 ? "Sol" : "Sağ"}`, 20, 49);
+
+      if (state.flashMessage) {
+        ctx.fillStyle = "rgba(15, 23, 42, 0.9)";
+        ctx.beginPath();
+        ctx.roundRect(w / 2 - 140, 14, 280, 34, 10);
+        ctx.fill();
+        ctx.fillStyle = "#4ade80";
+        ctx.font = "bold 12px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(state.flashMessage, w / 2, 31);
+        ctx.textAlign = "left";
+      }
     }
 
     let lastTime = performance.now();
     function loop(now) {
       const dt = Math.min(0.05, (now - lastTime) / 1000);
       lastTime = now;
-      stepPhysics(dt);
-      renderScene();
+      step(dt);
+      drawRoad();
       requestAnimationFrame(loop);
     }
 
     window.addEventListener("resize", resizeCanvas);
     resizeCanvas();
-    syncLabels();
-    syncSelectorPhotos();
-    renderSpecsSummary();
+    renderHUD();
+    renderGarage();
     requestAnimationFrame(loop);
   </script>
 </body>
