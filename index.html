@@ -59,10 +59,17 @@
     .select-box {
       background: #1e293b;
       border-radius: 10px;
-      padding: 6px 8px;
+      padding: 8px;
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 6px;
+    }
+
+    .select-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
     }
 
     .select-box label {
@@ -71,6 +78,25 @@
       text-transform: uppercase;
       letter-spacing: 0.5px;
       color: #94a3b8;
+    }
+
+    .selected-photo-badge {
+      width: 44px;
+      height: 44px;
+      border-radius: 9px;
+      background: #ffffff;
+      border: 2px solid #38bdf8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .selected-photo-badge img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
     }
 
     select, button, input[type="range"] {
@@ -101,7 +127,7 @@
     canvas {
       display: block;
       width: 100%;
-      height: 300px;
+      height: 310px;
     }
 
     .controls {
@@ -220,6 +246,19 @@
       padding: 8px 10px;
       font-size: 12px;
       color: #e2e8f0;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .spec-thumb {
+      width: 54px;
+      height: 54px;
+      border-radius: 8px;
+      background: #ffffff;
+      object-fit: contain;
+      flex-shrink: 0;
+      padding: 2px;
     }
 
     .spec-name {
@@ -235,11 +274,21 @@
       <div class="brand">SCOOTER VS ARENA</div>
       <div class="selectors">
         <div class="select-box">
-          <label for="s1">1. Scooter</label>
+          <div class="select-head">
+            <label for="s1">1. Scooter</label>
+            <div class="selected-photo-badge">
+              <img id="s1Thumb" alt="1. Scooter" />
+            </div>
+          </div>
           <select id="s1"></select>
         </div>
         <div class="select-box">
-          <label for="s2">2. Scooter</label>
+          <div class="select-head">
+            <label for="s2">2. Scooter</label>
+            <div class="selected-photo-badge">
+              <img id="s2Thumb" alt="2. Scooter" />
+            </div>
+          </div>
           <select id="s2"></select>
         </div>
       </div>
@@ -287,6 +336,36 @@
   </div>
 
   <script>
+    // Her scooter için kendi SVG/fotoğraf görseli üretici fonksiyonu
+    function makeScooterPhoto(primaryColor, accentColor, wheelRadius = 8, dualMotor = false, hasBox = false, titleText = "") {
+      const svg = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="160" height="120" viewBox="0 0 160 120">
+          <rect width="160" height="120" rx="12" fill="#ffffff"/>
+          <ellipse cx="80" cy="102" rx="48" ry="6" fill="rgba(15,23,42,0.12)"/>
+          ${hasBox ? `<rect x="26" y="54" width="24" height="18" rx="4" fill="#1e293b" stroke="${primaryColor}" stroke-width="2"/>` : ""}
+          <!-- Arka teker -->
+          <circle cx="38" cy="86" r="${wheelRadius + 5}" fill="#0f172a" stroke="${primaryColor}" stroke-width="3"/>
+          <circle cx="38" cy="86" r="4" fill="#cbd5e1"/>
+          <!-- Ön teker -->
+          <circle cx="122" cy="86" r="${wheelRadius + 5}" fill="#0f172a" stroke="${primaryColor}" stroke-width="3"/>
+          <circle cx="122" cy="86" r="4" fill="#cbd5e1"/>
+          <!-- Süspansiyon kolları -->
+          <path d="M38 86 L50 76 M122 86 L108 74" stroke="${accentColor}" stroke-width="4" stroke-linecap="round"/>
+          <!-- Taban / Deck -->
+          <rect x="34" y="72" width="76" height="9" rx="4.5" fill="#1e293b" stroke="${primaryColor}" stroke-width="2"/>
+          <rect x="44" y="74" width="52" height="3" rx="1.5" fill="${primaryColor}"/>
+          <!-- Gidon borusu -->
+          <line x1="106" y1="74" x2="96" y2="26" stroke="#0f172a" stroke-width="6" stroke-linecap="round"/>
+          <line x1="106" y1="74" x2="96" y2="26" stroke="${primaryColor}" stroke-width="2" stroke-linecap="round"/>
+          <!-- Gidon -->
+          <path d="M88 26 L106 26 L112 30" fill="none" stroke="#0f172a" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+          ${dualMotor ? `<circle cx="38" cy="86" r="3" fill="${accentColor}"/><circle cx="122" cy="86" r="3" fill="${accentColor}"/>` : ""}
+          <text x="80" y="16" font-family="Arial, sans-serif" font-size="9" font-weight="bold" fill="#334155" text-anchor="middle">${titleText}</text>
+        </svg>
+      `;
+      return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg.trim());
+    }
+
     const SCOOTERS = [
       {
         id: "segway-zt3-pro",
@@ -296,7 +375,8 @@
         battery: "46V 12.8Ah",
         rangeKm: 70,
         color: "#ef4444",
-        accent: "#fecaca"
+        accent: "#fca5a5",
+        photo: makeScooterPhoto("#ef4444", "#fca5a5", 9, false, false, "ZT3 PRO")
       },
       {
         id: "segway-e3-pro",
@@ -305,8 +385,9 @@
         topSpeedKmh: 32,
         battery: "36V 10.2Ah",
         rangeKm: 55,
-        color: "#94a3b8",
-        accent: "#e2e8f0"
+        color: "#64748b",
+        accent: "#cbd5e1",
+        photo: makeScooterPhoto("#64748b", "#cbd5e1", 7, false, false, "E3 PRO")
       },
       {
         id: "segway-max-g3",
@@ -315,8 +396,9 @@
         topSpeedKmh: 45,
         battery: "48V 12.5Ah",
         rangeKm: 80,
-        color: "#64748b",
-        accent: "#f87171"
+        color: "#dc2626",
+        accent: "#f87171",
+        photo: makeScooterPhoto("#dc2626", "#f87171", 9, false, false, "MAX G3")
       },
       {
         id: "segway-f3-pro",
@@ -325,8 +407,9 @@
         topSpeedKmh: 35,
         battery: "46V 10.2Ah",
         rangeKm: 70,
-        color: "#334155",
-        accent: "#fca5a5"
+        color: "#e11d48",
+        accent: "#fda4af",
+        photo: makeScooterPhoto("#e11d48", "#fda4af", 8, false, false, "F3 PRO")
       },
       {
         id: "rx07",
@@ -336,7 +419,8 @@
         battery: "60V 25A",
         rangeKm: 70,
         color: "#ef4444",
-        accent: "#fca5a5"
+        accent: "#fca5a5",
+        photo: makeScooterPhoto("#ef4444", "#fca5a5", 10, true, false, "ONVO RX-07")
       },
       {
         id: "rx09-3000",
@@ -345,8 +429,9 @@
         topSpeedKmh: 65,
         battery: "60V 20A",
         rangeKm: 8,
-        color: "#38bdf8",
-        accent: "#bae6fd"
+        color: "#2563eb",
+        accent: "#93c5fd",
+        photo: makeScooterPhoto("#2563eb", "#93c5fd", 10, true, true, "ONVO RX-09")
       },
       {
         id: "tiger-10-v3",
@@ -356,7 +441,8 @@
         battery: "52V/20.8Ah",
         rangeKm: 75,
         color: "#eab308",
-        accent: "#fef08a"
+        accent: "#fef08a",
+        photo: makeScooterPhoto("#eab308", "#fef08a", 9, true, false, "TIGER 10 V3")
       },
       {
         id: "tiger-max-gtr",
@@ -366,7 +452,8 @@
         battery: "48V/18.2Ah",
         rangeKm: 60,
         color: "#a855f7",
-        accent: "#e9d5ff"
+        accent: "#e9d5ff",
+        photo: makeScooterPhoto("#a855f7", "#e9d5ff", 9, true, false, "MAX GTR")
       },
       {
         id: "rx05",
@@ -376,7 +463,8 @@
         battery: "60V 25A",
         rangeKm: 60,
         color: "#22c55e",
-        accent: "#bbf7d0"
+        accent: "#bbf7d0",
+        photo: makeScooterPhoto("#22c55e", "#bbf7d0", 9, true, false, "ONVO RX-05")
       },
       {
         id: "tiger-10-gtr",
@@ -386,7 +474,8 @@
         battery: "60V/23.4Ah",
         rangeKm: 90,
         color: "#f97316",
-        accent: "#fed7aa"
+        accent: "#fed7aa",
+        photo: makeScooterPhoto("#f97316", "#fed7aa", 10, true, false, "TIGER 10 GTR")
       },
       {
         id: "mx03",
@@ -396,7 +485,8 @@
         battery: "52V 20A",
         rangeKm: 70,
         color: "#06b6d4",
-        accent: "#a5f3fc"
+        accent: "#a5f3fc",
+        photo: makeScooterPhoto("#06b6d4", "#a5f3fc", 9, true, false, "ONVO MX-03")
       },
       {
         id: "mx01",
@@ -406,7 +496,8 @@
         battery: "48V 13A",
         rangeKm: 55,
         color: "#ec4899",
-        accent: "#fbcfe8"
+        accent: "#fbcfe8",
+        photo: makeScooterPhoto("#ec4899", "#fbcfe8", 8, false, false, "ONVO MX-01")
       },
       {
         id: "togo-limited",
@@ -416,7 +507,8 @@
         battery: "60V 15A",
         rangeKm: 60,
         color: "#14b8a6",
-        accent: "#99f6e4"
+        accent: "#99f6e4",
+        photo: makeScooterPhoto("#14b8a6", "#99f6e4", 8, false, false, "TOGO LTD")
       },
       {
         id: "tiger-10-v4",
@@ -426,7 +518,8 @@
         battery: "52V 21A",
         rangeKm: 80,
         color: "#f59e0b",
-        accent: "#fde68a"
+        accent: "#fde68a",
+        photo: makeScooterPhoto("#f59e0b", "#fde68a", 9, true, false, "TIGER 10 V4")
       },
       {
         id: "x-limited",
@@ -436,7 +529,8 @@
         battery: "84V 60A",
         rangeKm: 170,
         color: "#8b5cf6",
-        accent: "#ddd6fe"
+        accent: "#ddd6fe",
+        photo: makeScooterPhoto("#8b5cf6", "#ddd6fe", 11, true, false, "X LIMITED")
       },
       {
         id: "togo-plus",
@@ -446,7 +540,8 @@
         battery: "48V 15A",
         rangeKm: 40,
         color: "#84cc16",
-        accent: "#d9f99d"
+        accent: "#d9f99d",
+        photo: makeScooterPhoto("#84cc16", "#d9f99d", 8, false, false, "TOGO PLUS")
       },
       {
         id: "achilleus",
@@ -456,7 +551,8 @@
         battery: "60V 35A",
         rangeKm: 100,
         color: "#10b981",
-        accent: "#a7f3d0"
+        accent: "#a7f3d0",
+        photo: makeScooterPhoto("#10b981", "#a7f3d0", 10, true, false, "ACHILLEUS")
       },
       {
         id: "thunder-3",
@@ -466,7 +562,8 @@
         battery: "72V 40A",
         rangeKm: 120,
         color: "#6366f1",
-        accent: "#c7d2fe"
+        accent: "#c7d2fe",
+        photo: makeScooterPhoto("#6366f1", "#c7d2fe", 11, true, false, "THUNDER 3")
       },
       {
         id: "city-new",
@@ -476,7 +573,8 @@
         battery: "60V 25A",
         rangeKm: 70,
         color: "#f43f5e",
-        accent: "#fecdd3"
+        accent: "#fecdd3",
+        photo: makeScooterPhoto("#f43f5e", "#fecdd3", 10, true, false, "CITY NEW")
       },
       {
         id: "victor-limited",
@@ -486,7 +584,8 @@
         battery: "60V 35A",
         rangeKm: 100,
         color: "#0ea5e9",
-        accent: "#bae6fd"
+        accent: "#bae6fd",
+        photo: makeScooterPhoto("#0ea5e9", "#bae6fd", 10, true, false, "VICTOR LTD")
       },
       {
         id: "ov-013-x-plus",
@@ -496,7 +595,8 @@
         battery: "48V 18A",
         rangeKm: 60,
         color: "#eab308",
-        accent: "#fef08a"
+        accent: "#fef08a",
+        photo: makeScooterPhoto("#eab308", "#fef08a", 9, false, false, "OV-013 X+")
       },
       {
         id: "aminia-long",
@@ -506,7 +606,8 @@
         battery: "52V 21A",
         rangeKm: 60,
         color: "#22c55e",
-        accent: "#bbf7d0"
+        accent: "#bbf7d0",
+        photo: makeScooterPhoto("#22c55e", "#bbf7d0", 9, true, false, "AMINIA")
       },
       {
         id: "rx04",
@@ -516,7 +617,8 @@
         battery: "52V 21A",
         rangeKm: 60,
         color: "#ef4444",
-        accent: "#fca5a5"
+        accent: "#fca5a5",
+        photo: makeScooterPhoto("#ef4444", "#fca5a5", 9, true, false, "ONVO RX-04")
       },
       {
         id: "sonic-alien",
@@ -526,7 +628,8 @@
         battery: "72V 40A",
         rangeKm: 120,
         color: "#f97316",
-        accent: "#fed7aa"
+        accent: "#fed7aa",
+        photo: makeScooterPhoto("#f97316", "#fed7aa", 11, true, false, "SONIC ALIEN")
       },
       {
         id: "ov-008",
@@ -536,7 +639,8 @@
         battery: "Belirtilmemiş",
         rangeKm: 30,
         color: "#38bdf8",
-        accent: "#bae6fd"
+        accent: "#bae6fd",
+        photo: makeScooterPhoto("#38bdf8", "#bae6fd", 7, false, false, "OV-008")
       },
       {
         id: "ov-012-x-plus",
@@ -546,7 +650,8 @@
         battery: "48V 15A",
         rangeKm: 50,
         color: "#a855f7",
-        accent: "#e9d5ff"
+        accent: "#e9d5ff",
+        photo: makeScooterPhoto("#a855f7", "#e9d5ff", 8, false, false, "OV-012 X+")
       },
       {
         id: "kx-01k",
@@ -556,7 +661,8 @@
         battery: "21.6V 2.4A",
         rangeKm: 8,
         color: "#f43f5e",
-        accent: "#fecdd3"
+        accent: "#fecdd3",
+        photo: makeScooterPhoto("#f43f5e", "#fecdd3", 6, false, false, "KX-01K")
       },
       {
         id: "kx-02",
@@ -566,7 +672,8 @@
         battery: "21.6V 5.2A",
         rangeKm: 15,
         color: "#e11d48",
-        accent: "#fda4af"
+        accent: "#fda4af",
+        photo: makeScooterPhoto("#e11d48", "#fda4af", 6, false, false, "KX-02")
       },
       {
         id: "rx10",
@@ -576,7 +683,8 @@
         battery: "60.8V 21.8A",
         rangeKm: 80,
         color: "#06b6d4",
-        accent: "#a5f3fc"
+        accent: "#a5f3fc",
+        photo: makeScooterPhoto("#06b6d4", "#a5f3fc", 10, true, false, "ONVO RX-10")
       },
       {
         id: "mx02",
@@ -586,7 +694,8 @@
         battery: "52V 15A",
         rangeKm: 60,
         color: "#f59e0b",
-        accent: "#fde68a"
+        accent: "#fde68a",
+        photo: makeScooterPhoto("#f59e0b", "#fde68a", 8, false, false, "ONVO MX-02")
       },
       {
         id: "ov-12",
@@ -596,7 +705,8 @@
         battery: "48V 10A",
         rangeKm: 40,
         color: "#10b981",
-        accent: "#a7f3d0"
+        accent: "#a7f3d0",
+        photo: makeScooterPhoto("#10b981", "#a7f3d0", 8, false, false, "OV-12")
       },
       {
         id: "ov-007-x",
@@ -606,7 +716,8 @@
         battery: "Belirtilmemiş",
         rangeKm: 30,
         color: "#6366f1",
-        accent: "#c7d2fe"
+        accent: "#c7d2fe",
+        photo: makeScooterPhoto("#6366f1", "#c7d2fe", 7, false, false, "OV-007 X")
       },
       {
         id: "rovoron-r7",
@@ -616,7 +727,8 @@
         battery: "60V 42.4A",
         rangeKm: 120,
         color: "#14b8a6",
-        accent: "#99f6e4"
+        accent: "#99f6e4",
+        photo: makeScooterPhoto("#14b8a6", "#99f6e4", 10, true, false, "ROVORON R7")
       },
       {
         id: "tiger-supra",
@@ -626,13 +738,16 @@
         battery: "60V/31.5Ah",
         rangeKm: 120,
         color: "#eab308",
-        accent: "#fef08a"
+        accent: "#fef08a",
+        photo: makeScooterPhoto("#eab308", "#fef08a", 10, true, false, "TIGER SUPRA")
       }
     ];
 
     const TRACK_METERS = 200;
     const s1Select = document.getElementById("s1");
     const s2Select = document.getElementById("s2");
+    const s1Thumb = document.getElementById("s1Thumb");
+    const s2Thumb = document.getElementById("s2Thumb");
     const slopeInput = document.getElementById("slopeInput");
     const loadInput = document.getElementById("loadInput");
     const slopeVal = document.getElementById("slopeVal");
@@ -640,12 +755,24 @@
     const startBtn = document.getElementById("startBtn");
     const resetBtn = document.getElementById("resetBtn");
     const resultBox = document.getElementById("resultBox");
-    const specsGrid = document.getElementById("specsGrid");
     const modeBtns = document.querySelectorAll(".mode-btn");
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
 
+    // Canvas içinde çizmek için scooter fotoğraflarını önbelleğe al
+    const imageCache = new Map();
+    function getCachedImage(scooter) {
+      if (imageCache.has(scooter.id)) {
+        return imageCache.get(scooter.id);
+      }
+      const img = new Image();
+      img.src = scooter.photo;
+      imageCache.set(scooter.id, img);
+      return img;
+    }
+
     SCOOTERS.forEach((sc, idx) => {
+      getCachedImage(sc);
       const opt1 = new Option(`${sc.name} (${sc.powerW}W • ${sc.topSpeedKmh} km/h)`, sc.id);
       const opt2 = new Option(`${sc.name} (${sc.powerW}W • ${sc.topSpeedKmh} km/h)`, sc.id);
       s1Select.add(opt1);
@@ -670,15 +797,24 @@
       return [a, b];
     }
 
+    function syncSelectorPhotos() {
+      const [a, b] = getSelectedPair();
+      s1Thumb.src = a.photo;
+      s2Thumb.src = b.photo;
+    }
+
     function renderSpecsSummary() {
       const [a, b] = getSelectedPair();
       const currentGrid = document.getElementById("specsGrid");
       if (!currentGrid) return;
       currentGrid.innerHTML = [a, b].map((sc, i) => `
         <div class="spec-box">
-          <div class="spec-name">${i + 1}. ${sc.name}</div>
-          <div>Güç: <strong>${sc.powerW}W</strong> • Hız: <strong>${sc.topSpeedKmh} km/h</strong></div>
-          <div>Pil: ${sc.battery} • Menzil: ${sc.rangeKm} km</div>
+          <img class="spec-thumb" src="${sc.photo}" alt="${sc.name}" />
+          <div>
+            <div class="spec-name">${i + 1}. ${sc.name}</div>
+            <div>Güç: <strong>${sc.powerW}W</strong> • Hız: <strong>${sc.topSpeedKmh} km/h</strong></div>
+            <div>Pil: ${sc.battery} • Menzil: ${sc.rangeKm} km</div>
+          </div>
         </div>
       `).join("");
     }
@@ -697,6 +833,7 @@
         { posM: 0, speedKmh: 0, finishTime: null }
       ];
       startBtn.textContent = "YARIŞI BAŞLAT";
+      syncSelectorPhotos();
       if (!keepMessage) {
         resultBox.innerHTML = `
           <div class="result-title">Hazır! İstediğin 2 scooter'ı seç ve yarışı başlat.</div>
@@ -805,47 +942,47 @@
       }
     }
 
-    function drawScooterIcon(x, y, scooter, labelNum) {
+    function drawScooterPhoto(x, y, scooter, labelNum) {
       ctx.save();
       ctx.translate(x, y);
 
-      ctx.fillStyle = "rgba(0,0,0,0.28)";
+      const boxW = 54;
+      const boxH = 42;
+      const left = -boxW / 2;
+      const top = -boxH / 2 - 4;
+
+      // Gölge
+      ctx.fillStyle = "rgba(0, 0, 0, 0.32)";
       ctx.beginPath();
-      ctx.ellipse(0, 12, 26, 5, 0, 0, Math.PI * 2);
+      ctx.ellipse(0, top + boxH + 3, 24, 5, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      ctx.fillStyle = "#0f172a";
-      ctx.strokeStyle = "#94a3b8";
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.arc(-16, 6, 7, 0, Math.PI * 2);
-      ctx.arc(17, 6, 7, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-
-      ctx.fillStyle = scooter.color;
-      ctx.beginPath();
-      ctx.roundRect(-18, -2, 36, 6, 3);
-      ctx.fill();
-
-      ctx.strokeStyle = scooter.accent;
-      ctx.lineWidth = 4;
-      ctx.lineCap = "round";
-      ctx.beginPath();
-      ctx.moveTo(13, 0);
-      ctx.lineTo(9, -22);
-      ctx.lineTo(15, -22);
-      ctx.stroke();
-
-      ctx.fillStyle = "#0f172a";
-      ctx.beginPath();
-      ctx.arc(-10, -16, 9, 0, Math.PI * 2);
-      ctx.fill();
+      // Beyaz kart çerçevesi
       ctx.fillStyle = "#ffffff";
-      ctx.font = "bold 11px sans-serif";
+      ctx.strokeStyle = scooter.color;
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.roundRect(left, top, boxW, boxH, 8);
+      ctx.fill();
+      ctx.stroke();
+
+      // Scooter fotoğrafı
+      const img = getCachedImage(scooter);
+      if (img && img.complete && img.naturalWidth > 0) {
+        ctx.drawImage(img, left + 3, top + 3, boxW - 6, boxH - 6);
+      }
+
+      // 1 veya 2 numara rozeti
+      ctx.fillStyle = "#0f172a";
+      ctx.beginPath();
+      ctx.arc(left + 7, top + 7, 8, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 10px sans-serif";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.fillText(String(labelNum), -10, -16);
+      ctx.fillText(String(labelNum), left + 7, top + 7);
 
       ctx.restore();
     }
@@ -865,34 +1002,34 @@
       const slopeDeg = Number(slopeInput.value);
       const pair = getSelectedPair();
 
-      const sky = ctx.createLinearGradient(0, 0, 0, h * 0.62);
+      const sky = ctx.createLinearGradient(0, 0, 0, h * 0.56);
       sky.addColorStop(0, "#38bdf8");
       sky.addColorStop(1, "#bae6fd");
       ctx.fillStyle = sky;
-      ctx.fillRect(0, 0, w, h * 0.62);
+      ctx.fillRect(0, 0, w, h * 0.56);
 
       ctx.fillStyle = "#0284c7";
       ctx.beginPath();
-      ctx.moveTo(0, h * 0.62);
-      ctx.lineTo(w * 0.25, h * 0.44);
-      ctx.lineTo(w * 0.55, h * 0.58);
-      ctx.lineTo(w * 0.82, h * 0.42);
+      ctx.moveTo(0, h * 0.56);
+      ctx.lineTo(w * 0.25, h * 0.39);
+      ctx.lineTo(w * 0.55, h * 0.52);
+      ctx.lineTo(w * 0.82, h * 0.37);
+      ctx.lineTo(w, h * 0.50);
       ctx.lineTo(w, h * 0.56);
-      ctx.lineTo(w, h * 0.62);
       ctx.closePath();
       ctx.fill();
 
-      const tilt = Math.tan((slopeDeg * Math.PI) / 180) * 35;
+      const tilt = Math.tan((slopeDeg * Math.PI) / 180) * 32;
       ctx.fillStyle = "#1e293b";
       ctx.beginPath();
-      ctx.moveTo(0, h * 0.58 + tilt * 0.4);
-      ctx.lineTo(w, h * 0.58 - tilt * 0.4);
+      ctx.moveTo(0, h * 0.53 + tilt * 0.35);
+      ctx.lineTo(w, h * 0.53 - tilt * 0.35);
       ctx.lineTo(w, h);
       ctx.lineTo(0, h);
       ctx.closePath();
       ctx.fill();
 
-      const lane1Y = h * 0.71;
+      const lane1Y = h * 0.68;
       const lane2Y = h * 0.87;
 
       ctx.strokeStyle = "#475569";
@@ -904,21 +1041,21 @@
       ctx.stroke();
       ctx.setLineDash([]);
 
-      const startX = 48;
-      const finishX = w - 36;
+      const startX = 56;
+      const finishX = w - 42;
       const trackSpan = Math.max(40, finishX - startX);
 
       ctx.strokeStyle = "#f8fafc";
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.moveTo(startX, h * 0.61);
+      ctx.moveTo(startX, h * 0.55);
       ctx.lineTo(startX, h - 8);
       ctx.stroke();
 
       ctx.strokeStyle = "#facc15";
       ctx.lineWidth = 3;
       ctx.beginPath();
-      ctx.moveTo(finishX, h * 0.61);
+      ctx.moveTo(finishX, h * 0.55);
       ctx.lineTo(finishX, h - 8);
       ctx.stroke();
 
@@ -944,7 +1081,7 @@
         ctx.textAlign = "left";
         ctx.fillText(`${pair[idx].name} • ${Math.round(r.speedKmh)} km/h • ${Math.round(r.posM)}m`, 14, laneY - 28);
 
-        drawScooterIcon(x, laneY, pair[idx], idx + 1);
+        drawScooterPhoto(x, laneY, pair[idx], idx + 1);
       });
     }
 
@@ -960,6 +1097,7 @@
     window.addEventListener("resize", resizeCanvas);
     resizeCanvas();
     syncLabels();
+    syncSelectorPhotos();
     renderSpecsSummary();
     requestAnimationFrame(loop);
   </script>
