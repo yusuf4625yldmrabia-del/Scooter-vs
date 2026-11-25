@@ -45,8 +45,9 @@
 
     .title-group {
       display: flex;
+      flex-wrap: wrap;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
     }
 
     .brand {
@@ -69,6 +70,25 @@
     .pill.money {
       color: #4ade80;
       border-color: rgba(74, 222, 128, 0.35);
+    }
+
+    .npc-control {
+      background: #1e293b;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 999px;
+      padding: 4px 10px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #e2e8f0;
+    }
+
+    .npc-control input[type="range"] {
+      width: 78px;
+      accent-color: #38bdf8;
+      cursor: pointer;
     }
 
     .map-switch {
@@ -327,6 +347,11 @@
         <div class="brand">SCOOTER RIDE</div>
         <div id="moneyPill" class="pill money">₺15.000</div>
         <div id="activeScooterPill" class="pill">Araç: -</div>
+        <label class="npc-control" title="Trafikteki NPC yoğunluğunu ayarla">
+          <span>NPC:</span>
+          <input id="npcDensitySlider" type="range" min="0" max="100" step="10" value="50" />
+          <span id="npcDensityLabel">Normal (%50)</span>
+        </label>
       </div>
       <div class="map-switch">
         <button id="freeMapBtn" class="map-btn active" type="button">Serbest Harita</button>
@@ -414,7 +439,6 @@
       .sort((a, b) => b.score - a.score)
       .map((s, idx, arr) => {
         const ratio = 1 - idx / Math.max(1, arr.length - 1);
-        // En iyiden (~₺185.000) en kötüye (~₺6.000) sıralı fiyat
         const rawPrice = 6000 + Math.pow(ratio, 1.35) * 179000;
         const price = Math.round(rawPrice / 500) * 500;
         return {
@@ -424,17 +448,17 @@
         };
       });
 
-    // Başlangıçta en düşük fiyatlı (sıralamanın sonundaki) başlangıç scooter'ı açık olsun ki oyuncu yükselerek ilerlesin
     const starterScooter = SCOOTERS[SCOOTERS.length - 1];
 
     const state = {
       money: 15000,
       ownedIds: new Set([starterScooter.id]),
       selectedId: starterScooter.id,
-      mapMode: "free", // "free" | "mission"
+      mapMode: "free",
       soundEnabled: true,
-      lane: 1, // 0 = sol şerit, 1 = sağ şerit
-      laneVisualX: 0,
+      npcDensity: 50, // 0 (Kapalı) - 100 (Çok Yoğun)
+      lane: 1,
+      laneVisualX: 1,
       speedKmh: 0,
       distanceM: 0,
       roadOffset: 0,
@@ -445,7 +469,7 @@
       npcs: [],
       mission: {
         active: true,
-        type: "checkpoint", // "checkpoint" | "speed_pass"
+        type: "checkpoint",
         targetM: 220,
         reward: 3500,
         completedCount: 0,
@@ -563,7 +587,6 @@
       osc1.stop(now + 0.34);
       osc2.stop(now + 0.34);
 
-      // Öndeki NPC'lere korna etkisi
       state.npcs.forEach(npc => {
         if (npc.y > 40 && npc.y < 230 && Math.abs(npc.lane - state.lane) <= 1) {
           npc.honked = true;
@@ -584,6 +607,30 @@
       state.flashMessage = msg;
       state.flashTimer = 2.2;
     }
+
+    function getNpcDensityText(val) {
+      if (val === 0) return "Kapalı (%0)";
+      if (val <= 30) return `Az (%${val})`;
+      if (val <= 70) return `Normal (%${val})`;
+      return `Çok (%${val})`;
+    }
+
+    const npcDensitySlider = document.getElementById("npcDensitySlider");
+    const npcDensityLabel = document.getElementById("npcDensityLabel");
+
+    npcDensitySlider.addEventListener("input", () => {
+      state.npcDensity = Number(npcDensitySlider.value);
+      npcDensityLabel.textContent = getNpcDensityText(state.npcDensity);
+
+      if (state.npcDensity === 0) {
+        state.npcs = [];
+      } else {
+        const maxAllowed = Math.max(1, Math.round((state.npcDensity / 100) * 10));
+        if (state.npcs.length > maxAllowed) {
+          state.npcs = state.npcs.slice(0, maxAllowed);
+        }
+      }
+    });
 
     function assignNextMission() {
       const mIndex = state.mission.completedCount;
@@ -794,15 +841,21 @@
       }
     });
 
-    // NPC Araç Üretimi (2 şeritli yolda NPC'ler)
+    // NPC Araç Üretimi (Ayarlanabilir NPC Yoğunluğu ile)
     const NPC_COLORS = ["#f97316", "#06b6d4", "#eab308", "#ec4899", "#a855f7", "#10b981"];
 
     function spawnNpc() {
+      if (state.npcDensity <= 0) return;
+
+      const maxActiveNpcs = Math.max(1, Math.round((state.npcDensity / 100) * 10));
+      if (state.npcs.length >= maxActiveNpcs) return;
+
+      const minGapY = Math.max(68, 175 - state.npcDensity * 1.05);
       const lane = Math.random() < 0.5 ? 0 : 1;
-      const sameLaneTooClose = state.npcs.some(n => n.lane === lane && n.y < 110);
+      const sameLaneTooClose = state.npcs.some(n => n.lane === lane && n.y < minGapY);
       if (sameLaneTooClose) return;
 
-      const maxSpeed = 35 + Math.random() * 45; // 35 - 80 km/h arası NPC araçlar
+      const maxSpeed = 35 + Math.random() * 45;
       state.npcs.push({
         lane,
         y: -45,
@@ -827,7 +880,7 @@
 
     function step(dt) {
       const sc = getCurrentScooter();
-      const accelRate = 18 + (sc.powerW / 13000) * 44; // km/h / sn
+      const accelRate = 18 + (sc.powerW / 13000) * 44;
       const brakeRate = 58;
       const coastDrag = 10;
 
@@ -844,12 +897,14 @@
       state.distanceM += deltaM;
       state.roadOffset = (state.roadOffset + deltaM * 18) % 80;
 
-      // Şerit görsel yumuşak geçiş
       state.laneVisualX += (state.lane - state.laneVisualX) * Math.min(1, dt * 13);
 
-      // NPC güncelleme
-      if (Math.random() < dt * 1.35) {
-        spawnNpc();
+      // NPC yoğunluğuna göre üretim sıklığı
+      if (state.npcDensity > 0) {
+        const spawnRatePerSec = (state.npcDensity / 100) * 3.2;
+        if (Math.random() < dt * spawnRatePerSec) {
+          spawnNpc();
+        }
       }
 
       const playerY = canvas.getBoundingClientRect().height * 0.74;
@@ -858,7 +913,6 @@
         const relSpeedMps = ((state.speedKmh - npc.speed) * 1000) / 3600;
         npc.y += relSpeedMps * dt * 16 + 35 * dt;
 
-        // Aynı şeritte arkadan yaklaşınca yavaşlama / çarpışma kontrolü
         if (Math.abs(npc.lane - state.laneVisualX) < 0.35 && Math.abs(npc.y - playerY) < 34) {
           if (state.speedKmh > npc.speed + 8) {
             state.speedKmh = Math.max(0, npc.speed * 0.75);
@@ -871,11 +925,6 @@
 
       // Görev haritası kontrolü
       if (state.mapMode === "mission" && state.mission.active) {
-        if (state.mission.type === "speed_pass") {
-          if (state.speedKmh < state.mission.minSpeedKmh && state.distanceM > state.mission.targetM - 240) {
-            // Hız görevi hedefine yaklaşınca hız kontrolü
-          }
-        }
         if (state.distanceM >= state.mission.targetM) {
           const earned = state.mission.reward;
           state.money += earned;
@@ -902,11 +951,9 @@
       const h = rect.height;
       const sc = getCurrentScooter();
 
-      // Harita arka plan rengi (Serbest vs Görev)
       ctx.fillStyle = state.mapMode === "mission" ? "#101c2e" : "#0f172a";
       ctx.fillRect(0, 0, w, h);
 
-      // Yol kenarı çimler / kaldırımlar
       const roadW = Math.min(340, w * 0.72);
       const roadLeft = (w - roadW) / 2;
       const roadRight = roadLeft + roadW;
@@ -916,16 +963,13 @@
       ctx.fillRect(0, 0, roadLeft, h);
       ctx.fillRect(roadRight, 0, w - roadRight, h);
 
-      // Asfalt
       ctx.fillStyle = "#1e293b";
       ctx.fillRect(roadLeft, 0, roadW, h);
 
-      // Sol ve sağ kenar çizgileri
       ctx.fillStyle = "#e2e8f0";
       ctx.fillRect(roadLeft, 0, 5, h);
       ctx.fillRect(roadRight - 5, 0, 5, h);
 
-      // Ortadaki kesikli şerit çizgisi (2 şerit ayırıcı)
       const midX = roadLeft + laneW;
       ctx.strokeStyle = "#facc15";
       ctx.lineWidth = 4;
@@ -937,7 +981,6 @@
       ctx.stroke();
       ctx.setLineDash([]);
 
-      // Görev modunda yaklaşan kontrol noktası çizgisi
       if (state.mapMode === "mission") {
         const remM = Math.max(0, state.mission.targetM - state.distanceM);
         const gateY = h * 0.74 - remM * 1.1;
@@ -976,26 +1019,23 @@
         ctx.restore();
       });
 
-      // Oyuncu Scooter (Tek kişilik sürüş)
+      // Oyuncu Scooter
       const px = roadLeft + laneW * (state.laneVisualX + 0.5);
       const py = h * 0.74;
 
       ctx.save();
       ctx.translate(px, py);
 
-      // Gölge
       ctx.fillStyle = "rgba(0,0,0,0.4)";
       ctx.beginPath();
       ctx.ellipse(0, 18, 16, 6, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      // Scooter gövdesi & sürücü
       ctx.fillStyle = sc.color;
       ctx.beginPath();
       ctx.roundRect(-8, -14, 16, 28, 5);
       ctx.fill();
 
-      // Gidon
       ctx.strokeStyle = "#e2e8f0";
       ctx.lineWidth = 4;
       ctx.beginPath();
@@ -1003,13 +1043,11 @@
       ctx.lineTo(13, -10);
       ctx.stroke();
 
-      // Sürücü kaskı
       ctx.fillStyle = "#f8fafc";
       ctx.beginPath();
       ctx.arc(0, -2, 7, 0, Math.PI * 2);
       ctx.fill();
 
-      // Fren lambası
       if (state.controls.brake) {
         ctx.fillStyle = "#ef4444";
         ctx.fillRect(-7, 12, 14, 4);
@@ -1020,7 +1058,7 @@
       // Üst hız / mesafe göstergesi
       ctx.fillStyle = "rgba(15, 23, 42, 0.82)";
       ctx.beginPath();
-      ctx.roundRect(10, 10, 230, 52, 10);
+      ctx.roundRect(10, 10, 235, 52, 10);
       ctx.fill();
 
       ctx.fillStyle = "#38bdf8";
@@ -1029,7 +1067,7 @@
 
       ctx.fillStyle = "#cbd5e1";
       ctx.font = "bold 11px sans-serif";
-      ctx.fillText(`Mesafe: ${Math.round(state.distanceM)}m • Şerit: ${state.lane === 0 ? "Sol" : "Sağ"}`, 20, 49);
+      ctx.fillText(`Mesafe: ${Math.round(state.distanceM)}m • Şerit: ${state.lane === 0 ? "Sol" : "Sağ"} • NPC: ${state.npcs.length}`, 20, 49);
 
       if (state.flashMessage) {
         ctx.fillStyle = "rgba(15, 23, 42, 0.9)";
