@@ -92,6 +92,11 @@
       border-color: rgba(192, 132, 252, 0.35);
     }
 
+    .pill.playtime {
+      color: #34d399;
+      border-color: rgba(52, 211, 153, 0.4);
+    }
+
     .npc-control {
       background: #1e293b;
       border: 1px solid rgba(255, 255, 255, 0.1);
@@ -499,6 +504,7 @@
         <div id="moneyPill" class="pill money">₺15.000,00</div>
         <div id="batteryPill" class="pill battery-ok">Şarj: %100</div>
         <div id="activeScooterPill" class="pill">Araç: -</div>
+        <div id="playtimePill" class="pill playtime" title="Oyuna başladığından beri toplam oynama süren (çıkınca durur)">Oynama: 00:00:00</div>
         <div id="puzzleTimerPill" class="pill puzzle-timer" title="Her 5 dakikada bir 2.000 ₺ bonus puzzle çıkar">Bonus Soru: 05:00</div>
         <label class="npc-control" title="Trafikteki NPC yoğunluğunu ayarla">
           <span>NPC:</span>
@@ -540,7 +546,7 @@
     <div class="garage-section">
       <div class="garage-head">
         <div class="garage-title">Scooter Mağazası &amp; Garaj (İyiden Kötüye Sıralı)</div>
-        <div class="garage-sub">Kazandığın scooterlar ve şarj durumları kaydedilir • Her 5 km'de şarj noktası</div>
+        <div class="garage-sub">Kazandığın scooterlar, şarj ve oynama süren kaydedilir • Her 5 km'de şarj noktası</div>
       </div>
       <div id="scooterList" class="scooter-list"></div>
     </div>
@@ -618,9 +624,7 @@
     const starterScooter = SCOOTERS[SCOOTERS.length - 1];
     const validScooterIds = new Set(SCOOTERS.map(s => s.id));
 
-    // 4 Konulu Tekrar Etmeyen Bonus Soru Havuzu + Dinamik Soru Üretici
     const STATIC_PUZZLES = [
-      // Konu 1: Menzil & Şarj Hesabı
       {
         id: "range_1",
         category: "Menzil & Şarj Hesabı",
@@ -663,8 +667,6 @@
         options: ["%20", "%25", "%30", "%35"],
         correctIndex: 2
       },
-
-      // Konu 2: Scooter Özellik Tahmini / Bilmecesi
       {
         id: "riddle_1",
         category: "Scooter Bilmecesi",
@@ -707,8 +709,6 @@
         options: ["Rovoron R7 Elektrikli", "ONVO RX-10 3000W", "Hiley Tiger 10 V4", "Dualtron Togo Limited"],
         correctIndex: 0
       },
-
-      // Konu 3: Hız - Süre - Yol Problemi
       {
         id: "speed_1",
         category: "Hız - Süre - Yol",
@@ -751,8 +751,6 @@
         options: ["15 km", "20 km", "25 km", "30 km"],
         correctIndex: 1
       },
-
-      // Konu 4: Karşılaştırma (Hangisi Daha Güçlü / Hızlı?)
       {
         id: "comp_1",
         category: "Model Karşılaştırma",
@@ -837,6 +835,9 @@
           batteryByScooter,
           askedPuzzleIds: new Set(savedAskedPuzzles),
           puzzleDynamicCounter: typeof parsed.puzzleDynamicCounter === "number" ? Math.max(0, parsed.puzzleDynamicCounter) : 0,
+          totalPlaySeconds: typeof parsed.totalPlaySeconds === "number" && Number.isFinite(parsed.totalPlaySeconds)
+            ? Math.max(0, parsed.totalPlaySeconds)
+            : 0,
           npcDensity: typeof parsed.npcDensity === "number" ? Math.max(0, Math.min(100, parsed.npcDensity)) : 50,
           soundEnabled: typeof parsed.soundEnabled === "boolean" ? parsed.soundEnabled : true,
           completedCount: typeof parsed.completedCount === "number" ? Math.max(0, parsed.completedCount) : 0
@@ -857,6 +858,8 @@
       batteryByScooter: saved ? saved.batteryByScooter : defaultBatteries,
       askedPuzzleIds: saved ? saved.askedPuzzleIds : new Set(),
       puzzleDynamicCounter: saved ? saved.puzzleDynamicCounter : 0,
+      totalPlaySeconds: saved ? saved.totalPlaySeconds : 0,
+      playSaveAccumulator: 0,
       mapMode: "free",
       soundEnabled: saved ? saved.soundEnabled : true,
       npcDensity: saved ? saved.npcDensity : 50,
@@ -893,6 +896,25 @@
       flashTimer: 0
     };
 
+    function isGameActiveForPlaytime() {
+      return document.visibilityState === "visible" && document.hasFocus();
+    }
+
+    function formatPlaytime(totalSec) {
+      const s = Math.max(0, Math.floor(totalSec));
+      const hh = String(Math.floor(s / 3600)).padStart(2, "0");
+      const mm = String(Math.floor((s % 3600) / 60)).padStart(2, "0");
+      const ss = String(s % 60).padStart(2, "0");
+      return `${hh}:${mm}:${ss}`;
+    }
+
+    const playtimePill = document.getElementById("playtimePill");
+
+    function updatePlaytimeUI() {
+      const active = isGameActiveForPlaytime();
+      playtimePill.textContent = `Oynama: ${formatPlaytime(state.totalPlaySeconds)}${active ? "" : " (Durdu)"}`;
+    }
+
     function getCurrentScooter() {
       return SCOOTERS.find(s => s.id === state.selectedId) || SCOOTERS[0];
     }
@@ -917,6 +939,7 @@
           batteryByScooter: state.batteryByScooter,
           askedPuzzleIds: Array.from(state.askedPuzzleIds),
           puzzleDynamicCounter: state.puzzleDynamicCounter,
+          totalPlaySeconds: state.totalPlaySeconds,
           npcDensity: state.npcDensity,
           soundEnabled: state.soundEnabled,
           completedCount: state.mission.completedCount
@@ -925,14 +948,39 @@
       } catch (_) {}
     }
 
-    // Dinamik benzersiz soru üretici (statik 24 soru biterse veya çeşitlilik için)
+    // Sayfa gizlendiğinde, sekme değiştiğinde veya çıkıldığında oynama sayacını durdurup kaydet
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState !== "visible") {
+        state.controls.gas = false;
+        state.controls.brake = false;
+        updateMotorSound(0, false, false);
+        saveProgress();
+      }
+      updatePlaytimeUI();
+    });
+
+    window.addEventListener("blur", () => {
+      state.controls.gas = false;
+      state.controls.brake = false;
+      updateMotorSound(0, false, false);
+      saveProgress();
+      updatePlaytimeUI();
+    });
+
+    window.addEventListener("focus", () => {
+      updatePlaytimeUI();
+    });
+
+    window.addEventListener("pagehide", () => {
+      saveProgress();
+    });
+
     function generateUniqueDynamicPuzzle() {
       for (let attempt = 0; attempt < 40; attempt++) {
         state.puzzleDynamicCounter += 1;
         const topic = state.puzzleDynamicCounter % 4;
 
         if (topic === 0) {
-          // Konu 1: Menzil & Şarj
           const sc = SCOOTERS[Math.floor(Math.random() * SCOOTERS.length)];
           const range = sc.rangeKm >= 20 ? sc.rangeKm : 60;
           const startPct = [60, 70, 80, 90, 100][Math.floor(Math.random() * 5)];
@@ -958,7 +1006,6 @@
             correctIndex: opts.indexOf(`%${ans}`)
           };
         } else if (topic === 1) {
-          // Konu 2: Özellik Tahmini
           const sc = SCOOTERS[Math.floor(Math.random() * SCOOTERS.length)];
           const uid = `dyn_riddle_${sc.id}`;
           if (state.askedPuzzleIds.has(uid)) continue;
@@ -973,7 +1020,6 @@
             correctIndex: all.findIndex(s => s.id === sc.id)
           };
         } else if (topic === 2) {
-          // Konu 3: Hız - Süre - Yol
           const speeds = [40, 50, 60, 75, 80, 90, 100, 120];
           const mins = [12, 15, 20, 30, 45];
           const spd = speeds[Math.floor(Math.random() * speeds.length)];
@@ -997,7 +1043,6 @@
             correctIndex: opts.indexOf(`${dist} km`)
           };
         } else {
-          // Konu 4: Karşılaştırma
           const pool = [...SCOOTERS].sort(() => Math.random() - 0.5).slice(0, 4);
           const sortedByPower = [...pool].sort((a, b) => b.powerW - a.powerW);
           if (sortedByPower[0].powerW === sortedByPower[1].powerW) continue;
@@ -1020,13 +1065,11 @@
     function pickNextUniquePuzzle() {
       const remainingStatic = STATIC_PUZZLES.filter(p => !state.askedPuzzleIds.has(p.id));
       if (remainingStatic.length > 0) {
-        const chosen = remainingStatic[Math.floor(Math.random() * remainingStatic.length)];
-        return chosen;
+        return remainingStatic[Math.floor(Math.random() * remainingStatic.length)];
       }
       const dyn = generateUniqueDynamicPuzzle();
       if (dyn) return dyn;
 
-      // Çok uç durumda havuz tamamen tükenirse tekrar sıfırdan aç
       state.askedPuzzleIds.clear();
       return STATIC_PUZZLES[Math.floor(Math.random() * STATIC_PUZZLES.length)];
     }
@@ -1123,11 +1166,9 @@
       const q = pickNextUniquePuzzle();
       if (!q) return;
 
-      // Bir daha çıkmaması için sorulduğu anda kaydet
       state.askedPuzzleIds.add(q.id);
       saveProgress();
 
-      // Basılı kalan gaz/fren kontrollerini sıfırla ki oyun durunca takılı kalmasın
       state.controls.gas = false;
       state.controls.brake = false;
       document.getElementById("gasBtn").classList.remove("pressed");
@@ -1226,7 +1267,7 @@
     function updateMotorSound(speedRatio, isGas, isBrake) {
       if (!audioCtxHolder.ctx || !audioCtxHolder.motorGain) return;
       const now = audioCtxHolder.ctx.currentTime;
-      if (!state.soundEnabled || state.puzzle.isOpen) {
+      if (!state.soundEnabled || state.puzzle.isOpen || !isGameActiveForPlaytime()) {
         audioCtxHolder.motorGain.gain.setTargetAtTime(0.0001, now, 0.05);
         return;
       }
@@ -1437,6 +1478,7 @@
       document.getElementById("moneyPill").textContent = formatMoney(state.money);
       document.getElementById("activeScooterPill").textContent = `Araç: #${sc.rank} ${sc.name} (${sc.powerW}W)`;
       updateBatteryUI();
+      updatePlaytimeUI();
       updatePuzzleHudTimer();
       updateMissionUI();
     }
@@ -1588,7 +1630,6 @@
 
     window.addEventListener("keydown", (e) => {
       if (state.puzzle.isOpen) {
-        // Soru açıkken klavyeden A/B/C/D veya 1/2/3/4 ile de cevap verilebilsin
         const keyMap = { "1": 0, "a": 0, "A": 0, "2": 1, "b": 1, "B": 1, "3": 2, "c": 2, "C": 2, "4": 3, "d": 3, "D": 3 };
         if (e.key in keyMap) {
           handlePuzzleAnswer(keyMap[e.key]);
@@ -1662,7 +1703,22 @@
     }
 
     function step(dt) {
-      // Bonus Puzzle açıkken oyun tamamen durur (scooter ve trafik donar)
+      // Oyundan çıkıldığında / sekme arkaplana alındığında oynama sayacı durur
+      if (!isGameActiveForPlaytime()) {
+        updatePlaytimeUI();
+        updateMotorSound(0, false, false);
+        return;
+      }
+
+      // Açık ve odaklanmış olduğu sürece oynama süresini say ve periyodik kaydet
+      state.totalPlaySeconds += dt;
+      state.playSaveAccumulator += dt;
+      if (state.playSaveAccumulator >= 5) {
+        state.playSaveAccumulator = 0;
+        saveProgress();
+      }
+      updatePlaytimeUI();
+
       if (state.puzzle.isOpen) {
         updateMotorSound(0, false, false);
         if (!state.puzzle.answered) {
@@ -1679,7 +1735,6 @@
         return;
       }
 
-      // 5 dakikalık (300 sn) bonus soru sayacı (iki haritada da çalışır)
       state.puzzle.timeUntilNextSec -= dt;
       updatePuzzleHudTimer();
       if (state.puzzle.timeUntilNextSec <= 0) {
