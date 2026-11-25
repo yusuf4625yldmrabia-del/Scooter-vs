@@ -351,7 +351,7 @@
     <div class="hud-top">
       <div class="title-group">
         <div class="brand">SCOOTER RIDE</div>
-        <div id="moneyPill" class="pill money">₺15.000</div>
+        <div id="moneyPill" class="pill money">₺15.000,00</div>
         <div id="activeScooterPill" class="pill">Araç: -</div>
         <label class="npc-control" title="Trafikteki NPC yoğunluğunu ayarla">
           <span>NPC:</span>
@@ -400,44 +400,44 @@
   </div>
 
   <script>
-    const SAVE_KEY = "scooter_ride_save_v1";
+    const SAVE_KEY = "scooter_ride_save_v2";
 
-    // Performans puanına (güç + hız) göre iyiden kötüye sıralanmış scooter listesi
+    // Görsellerdeki fiyatlarla güncellenmiş scooter listesi
     const RAW_SCOOTERS = [
-      { id: "x-limited", name: "Dualtron X Limited", powerW: 13000, topSpeedKmh: 130, battery: "84V 60A", rangeKm: 170, color: "#8b5cf6" },
-      { id: "sonic-alien", name: "Dualtron Sonic Alien", powerW: 11800, topSpeedKmh: 120, battery: "72V 40A", rangeKm: 120, color: "#f97316" },
-      { id: "thunder-3", name: "Dualtron Thunder 3", powerW: 10800, topSpeedKmh: 110, battery: "72V 40A", rangeKm: 120, color: "#6366f1" },
-      { id: "tiger-supra", name: "Hiley Tiger Supra", powerW: 5200, topSpeedKmh: 100, battery: "60V/31.5Ah", rangeKm: 120, color: "#eab308" },
-      { id: "achilleus", name: "Dualtron Achilleus", powerW: 4650, topSpeedKmh: 80, battery: "60V 35A", rangeKm: 100, color: "#10b981" },
-      { id: "victor-limited", name: "Dualtron Victor Limited", powerW: 4300, topSpeedKmh: 80, battery: "60V 35A", rangeKm: 100, color: "#0ea5e9" },
-      { id: "tiger-10-gtr", name: "Hiley Tiger 10 GTR", powerW: 4000, topSpeedKmh: 90, battery: "60V/23.4Ah", rangeKm: 90, color: "#f97316" },
-      { id: "rx07", name: "Onvo RX-07 Elektrikli", powerW: 4000, topSpeedKmh: 80, battery: "60V 25A", rangeKm: 70, color: "#ef4444" },
-      { id: "city-new", name: "Dualtron City New", powerW: 4000, topSpeedKmh: 70, battery: "60V 25A", rangeKm: 70, color: "#f43f5e" },
-      { id: "rx10", name: "ONVO RX-10 3000W", powerW: 3000, topSpeedKmh: 80, battery: "60.8V 21.8A", rangeKm: 80, color: "#06b6d4" },
-      { id: "rovoron-r7", name: "Rovoron R7 Elektrikli", powerW: 3000, topSpeedKmh: 80, battery: "60V 42.4A", rangeKm: 120, color: "#14b8a6" },
-      { id: "tiger-10-v4", name: "Hiley Tiger 10 V4", powerW: 3000, topSpeedKmh: 70, battery: "52V 21A", rangeKm: 80, color: "#f59e0b" },
-      { id: "rx09-3000", name: "ONVO RX-09 3000W", powerW: 3000, topSpeedKmh: 65, battery: "60V 20A", rangeKm: 8, color: "#2563eb" },
-      { id: "togo-limited", name: "Dualtron Togo Limited", powerW: 2900, topSpeedKmh: 60, battery: "60V 15A", rangeKm: 60, color: "#14b8a6" },
-      { id: "aminia-long", name: "Dualtron Aminia Long", powerW: 2900, topSpeedKmh: 60, battery: "52V 21A", rangeKm: 60, color: "#22c55e" },
-      { id: "rx05", name: "Onvo RX-05 Elektrikli", powerW: 2400, topSpeedKmh: 75, battery: "60V 25A", rangeKm: 60, color: "#22c55e" },
-      { id: "mx03", name: "ONVO Mx-03 2400W", powerW: 2400, topSpeedKmh: 65, battery: "52V 20A", rangeKm: 70, color: "#06b6d4" },
-      { id: "rx04", name: "Onvo RX-04 Elektrikli", powerW: 2400, topSpeedKmh: 65, battery: "52V 21A", rangeKm: 60, color: "#ef4444" },
-      { id: "tiger-10-v3", name: "Hiley Tiger 10 V3", powerW: 2000, topSpeedKmh: 65, battery: "52V/20.8Ah", rangeKm: 75, color: "#eab308" },
-      { id: "ov-013-x-plus", name: "ONVO OV-013 X-Plus", powerW: 2000, topSpeedKmh: 65, battery: "48V 18A", rangeKm: 60, color: "#eab308" },
-      { id: "segway-max-g3", name: "Segway Ninebot Max G3 (Limit Açık)", powerW: 2000, topSpeedKmh: 45, battery: "48V 12.5Ah", rangeKm: 80, color: "#dc2626" },
-      { id: "tiger-max-gtr", name: "Hiley Tiger Max Gtr", powerW: 1600, topSpeedKmh: 55, battery: "48V/18.2Ah", rangeKm: 60, color: "#a855f7" },
-      { id: "mx02", name: "ONVO Mx-02 1600W", powerW: 1600, topSpeedKmh: 55, battery: "52V 15A", rangeKm: 60, color: "#f59e0b" },
-      { id: "ov-012-x-plus", name: "Onvo OV-012 X Plus", powerW: 1600, topSpeedKmh: 50, battery: "48V 15A", rangeKm: 50, color: "#a855f7" },
-      { id: "segway-zt3-pro", name: "Segway-Ninebot ZT3 Pro (Limit Açık)", powerW: 1600, topSpeedKmh: 40, battery: "46V 12.8Ah", rangeKm: 70, color: "#ef4444" },
-      { id: "togo-plus", name: "Dualtron Togo Plus", powerW: 1350, topSpeedKmh: 40, battery: "48V 15A", rangeKm: 40, color: "#84cc16" },
-      { id: "segway-f3-pro", name: "Segway Ninebot F3 Pro (Limit Açık)", powerW: 1200, topSpeedKmh: 35, battery: "46V 10.2Ah", rangeKm: 70, color: "#e11d48" },
-      { id: "mx01", name: "ONVO Mx-01 800W", powerW: 800, topSpeedKmh: 50, battery: "48V 13A", rangeKm: 55, color: "#ec4899" },
-      { id: "ov-12", name: "Onvo OV-12 Elektrikli", powerW: 800, topSpeedKmh: 50, battery: "48V 10A", rangeKm: 40, color: "#10b981" },
-      { id: "segway-e3-pro", name: "Segway-Ninebot E3 Pro (Limit Açık)", powerW: 800, topSpeedKmh: 32, battery: "36V 10.2Ah", rangeKm: 55, color: "#64748b" },
-      { id: "ov-008", name: "ONVO OV-008 500W", powerW: 500, topSpeedKmh: 35, battery: "Belirtilmemiş", rangeKm: 30, color: "#38bdf8" },
-      { id: "ov-007-x", name: "Onvo Ov-007 X Elektrikli", powerW: 500, topSpeedKmh: 35, battery: "Belirtilmemiş", rangeKm: 30, color: "#6366f1" },
-      { id: "kx-02", name: "Onvo KX-02 Elektrikli", powerW: 200, topSpeedKmh: 16, battery: "21.6V 5.2A", rangeKm: 15, color: "#e11d48" },
-      { id: "kx-01k", name: "ONVO KX-01K 150W", powerW: 150, topSpeedKmh: 15, battery: "21.6V 2.4A", rangeKm: 8, color: "#f43f5e" }
+      { id: "x-limited", name: "Dualtron X Limited", price: 339900, powerW: 13000, topSpeedKmh: 130, battery: "84V 60A", rangeKm: 170, color: "#8b5cf6" },
+      { id: "sonic-alien", name: "Dualtron Sonic Alien", price: 239900, powerW: 11800, topSpeedKmh: 120, battery: "72V 40A", rangeKm: 120, color: "#f97316" },
+      { id: "thunder-3", name: "Dualtron Thunder 3", price: 231900, powerW: 10800, topSpeedKmh: 110, battery: "72V 40A", rangeKm: 120, color: "#6366f1" },
+      { id: "tiger-supra", name: "Hiley Tiger Supra", price: 164900, powerW: 5200, topSpeedKmh: 100, battery: "60V/31.5Ah", rangeKm: 120, color: "#eab308" },
+      { id: "achilleus", name: "Dualtron Achilleus", price: 164700, powerW: 4650, topSpeedKmh: 80, battery: "60V 35A", rangeKm: 100, color: "#10b981" },
+      { id: "victor-limited", name: "Dualtron Victor Limited", price: 139900, powerW: 4300, topSpeedKmh: 80, battery: "60V 35A", rangeKm: 100, color: "#0ea5e9" },
+      { id: "tiger-10-gtr", name: "Hiley Tiger 10 GTR", price: 95000, powerW: 4000, topSpeedKmh: 90, battery: "60V/23.4Ah", rangeKm: 90, color: "#f97316" },
+      { id: "rx07", name: "Onvo RX-07 Elektrikli", price: 53000, powerW: 4000, topSpeedKmh: 80, battery: "60V 25A", rangeKm: 70, color: "#ef4444" },
+      { id: "city-new", name: "Dualtron City New", price: 134900, powerW: 4000, topSpeedKmh: 70, battery: "60V 25A", rangeKm: 70, color: "#f43f5e" },
+      { id: "rx10", name: "ONVO RX-10 3000W", price: 73990, powerW: 3000, topSpeedKmh: 80, battery: "60.8V 21.8A", rangeKm: 80, color: "#06b6d4" },
+      { id: "rovoron-r7", name: "Rovoron R7 Elektrikli", price: 98900, powerW: 3000, topSpeedKmh: 80, battery: "60V 42.4A", rangeKm: 120, color: "#14b8a6" },
+      { id: "tiger-10-v4", name: "Hiley Tiger 10 V4", price: 104999, powerW: 3000, topSpeedKmh: 70, battery: "52V 21A", rangeKm: 80, color: "#f59e0b" },
+      { id: "rx09-3000", name: "ONVO RX-09 3000W", price: 64999, powerW: 3000, topSpeedKmh: 65, battery: "60V 20A", rangeKm: 8, color: "#2563eb" },
+      { id: "togo-limited", name: "Dualtron Togo Limited", price: 69900, powerW: 2900, topSpeedKmh: 60, battery: "60V 15A", rangeKm: 60, color: "#14b8a6" },
+      { id: "aminia-long", name: "Dualtron Aminia Long", price: 72900, powerW: 2900, topSpeedKmh: 60, battery: "52V 21A", rangeKm: 60, color: "#22c55e" },
+      { id: "rx05", name: "Onvo RX-05 Elektrikli", price: 47000, powerW: 2400, topSpeedKmh: 75, battery: "60V 25A", rangeKm: 60, color: "#22c55e" },
+      { id: "mx03", name: "ONVO Mx-03 2400W", price: 53999, powerW: 2400, topSpeedKmh: 65, battery: "52V 20A", rangeKm: 70, color: "#06b6d4" },
+      { id: "rx04", name: "Onvo RX-04 Elektrikli", price: 62999, powerW: 2400, topSpeedKmh: 65, battery: "52V 21A", rangeKm: 60, color: "#ef4444" },
+      { id: "tiger-10-v3", name: "Hiley Tiger 10 V3", price: 71999, powerW: 2000, topSpeedKmh: 65, battery: "52V/20.8Ah", rangeKm: 75, color: "#eab308" },
+      { id: "ov-013-x-plus", name: "ONVO OV-013 X-Plus", price: 41990, powerW: 2000, topSpeedKmh: 65, battery: "48V 18A", rangeKm: 60, color: "#eab308" },
+      { id: "segway-max-g3", name: "Segway Ninebot Max G3", price: 64999, powerW: 2000, topSpeedKmh: 45, battery: "48V 12.5Ah", rangeKm: 80, color: "#dc2626" },
+      { id: "tiger-max-gtr", name: "Hiley Tiger Max Gtr", price: 58000, powerW: 1600, topSpeedKmh: 55, battery: "48V/18.2Ah", rangeKm: 60, color: "#a855f7" },
+      { id: "mx02", name: "ONVO Mx-02 1600W", price: 44999, powerW: 1600, topSpeedKmh: 55, battery: "52V 15A", rangeKm: 60, color: "#f59e0b" },
+      { id: "ov-012-x-plus", name: "Onvo OV-012 X Plus", price: 36999, powerW: 1600, topSpeedKmh: 50, battery: "48V 15A", rangeKm: 50, color: "#a855f7" },
+      { id: "segway-zt3-pro", name: "Segway-Ninebot ZT3 Pro", price: 51269, powerW: 1600, topSpeedKmh: 40, battery: "46V 12.8Ah", rangeKm: 70, color: "#ef4444" },
+      { id: "togo-plus", name: "Dualtron Togo Plus", price: 48900, powerW: 1350, topSpeedKmh: 40, battery: "48V 15A", rangeKm: 40, color: "#84cc16" },
+      { id: "segway-f3-pro", name: "Segway Ninebot F3 Pro", price: 39999, powerW: 1200, topSpeedKmh: 35, battery: "46V 10.2Ah", rangeKm: 70, color: "#e11d48" },
+      { id: "mx01", name: "ONVO Mx-01 800W", price: 28999, powerW: 800, topSpeedKmh: 50, battery: "48V 13A", rangeKm: 55, color: "#ec4899" },
+      { id: "ov-12", name: "Onvo OV-12 Elektrikli", price: 28500, powerW: 800, topSpeedKmh: 50, battery: "48V 10A", rangeKm: 40, color: "#10b981" },
+      { id: "segway-e3-pro", name: "Segway-Ninebot E3 Pro", price: 28999, powerW: 800, topSpeedKmh: 32, battery: "36V 10.2Ah", rangeKm: 55, color: "#64748b" },
+      { id: "ov-008", name: "ONVO OV-008 500W", price: 23999, powerW: 500, topSpeedKmh: 35, battery: "Belirtilmemiş", rangeKm: 30, color: "#38bdf8" },
+      { id: "ov-007-x", name: "Onvo Ov-007 X Elektrikli", price: 22500, powerW: 500, topSpeedKmh: 35, battery: "Belirtilmemiş", rangeKm: 30, color: "#6366f1" },
+      { id: "kx-02", name: "Onvo KX-02 Elektrikli", price: 14900, powerW: 200, topSpeedKmh: 16, battery: "21.6V 5.2A", rangeKm: 15, color: "#e11d48" },
+      { id: "kx-01k", name: "ONVO KX-01K 150W", price: 9999, powerW: 150, topSpeedKmh: 15, battery: "21.6V 2.4A", rangeKm: 8, color: "#f43f5e" }
     ];
 
     const SCOOTERS = RAW_SCOOTERS
@@ -446,16 +446,10 @@
         score: s.powerW * 1.4 + s.topSpeedKmh * 180
       }))
       .sort((a, b) => b.score - a.score)
-      .map((s, idx, arr) => {
-        const ratio = 1 - idx / Math.max(1, arr.length - 1);
-        const rawPrice = 6000 + Math.pow(ratio, 1.35) * 179000;
-        const price = Math.round(rawPrice / 500) * 500;
-        return {
-          ...s,
-          rank: idx + 1,
-          price
-        };
-      });
+      .map((s, idx) => ({
+        ...s,
+        rank: idx + 1
+      }));
 
     const starterScooter = SCOOTERS[SCOOTERS.length - 1];
     const validScooterIds = new Set(SCOOTERS.map(s => s.id));
@@ -536,7 +530,6 @@
       } catch (_) {}
     }
 
-    // Web Audio API Ses Motoru
     const audioCtxHolder = {
       ctx: null,
       motorOsc: null,
@@ -657,7 +650,10 @@
     }
 
     function formatMoney(val) {
-      return "₺" + Number(val).toLocaleString("tr-TR");
+      return "₺" + Number(val).toLocaleString("tr-TR", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
     }
 
     function showToast(msg) {
@@ -803,7 +799,6 @@
       renderGarage();
     };
 
-    // Harita seçimi
     const freeMapBtn = document.getElementById("freeMapBtn");
     const missionMapBtn = document.getElementById("missionMapBtn");
 
@@ -824,7 +819,6 @@
       renderHUD();
     });
 
-    // Ses aç/kapat
     const soundBtn = document.getElementById("soundToggleBtn");
     function syncSoundBtnUI() {
       soundBtn.textContent = state.soundEnabled ? "Ses: Açık" : "Ses: Kapalı";
@@ -836,7 +830,6 @@
       if (state.soundEnabled) ensureAudio();
     });
 
-    // Şerit değiştirme
     function changeLane(targetLane) {
       ensureAudio();
       const clamped = Math.max(0, Math.min(1, targetLane));
@@ -848,7 +841,6 @@
     document.getElementById("leftLaneBtn").addEventListener("click", () => changeLane(0));
     document.getElementById("rightLaneBtn").addEventListener("click", () => changeLane(1));
 
-    // Gaz / Fren / Korna butonları
     const gasBtn = document.getElementById("gasBtn");
     const brakeBtn = document.getElementById("brakeBtn");
     const hornBtn = document.getElementById("hornBtn");
@@ -879,7 +871,6 @@
       setTimeout(() => hornBtn.classList.remove("pressed"), 180);
     });
 
-    // Klavye kontrolleri
     window.addEventListener("keydown", (e) => {
       ensureAudio();
       if (e.key === "w" || e.key === "W" || e.key === "ArrowUp") {
@@ -910,7 +901,6 @@
       }
     });
 
-    // NPC Araç Üretimi
     const NPC_COLORS = ["#f97316", "#06b6d4", "#eab308", "#ec4899", "#a855f7", "#10b981"];
 
     function spawnNpc() {
@@ -935,7 +925,6 @@
       });
     }
 
-    // Canvas çizim ve fizik
     const canvas = document.getElementById("roadCanvas");
     const ctx = canvas.getContext("2d");
 
