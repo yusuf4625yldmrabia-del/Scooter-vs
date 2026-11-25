@@ -72,6 +72,21 @@
       border-color: rgba(74, 222, 128, 0.35);
     }
 
+    .pill.battery-ok {
+      color: #38bdf8;
+      border-color: rgba(56, 189, 248, 0.35);
+    }
+
+    .pill.battery-low {
+      color: #fbbf24;
+      border-color: rgba(251, 191, 36, 0.4);
+    }
+
+    .pill.battery-empty {
+      color: #f87171;
+      border-color: rgba(248, 113, 113, 0.45);
+    }
+
     .npc-control {
       background: #1e293b;
       border: 1px solid rgba(255, 255, 255, 0.1);
@@ -352,6 +367,7 @@
       <div class="title-group">
         <div class="brand">SCOOTER RIDE</div>
         <div id="moneyPill" class="pill money">₺15.000,00</div>
+        <div id="batteryPill" class="pill battery-ok">Şarj: %100</div>
         <div id="activeScooterPill" class="pill">Araç: -</div>
         <label class="npc-control" title="Trafikteki NPC yoğunluğunu ayarla">
           <span>NPC:</span>
@@ -371,7 +387,7 @@
 
     <div class="mission-banner">
       <div id="missionText" class="mission-text">
-        <strong>Serbest Harita:</strong> 2 şeritli yolda serbest sürüş yap. Şerit: A/D veya ←/→ • Gaz: W/↑ • Fren: S/↓ • Korna: H
+        <strong>Serbest Harita:</strong> Her 5 km'de şarj checkpoint'i var! Şerit: A/D veya ←/→ • Gaz: W/↑ • Fren: S/↓ • Korna: H
       </div>
       <div class="banner-actions">
         <button id="soundToggleBtn" class="sound-btn" type="button">Ses: Açık</button>
@@ -393,7 +409,7 @@
     <div class="garage-section">
       <div class="garage-head">
         <div class="garage-title">Scooter Mağazası &amp; Garaj (İyiden Kötüye Sıralı)</div>
-        <div class="garage-sub">Kazandığın scooterlar otomatik kaydedilir • Başlangıçta 1. model açık</div>
+        <div class="garage-sub">Kazandığın scooterlar ve şarj durumları kaydedilir • Her 5 km'de şarj noktası</div>
       </div>
       <div id="scooterList" class="scooter-list"></div>
     </div>
@@ -401,8 +417,8 @@
 
   <script>
     const SAVE_KEY = "scooter_ride_save_v2";
+    const CHARGE_INTERVAL_M = 5000; // Her 5 km'de (5000m) bir şarj checkpoint'i
 
-    // Görsellerdeki fiyatlarla güncellenmiş scooter listesi
     const RAW_SCOOTERS = [
       { id: "x-limited", name: "Dualtron X Limited", price: 339900, powerW: 13000, topSpeedKmh: 130, battery: "84V 60A", rangeKm: 170, color: "#8b5cf6" },
       { id: "sonic-alien", name: "Dualtron Sonic Alien", price: 239900, powerW: 11800, topSpeedKmh: 120, battery: "72V 40A", rangeKm: 120, color: "#f97316" },
@@ -472,10 +488,22 @@
           ? parsed.selectedId
           : (savedOwned[0] || starterScooter.id);
 
+        const rawBatteries = parsed.batteryByScooter && typeof parsed.batteryByScooter === "object"
+          ? parsed.batteryByScooter
+          : {};
+        const batteryByScooter = {};
+        SCOOTERS.forEach(s => {
+          const val = rawBatteries[s.id];
+          batteryByScooter[s.id] = typeof val === "number" && Number.isFinite(val)
+            ? Math.max(0, Math.min(100, val))
+            : 100;
+        });
+
         return {
           money: typeof parsed.money === "number" && Number.isFinite(parsed.money) ? Math.max(0, parsed.money) : 15000,
           ownedIds: new Set(savedOwned),
           selectedId: savedSelected,
+          batteryByScooter,
           npcDensity: typeof parsed.npcDensity === "number" ? Math.max(0, Math.min(100, parsed.npcDensity)) : 50,
           soundEnabled: typeof parsed.soundEnabled === "boolean" ? parsed.soundEnabled : true,
           completedCount: typeof parsed.completedCount === "number" ? Math.max(0, parsed.completedCount) : 0
@@ -486,11 +514,14 @@
     }
 
     const saved = loadSavedState();
+    const defaultBatteries = {};
+    SCOOTERS.forEach(s => { defaultBatteries[s.id] = 100; });
 
     const state = {
       money: saved ? saved.money : 15000,
       ownedIds: saved ? saved.ownedIds : new Set([starterScooter.id]),
       selectedId: saved ? saved.selectedId : starterScooter.id,
+      batteryByScooter: saved ? saved.batteryByScooter : defaultBatteries,
       mapMode: "free",
       soundEnabled: saved ? saved.soundEnabled : true,
       npcDensity: saved ? saved.npcDensity : 50,
@@ -498,23 +529,42 @@
       laneVisualX: 1,
       speedKmh: 0,
       distanceM: 0,
+      nextChargeCheckpointM: CHARGE_INTERVAL_M,
       roadOffset: 0,
       controls: {
         gas: false,
         brake: false
       },
       npcs: [],
+      passedNpcsInMission: 0,
       mission: {
         active: true,
         type: "checkpoint",
-        targetM: 220,
-        reward: 3500,
+        targetM: 320,
+        minSpeedKmh: 0,
+        targetOvertakes: 0,
+        reward: 650,
         completedCount: saved ? saved.completedCount : 0,
-        statusText: "Kontrol noktasına ulaş (220m)"
+        statusText: "Kontrol noktasına ulaş (320m)"
       },
       flashMessage: "",
       flashTimer: 0
     };
+
+    function getCurrentScooter() {
+      return SCOOTERS.find(s => s.id === state.selectedId) || SCOOTERS[0];
+    }
+
+    function getCurrentBattery() {
+      const sc = getCurrentScooter();
+      const val = state.batteryByScooter[sc.id];
+      return typeof val === "number" ? val : 100;
+    }
+
+    function setCurrentBattery(val) {
+      const sc = getCurrentScooter();
+      state.batteryByScooter[sc.id] = Math.max(0, Math.min(100, val));
+    }
 
     function saveProgress() {
       try {
@@ -522,6 +572,7 @@
           money: state.money,
           ownedIds: Array.from(state.ownedIds),
           selectedId: state.selectedId,
+          batteryByScooter: state.batteryByScooter,
           npcDensity: state.npcDensity,
           soundEnabled: state.soundEnabled,
           completedCount: state.mission.completedCount
@@ -568,6 +619,29 @@
       if (audioCtxHolder.ctx && audioCtxHolder.ctx.state === "suspended") {
         audioCtxHolder.ctx.resume().catch(() => {});
       }
+    }
+
+    function playChargeSound() {
+      if (!state.soundEnabled) return;
+      ensureAudio();
+      if (!audioCtxHolder.ctx) return;
+      const ctx = audioCtxHolder.ctx;
+      const now = ctx.currentTime;
+
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(523.25, now);
+      osc.frequency.setValueAtTime(659.25, now + 0.08);
+      osc.frequency.setValueAtTime(783.99, now + 0.16);
+
+      gain.gain.setValueAtTime(0.055, now);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.32);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.34);
     }
 
     function updateMotorSound(speedRatio, isGas, isBrake) {
@@ -645,10 +719,6 @@
       });
     }
 
-    function getCurrentScooter() {
-      return SCOOTERS.find(s => s.id === state.selectedId) || SCOOTERS[0];
-    }
-
     function formatMoney(val) {
       return "₺" + Number(val).toLocaleString("tr-TR", {
         minimumFractionDigits: 2,
@@ -658,7 +728,7 @@
 
     function showToast(msg) {
       state.flashMessage = msg;
-      state.flashTimer = 2.2;
+      state.flashTimer = 2.4;
     }
 
     function getNpcDensityText(val) {
@@ -693,28 +763,61 @@
 
     function assignNextMission() {
       const mIndex = state.mission.completedCount;
-      const isSpeedMission = mIndex % 2 === 1;
-      if (isSpeedMission) {
-        const minSpeed = Math.min(85, Math.max(22, Math.round(getCurrentScooter().topSpeedKmh * 0.65)));
-        const reward = 4200 + mIndex * 1000;
-        state.mission = {
-          active: true,
-          type: "speed_pass",
-          targetM: state.distanceM + 260,
-          minSpeedKmh: minSpeed,
-          reward,
-          completedCount: mIndex,
-          statusText: `260m boyunca en az ${minSpeed} km/h hızla sür`
-        };
-      } else {
-        const reward = 3500 + mIndex * 900;
+      const sc = getCurrentScooter();
+      state.passedNpcsInMission = 0;
+
+      // Dengeli ödüller: 2-3 turda 30.000 TL yerine makul kazanç
+      const baseReward = 650 + Math.min(1800, mIndex * 110);
+      const eventPattern = mIndex % 4;
+
+      if (eventPattern === 0) {
+        const dist = 320 + Math.min(480, mIndex * 25);
         state.mission = {
           active: true,
           type: "checkpoint",
-          targetM: state.distanceM + 220,
-          reward,
+          targetM: state.distanceM + dist,
+          minSpeedKmh: 0,
+          targetOvertakes: 0,
+          reward: baseReward,
           completedCount: mIndex,
-          statusText: "Kontrol noktasına ulaş (220m)"
+          statusText: `Kontrol noktasına ulaş (${dist}m)`
+        };
+      } else if (eventPattern === 1) {
+        const dist = 340 + Math.min(460, mIndex * 25);
+        const minSpeed = Math.min(85, Math.max(18, Math.round(sc.topSpeedKmh * 0.6)));
+        state.mission = {
+          active: true,
+          type: "speed_pass",
+          targetM: state.distanceM + dist,
+          minSpeedKmh: minSpeed,
+          targetOvertakes: 0,
+          reward: Math.round(baseReward * 1.2),
+          completedCount: mIndex,
+          statusText: `${dist}m boyunca en az ${minSpeed} km/h hızla git`
+        };
+      } else if (eventPattern === 2) {
+        const overtakes = 4 + Math.min(10, Math.floor(mIndex / 2));
+        state.mission = {
+          active: true,
+          type: "overtake",
+          targetM: state.distanceM + 900,
+          minSpeedKmh: 0,
+          targetOvertakes: overtakes,
+          reward: Math.round(baseReward * 1.25),
+          completedCount: mIndex,
+          statusText: `Trafikte ${overtakes} NPC araç geç`
+        };
+      } else {
+        const dist = 420 + Math.min(580, mIndex * 30);
+        state.mission = {
+          active: true,
+          type: "charge_run",
+          targetM: state.distanceM + dist,
+          minSpeedKmh: 0,
+          targetOvertakes: 0,
+          reward: Math.round(baseReward * 1.3),
+          completedCount: mIndex,
+          statusText: `Şarjını bitirmeden ${dist}m hedefe ulaş`
         };
       }
       updateMissionUI();
@@ -722,11 +825,32 @@
 
     function updateMissionUI() {
       const el = document.getElementById("missionText");
+      const nextChargeRem = Math.max(0, Math.round(state.nextChargeCheckpointM - state.distanceM));
       if (state.mapMode === "free") {
-        el.innerHTML = `<strong>Serbest Harita:</strong> 2 şeritli yolda NPC'ler arasında serbest sürüş. Şerit: A/D veya ←/→ • Gaz: W/↑ • Fren: S/↓ • Korna: H`;
+        el.innerHTML = `<strong>Serbest Harita:</strong> Sonraki şarj noktası <strong>${nextChargeRem}m</strong> sonra • Şerit: A/D veya ←/→ • Gaz: W/↑ • Fren: S/↓ • Korna: H`;
       } else {
-        const remaining = Math.max(0, Math.round(state.mission.targetM - state.distanceM));
-        el.innerHTML = `<strong>Görev Haritası (${state.mission.statusText}):</strong> Kalan mesafe <strong>${remaining}m</strong> • Ödül: <strong>${formatMoney(state.mission.reward)}</strong> • Tamamlanan: <strong>${state.mission.completedCount}</strong>`;
+        let progressText = "";
+        if (state.mission.type === "overtake") {
+          progressText = `Geçilen NPC: <strong>${state.passedNpcsInMission}/${state.mission.targetOvertakes}</strong>`;
+        } else {
+          const remaining = Math.max(0, Math.round(state.mission.targetM - state.distanceM));
+          progressText = `Kalan mesafe: <strong>${remaining}m</strong>`;
+        }
+        el.innerHTML = `<strong>Görev (${state.mission.statusText}):</strong> ${progressText} • Şarj noktası: <strong>${nextChargeRem}m</strong> • Ödül: <strong>${formatMoney(state.mission.reward)}</strong> • Tamamlanan: <strong>${state.mission.completedCount}</strong>`;
+      }
+    }
+
+    function updateBatteryUI() {
+      const bat = Math.round(getCurrentBattery());
+      const pill = document.getElementById("batteryPill");
+      pill.textContent = `Şarj: %${bat}`;
+      pill.classList.remove("battery-ok", "battery-low", "battery-empty");
+      if (bat <= 0) {
+        pill.classList.add("battery-empty");
+      } else if (bat <= 20) {
+        pill.classList.add("battery-low");
+      } else {
+        pill.classList.add("battery-ok");
       }
     }
 
@@ -734,6 +858,7 @@
       const sc = getCurrentScooter();
       document.getElementById("moneyPill").textContent = formatMoney(state.money);
       document.getElementById("activeScooterPill").textContent = `Araç: #${sc.rank} ${sc.name} (${sc.powerW}W)`;
+      updateBatteryUI();
       updateMissionUI();
     }
 
@@ -743,6 +868,7 @@
         const owned = state.ownedIds.has(sc.id);
         const isSelected = state.selectedId === sc.id;
         const canAfford = state.money >= sc.price;
+        const batPct = Math.round(typeof state.batteryByScooter[sc.id] === "number" ? state.batteryByScooter[sc.id] : 100);
 
         let btnHtml = "";
         if (isSelected) {
@@ -758,7 +884,7 @@
             <div>
               <div class="scooter-rank">Sıra #${sc.rank} • ${sc.powerW}W • ${sc.topSpeedKmh} km/h</div>
               <div class="scooter-name">${sc.name}</div>
-              <div class="scooter-meta">Pil: ${sc.battery} • Menzil: ${sc.rangeKm} km</div>
+              <div class="scooter-meta">Pil: ${sc.battery} • Menzil: ${sc.rangeKm} km • Şarj: %${batPct}</div>
             </div>
             <div class="card-footer">
               <div class="price-tag">${owned ? "Sahip Olunan" : formatMoney(sc.price)}</div>
@@ -780,6 +906,9 @@
       state.money -= sc.price;
       state.ownedIds.add(id);
       state.selectedId = id;
+      if (typeof state.batteryByScooter[id] !== "number") {
+        state.batteryByScooter[id] = 100;
+      }
       state.speedKmh = Math.min(state.speedKmh, sc.topSpeedKmh);
       saveProgress();
       showToast(`${sc.name} satın alındı ve kaydedildi!`);
@@ -794,7 +923,7 @@
       state.selectedId = id;
       state.speedKmh = Math.min(state.speedKmh, sc.topSpeedKmh);
       saveProgress();
-      showToast(`${sc.name} seçildi.`);
+      showToast(`${sc.name} seçildi (Şarj: %${Math.round(getCurrentBattery())}).`);
       renderHUD();
       renderGarage();
     };
@@ -921,7 +1050,8 @@
         speed: maxSpeed * 0.75,
         maxSpeed,
         color: NPC_COLORS[Math.floor(Math.random() * NPC_COLORS.length)],
-        honked: false
+        honked: false,
+        passed: false
       });
     }
 
@@ -938,12 +1068,21 @@
 
     function step(dt) {
       const sc = getCurrentScooter();
-      const accelRate = 18 + (sc.powerW / 13000) * 44;
+      const currentBat = getCurrentBattery();
+
+      // Şarj durumuna göre hız ve ivmelenme çarpanı
+      const batteryFactor = currentBat > 0 ? (currentBat <= 15 ? 0.65 : 1) : 0.25;
+      const effectiveTopSpeed = sc.topSpeedKmh * batteryFactor;
+      const accelRate = (18 + (sc.powerW / 13000) * 44) * batteryFactor;
       const brakeRate = 58;
       const coastDrag = 10;
 
+      if (state.speedKmh > effectiveTopSpeed) {
+        state.speedKmh = Math.max(effectiveTopSpeed, state.speedKmh - brakeRate * 0.6 * dt);
+      }
+
       if (state.controls.gas && !state.controls.brake) {
-        state.speedKmh = Math.min(sc.topSpeedKmh, state.speedKmh + accelRate * dt);
+        state.speedKmh = Math.min(effectiveTopSpeed, state.speedKmh + accelRate * dt);
       } else if (state.controls.brake) {
         state.speedKmh = Math.max(0, state.speedKmh - brakeRate * dt);
       } else {
@@ -954,6 +1093,28 @@
       const deltaM = speedMps * dt;
       state.distanceM += deltaM;
       state.roadOffset = (state.roadOffset + deltaM * 18) % 80;
+
+      // Menzile (rangeKm) göre şarj tüketimi
+      if (deltaM > 0 && sc.rangeKm > 0) {
+        const rangeMeters = sc.rangeKm * 1000;
+        const drainPct = (deltaM / rangeMeters) * 100;
+        const nextBat = Math.max(0, currentBat - drainPct);
+        setCurrentBattery(nextBat);
+        if (currentBat > 0 && nextBat === 0) {
+          showToast("Şarj bitti! 5 km şarj noktasına git veya yavaşla.");
+        }
+      }
+
+      // Her 5 km'de (5000m) bir şarj checkpoint'ini toplama
+      while (state.distanceM >= state.nextChargeCheckpointM) {
+        setCurrentBattery(100);
+        const kmMark = Math.round(state.nextChargeCheckpointM / 1000);
+        state.nextChargeCheckpointM += CHARGE_INTERVAL_M;
+        playChargeSound();
+        saveProgress();
+        showToast(`${kmMark}. km Şarj Checkpoint'i alındı! Şarj %100 doldu.`);
+        renderGarage();
+      }
 
       state.laneVisualX += (state.lane - state.laneVisualX) * Math.min(1, dt * 13);
 
@@ -970,6 +1131,11 @@
         const relSpeedMps = ((state.speedKmh - npc.speed) * 1000) / 3600;
         npc.y += relSpeedMps * dt * 16 + 35 * dt;
 
+        if (!npc.passed && npc.y > playerY + 26) {
+          npc.passed = true;
+          state.passedNpcsInMission += 1;
+        }
+
         if (Math.abs(npc.lane - state.laneVisualX) < 0.35 && Math.abs(npc.y - playerY) < 34) {
           if (state.speedKmh > npc.speed + 8) {
             state.speedKmh = Math.max(0, npc.speed * 0.75);
@@ -981,12 +1147,24 @@
       state.npcs = state.npcs.filter(n => n.y > -120 && n.y < canvas.getBoundingClientRect().height + 120);
 
       if (state.mapMode === "mission" && state.mission.active) {
-        if (state.distanceM >= state.mission.targetM) {
+        let completed = false;
+        if (state.mission.type === "overtake") {
+          completed = state.passedNpcsInMission >= state.mission.targetOvertakes;
+        } else if (state.distanceM >= state.mission.targetM) {
+          if (state.mission.type === "speed_pass" && state.speedKmh < state.mission.minSpeedKmh) {
+            showToast(`Hedefe ulaştın ama hızın ${state.mission.minSpeedKmh} km/h altında! Mesafe uzatıldı.`);
+            state.mission.targetM += 140;
+          } else {
+            completed = true;
+          }
+        }
+
+        if (completed) {
           const earned = state.mission.reward;
           state.money += earned;
           state.mission.completedCount += 1;
           saveProgress();
-          showToast(`Görev tamamlandı! +${formatMoney(earned)} kazandın!`);
+          showToast(`Görev tamamlandı! +${formatMoney(earned)} kazandın.`);
           assignNextMission();
           renderGarage();
         }
@@ -999,6 +1177,7 @@
       }
 
       document.getElementById("moneyPill").textContent = formatMoney(state.money);
+      updateBatteryUI();
       updateMotorSound(state.speedKmh / Math.max(1, sc.topSpeedKmh), state.controls.gas, state.controls.brake);
     }
 
@@ -1007,6 +1186,7 @@
       const w = rect.width;
       const h = rect.height;
       const sc = getCurrentScooter();
+      const playerY = h * 0.74;
 
       ctx.fillStyle = state.mapMode === "mission" ? "#101c2e" : "#0f172a";
       ctx.fillRect(0, 0, w, h);
@@ -1038,9 +1218,29 @@
       ctx.stroke();
       ctx.setLineDash([]);
 
-      if (state.mapMode === "mission") {
+      // 5 km'de bir çıkan Şarj Checkpoint çizgisi/kapısı
+      const chargeRemM = Math.max(0, state.nextChargeCheckpointM - state.distanceM);
+      const chargeY = playerY - chargeRemM * 1.1;
+      if (chargeY > -35 && chargeY < h + 35) {
+        ctx.fillStyle = "rgba(56, 189, 248, 0.24)";
+        ctx.fillRect(roadLeft + 6, chargeY - 11, roadW - 12, 22);
+        ctx.strokeStyle = "#38bdf8";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(roadLeft + 6, chargeY);
+        ctx.lineTo(roadRight - 6, chargeY);
+        ctx.stroke();
+
+        ctx.fillStyle = "#e0f2fe";
+        ctx.font = "bold 11px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(`⚡ ŞARJ (${Math.round(state.nextChargeCheckpointM / 1000)} km)`, w / 2, chargeY - 14);
+        ctx.textAlign = "left";
+      }
+
+      if (state.mapMode === "mission" && state.mission.type !== "overtake") {
         const remM = Math.max(0, state.mission.targetM - state.distanceM);
-        const gateY = h * 0.74 - remM * 1.1;
+        const gateY = playerY - remM * 1.1;
         if (gateY > -30 && gateY < h + 30) {
           ctx.fillStyle = "rgba(74, 222, 128, 0.25)";
           ctx.fillRect(roadLeft + 6, gateY - 8, roadW - 12, 16);
@@ -1076,10 +1276,9 @@
       });
 
       const px = roadLeft + laneW * (state.laneVisualX + 0.5);
-      const py = h * 0.74;
 
       ctx.save();
-      ctx.translate(px, py);
+      ctx.translate(px, playerY);
 
       ctx.fillStyle = "rgba(0,0,0,0.4)";
       ctx.beginPath();
@@ -1110,9 +1309,9 @@
 
       ctx.restore();
 
-      ctx.fillStyle = "rgba(15, 23, 42, 0.82)";
+      ctx.fillStyle = "rgba(15, 23, 42, 0.84)";
       ctx.beginPath();
-      ctx.roundRect(10, 10, 235, 52, 10);
+      ctx.roundRect(10, 10, 260, 56, 10);
       ctx.fill();
 
       ctx.fillStyle = "#38bdf8";
@@ -1121,12 +1320,12 @@
 
       ctx.fillStyle = "#cbd5e1";
       ctx.font = "bold 11px sans-serif";
-      ctx.fillText(`Mesafe: ${Math.round(state.distanceM)}m • Şerit: ${state.lane === 0 ? "Sol" : "Sağ"} • NPC: ${state.npcs.length}`, 20, 49);
+      ctx.fillText(`Mesafe: ${Math.round(state.distanceM)}m • Şarj: %${Math.round(getCurrentBattery())} • NPC: ${state.npcs.length}`, 20, 50);
 
       if (state.flashMessage) {
         ctx.fillStyle = "rgba(15, 23, 42, 0.9)";
         ctx.beginPath();
-        ctx.roundRect(w / 2 - 140, 14, 280, 34, 10);
+        ctx.roundRect(w / 2 - 165, 14, 330, 34, 10);
         ctx.fill();
         ctx.fillStyle = "#4ade80";
         ctx.font = "bold 12px sans-serif";
