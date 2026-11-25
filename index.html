@@ -87,6 +87,11 @@
       border-color: rgba(248, 113, 113, 0.45);
     }
 
+    .pill.puzzle-timer {
+      color: #c084fc;
+      border-color: rgba(192, 132, 252, 0.35);
+    }
+
     .npc-control {
       background: #1e293b;
       border: 1px solid rgba(255, 255, 255, 0.1);
@@ -351,6 +356,131 @@
       color: #ffffff;
     }
 
+    /* Bonus Puzzle Modal */
+    .puzzle-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(5, 10, 22, 0.86);
+      backdrop-filter: blur(5px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 999;
+    }
+
+    .puzzle-overlay.open {
+      display: flex;
+    }
+
+    .puzzle-modal {
+      width: 100%;
+      max-width: 470px;
+      background: #131c31;
+      border: 1px solid rgba(56, 189, 248, 0.45);
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .puzzle-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .puzzle-badge {
+      background: rgba(192, 132, 252, 0.16);
+      border: 1px solid rgba(192, 132, 252, 0.45);
+      color: #e9d5ff;
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .puzzle-countdown {
+      background: #1e293b;
+      border: 1px solid rgba(251, 191, 36, 0.45);
+      color: #fbbf24;
+      border-radius: 999px;
+      padding: 4px 11px;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .puzzle-countdown.urgent {
+      color: #f87171;
+      border-color: rgba(248, 113, 113, 0.6);
+    }
+
+    .puzzle-paused-note {
+      font-size: 11px;
+      color: #94a3b8;
+      background: rgba(15, 23, 42, 0.75);
+      border-radius: 8px;
+      padding: 6px 10px;
+    }
+
+    .puzzle-question {
+      font-size: 15px;
+      font-weight: 800;
+      line-height: 1.45;
+      color: #f8fafc;
+    }
+
+    .puzzle-options {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+
+    .puzzle-opt-btn {
+      width: 100%;
+      text-align: left;
+      background: #1e293b;
+      color: #f8fafc;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 11px;
+      padding: 11px 13px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.08s ease, border-color 0.15s ease, background 0.15s ease;
+    }
+
+    .puzzle-opt-btn:hover:not(:disabled) {
+      border-color: #38bdf8;
+      background: #243249;
+    }
+
+    .puzzle-opt-btn:disabled {
+      cursor: default;
+    }
+
+    .puzzle-opt-btn.correct {
+      background: rgba(22, 163, 74, 0.28);
+      border-color: #4ade80;
+      color: #bbf7d0;
+    }
+
+    .puzzle-opt-btn.wrong {
+      background: rgba(220, 38, 38, 0.28);
+      border-color: #f87171;
+      color: #fecaca;
+    }
+
+    .puzzle-feedback {
+      min-height: 20px;
+      font-size: 12px;
+      font-weight: 800;
+      text-align: center;
+    }
+
     @media (max-width: 680px) {
       .drive-controls {
         grid-template-columns: 1fr;
@@ -369,6 +499,7 @@
         <div id="moneyPill" class="pill money">₺15.000,00</div>
         <div id="batteryPill" class="pill battery-ok">Şarj: %100</div>
         <div id="activeScooterPill" class="pill">Araç: -</div>
+        <div id="puzzleTimerPill" class="pill puzzle-timer" title="Her 5 dakikada bir 2.000 ₺ bonus puzzle çıkar">Bonus Soru: 05:00</div>
         <label class="npc-control" title="Trafikteki NPC yoğunluğunu ayarla">
           <span>NPC:</span>
           <input id="npcDensitySlider" type="range" min="0" max="100" step="10" value="50" />
@@ -415,9 +546,26 @@
     </div>
   </div>
 
+  <!-- 5 Dakikada Bir Gelen 15 Saniyelik Bonus Puzzle Modal -->
+  <div id="puzzleOverlay" class="puzzle-overlay" role="dialog" aria-modal="true" aria-labelledby="puzzleQuestionText">
+    <div class="puzzle-modal">
+      <div class="puzzle-top">
+        <span id="puzzleCategoryBadge" class="puzzle-badge">Menzil &amp; Şarj • Ödül: ₺2.000,00</span>
+        <span id="puzzleCountdownBadge" class="puzzle-countdown">15 sn</span>
+      </div>
+      <div class="puzzle-paused-note">Oyun duraklatıldı — kaza yapmaman için scooterın güvenli şekilde bekletiliyor.</div>
+      <div id="puzzleQuestionText" class="puzzle-question">Soru yükleniyor...</div>
+      <div id="puzzleOptionsContainer" class="puzzle-options"></div>
+      <div id="puzzleFeedbackText" class="puzzle-feedback"></div>
+    </div>
+  </div>
+
   <script>
     const SAVE_KEY = "scooter_ride_save_v2";
     const CHARGE_INTERVAL_M = 5000; // Her 5 km'de (5000m) bir şarj checkpoint'i
+    const PUZZLE_INTERVAL_SEC = 300; // 5 dakika (300 saniye) aralık
+    const PUZZLE_DURATION_SEC = 15; // 15 saniye cevap süresi
+    const PUZZLE_REWARD = 2000; // 2.000 TL bonus ödül
 
     const RAW_SCOOTERS = [
       { id: "x-limited", name: "Dualtron X Limited", price: 339900, powerW: 13000, topSpeedKmh: 130, battery: "84V 60A", rangeKm: 170, color: "#8b5cf6" },
@@ -470,6 +618,185 @@
     const starterScooter = SCOOTERS[SCOOTERS.length - 1];
     const validScooterIds = new Set(SCOOTERS.map(s => s.id));
 
+    // 4 Konulu Tekrar Etmeyen Bonus Soru Havuzu + Dinamik Soru Üretici
+    const STATIC_PUZZLES = [
+      // Konu 1: Menzil & Şarj Hesabı
+      {
+        id: "range_1",
+        category: "Menzil & Şarj Hesabı",
+        question: "60 km menzilli bir scooterın şarjı %75 iken 15 km daha sürersen şarjın yüzde kaç kalır?",
+        options: ["%40", "%50", "%55", "%60"],
+        correctIndex: 1
+      },
+      {
+        id: "range_2",
+        category: "Menzil & Şarj Hesabı",
+        question: "100 km menzile sahip Dualtron Achilleus ile %80 şarjla yola çıkıp 35 km gidersen şarjın yüzde kaç kalır?",
+        options: ["%35", "%45", "%50", "%55"],
+        correctIndex: 1
+      },
+      {
+        id: "range_3",
+        category: "Menzil & Şarj Hesabı",
+        question: "40 km menzilli bir scooterın şarjı %50 ise maksimum kaç km daha yol gidebilir?",
+        options: ["15 km", "20 km", "25 km", "30 km"],
+        correctIndex: 1
+      },
+      {
+        id: "range_4",
+        category: "Menzil & Şarj Hesabı",
+        question: "80 km menzilli bir scooterda her 5 km'lik şarj noktası arasında şarjının yüzde kaçı tükenir?",
+        options: ["%5", "%6,25", "%8", "%10"],
+        correctIndex: 1
+      },
+      {
+        id: "range_5",
+        category: "Menzil & Şarj Hesabı",
+        question: "120 km menzilli bir scooter %100 şarjla 30 km yol yaptığında bataryanın kaçta kaçı kullanılmış olur?",
+        options: ["4'te 1'i (%25)", "3'te 1'i (%33)", "5'te 1'i (%20)", "Yarısı (%50)"],
+        correctIndex: 0
+      },
+      {
+        id: "range_6",
+        category: "Menzil & Şarj Hesabı",
+        question: "30 km menzilli ONVO OV-008 ile %60 şarjdayken 9 km gidersen kalan şarjın yüzde kaç olur?",
+        options: ["%20", "%25", "%30", "%35"],
+        correctIndex: 2
+      },
+
+      // Konu 2: Scooter Özellik Tahmini / Bilmecesi
+      {
+        id: "riddle_1",
+        category: "Scooter Bilmecesi",
+        question: "120 km/h son hıza ulaşan, 11.800W gücünde ve 120 km menzil sunan turuncu/siyah canavar hangisidir?",
+        options: ["Dualtron Thunder 3", "Dualtron Sonic Alien", "Hiley Tiger Supra", "Dualtron X Limited"],
+        correctIndex: 1
+      },
+      {
+        id: "riddle_2",
+        category: "Scooter Bilmecesi",
+        question: "13.000W gücü, 130 km/h hızı ve 170 km menzili ile garajın 1 numaralı en güçlü modeli hangisidir?",
+        options: ["Dualtron X Limited", "Dualtron Sonic Alien", "Dualtron Thunder 3", "Rovoron R7 Elektrikli"],
+        correctIndex: 0
+      },
+      {
+        id: "riddle_3",
+        category: "Scooter Bilmecesi",
+        question: "5.200W motora ve 100 km/h son hıza sahip olan Hiley modeli hangisidir?",
+        options: ["Hiley Tiger 10 GTR", "Hiley Tiger 10 V4", "Hiley Tiger Supra", "Hiley Tiger Max Gtr"],
+        correctIndex: 2
+      },
+      {
+        id: "riddle_4",
+        category: "Scooter Bilmecesi",
+        question: "150W motor gücü ve 15 km/h son hızıyla garajdaki başlangıç scooterı hangisidir?",
+        options: ["Onvo KX-02 Elektrikli", "ONVO KX-01K 150W", "ONVO OV-008 500W", "Segway-Ninebot E3 Pro"],
+        correctIndex: 1
+      },
+      {
+        id: "riddle_5",
+        category: "Scooter Bilmecesi",
+        question: "4.000W gücünde olup 80 km/h hıza ulaşabilen Onvo modeli hangisidir?",
+        options: ["ONVO RX-10 3000W", "Onvo RX-07 Elektrikli", "Onvo RX-05 Elektrikli", "ONVO Mx-03 2400W"],
+        correctIndex: 1
+      },
+      {
+        id: "riddle_6",
+        category: "Scooter Bilmecesi",
+        question: "3.000W motor gücüne sahip olmasına rağmen 60V 42.4A bataryasıyla 120 km menzil sunan model hangisidir?",
+        options: ["Rovoron R7 Elektrikli", "ONVO RX-10 3000W", "Hiley Tiger 10 V4", "Dualtron Togo Limited"],
+        correctIndex: 0
+      },
+
+      // Konu 3: Hız - Süre - Yol Problemi
+      {
+        id: "speed_1",
+        category: "Hız - Süre - Yol",
+        question: "60 km/h sabit hızla 30 dakika boyunca durmadan gidersen kaç km yol alırsın?",
+        options: ["20 km", "25 km", "30 km", "45 km"],
+        correctIndex: 2
+      },
+      {
+        id: "speed_2",
+        category: "Hız - Süre - Yol",
+        question: "90 km/h sabit hızla giden Hiley Tiger 10 GTR, 20 dakikada kaç km yol kat eder?",
+        options: ["20 km", "25 km", "30 km", "35 km"],
+        correctIndex: 2
+      },
+      {
+        id: "speed_3",
+        category: "Hız - Süre - Yol",
+        question: "120 km/h hızla giden bir scooter, 5 km (5.000 m) mesafedeki şarj noktasına kaç dakikada ulaşır?",
+        options: ["2 dakika", "2,5 dakika", "3 dakika", "5 dakika"],
+        correctIndex: 1
+      },
+      {
+        id: "speed_4",
+        category: "Hız - Süre - Yol",
+        question: "45 km/h sabit hızla 40 dakika giden Segway Ninebot Max G3 kaç km yol alır?",
+        options: ["25 km", "30 km", "35 km", "40 km"],
+        correctIndex: 1
+      },
+      {
+        id: "speed_5",
+        category: "Hız - Süre - Yol",
+        question: "75 km/h hızla 12 dakikada kaç km yol gidilir?",
+        options: ["12 km", "15 km", "18 km", "20 km"],
+        correctIndex: 1
+      },
+      {
+        id: "speed_6",
+        category: "Hız - Süre - Yol",
+        question: "80 km/h sabit hızla 15 dakika sürüş yapan bir sürücü kaç km mesafe tamamlar?",
+        options: ["15 km", "20 km", "25 km", "30 km"],
+        correctIndex: 1
+      },
+
+      // Konu 4: Karşılaştırma (Hangisi Daha Güçlü / Hızlı?)
+      {
+        id: "comp_1",
+        category: "Model Karşılaştırma",
+        question: "Aşağıdaki scooterlardan hangisinin motor gücü (Watt) diğerlerinden daha yüksektir?",
+        options: ["ONVO Mx-02 1600W", "ONVO RX-10 3000W", "Onvo RX-05 Elektrikli", "Dualtron Togo Limited"],
+        correctIndex: 1
+      },
+      {
+        id: "comp_2",
+        category: "Model Karşılaştırma",
+        question: "Hangisinin maksimum hızı (km/h) diğerlerinden daha fazladır?",
+        options: ["Dualtron City New (70 km/h)", "Onvo RX-05 Elektrikli (75 km/h)", "Segway Ninebot Max G3 (45 km/h)", "Dualtron Togo Limited (60 km/h)"],
+        correctIndex: 1
+      },
+      {
+        id: "comp_3",
+        category: "Model Karşılaştırma",
+        question: "Dualtron Thunder 3 ile Hiley Tiger Supra karşılaştırıldığında hangisi daha hızlıdır?",
+        options: ["Dualtron Thunder 3 (110 km/h)", "Hiley Tiger Supra (100 km/h)", "İkisi de 90 km/h", "İkisi de 120 km/h"],
+        correctIndex: 0
+      },
+      {
+        id: "comp_4",
+        category: "Model Karşılaştırma",
+        question: "Aşağıdakilerden hangisi 2.400W motor gücüne sahip modellerden biri DEĞİLDİR?",
+        options: ["Onvo RX-05 Elektrikli", "ONVO Mx-03 2400W", "Onvo RX-04 Elektrikli", "ONVO RX-10 3000W"],
+        correctIndex: 3
+      },
+      {
+        id: "comp_5",
+        category: "Model Karşılaştırma",
+        question: "Segway-Ninebot ZT3 Pro (40 km/h) ile Segway Ninebot F3 Pro (35 km/h) arasında hangisi daha hızlıdır?",
+        options: ["Segway-Ninebot ZT3 Pro", "Segway Ninebot F3 Pro", "Hızları eşittir", "İkisi de 30 km/h"],
+        correctIndex: 0
+      },
+      {
+        id: "comp_6",
+        category: "Model Karşılaştırma",
+        question: "Hiley Tiger 10 GTR (4000W) ile Dualtron Victor Limited (4300W) kıyaslandığında hangisinin motoru daha güçlüdür?",
+        options: ["Dualtron Victor Limited", "Hiley Tiger 10 GTR", "Güçleri eşittir", "İkisi de 3000W"],
+        correctIndex: 0
+      }
+    ];
+
     function loadSavedState() {
       try {
         const raw = localStorage.getItem(SAVE_KEY);
@@ -499,11 +826,17 @@
             : 100;
         });
 
+        const savedAskedPuzzles = Array.isArray(parsed.askedPuzzleIds)
+          ? parsed.askedPuzzleIds.filter(id => typeof id === "string")
+          : [];
+
         return {
           money: typeof parsed.money === "number" && Number.isFinite(parsed.money) ? Math.max(0, parsed.money) : 15000,
           ownedIds: new Set(savedOwned),
           selectedId: savedSelected,
           batteryByScooter,
+          askedPuzzleIds: new Set(savedAskedPuzzles),
+          puzzleDynamicCounter: typeof parsed.puzzleDynamicCounter === "number" ? Math.max(0, parsed.puzzleDynamicCounter) : 0,
           npcDensity: typeof parsed.npcDensity === "number" ? Math.max(0, Math.min(100, parsed.npcDensity)) : 50,
           soundEnabled: typeof parsed.soundEnabled === "boolean" ? parsed.soundEnabled : true,
           completedCount: typeof parsed.completedCount === "number" ? Math.max(0, parsed.completedCount) : 0
@@ -522,6 +855,8 @@
       ownedIds: saved ? saved.ownedIds : new Set([starterScooter.id]),
       selectedId: saved ? saved.selectedId : starterScooter.id,
       batteryByScooter: saved ? saved.batteryByScooter : defaultBatteries,
+      askedPuzzleIds: saved ? saved.askedPuzzleIds : new Set(),
+      puzzleDynamicCounter: saved ? saved.puzzleDynamicCounter : 0,
       mapMode: "free",
       soundEnabled: saved ? saved.soundEnabled : true,
       npcDensity: saved ? saved.npcDensity : 50,
@@ -546,6 +881,13 @@
         reward: 650,
         completedCount: saved ? saved.completedCount : 0,
         statusText: "Kontrol noktasına ulaş (320m)"
+      },
+      puzzle: {
+        isOpen: false,
+        answered: false,
+        timeUntilNextSec: PUZZLE_INTERVAL_SEC,
+        remainingAnswerSec: PUZZLE_DURATION_SEC,
+        current: null
       },
       flashMessage: "",
       flashTimer: 0
@@ -573,12 +915,249 @@
           ownedIds: Array.from(state.ownedIds),
           selectedId: state.selectedId,
           batteryByScooter: state.batteryByScooter,
+          askedPuzzleIds: Array.from(state.askedPuzzleIds),
+          puzzleDynamicCounter: state.puzzleDynamicCounter,
           npcDensity: state.npcDensity,
           soundEnabled: state.soundEnabled,
           completedCount: state.mission.completedCount
         };
         localStorage.setItem(SAVE_KEY, JSON.stringify(payload));
       } catch (_) {}
+    }
+
+    // Dinamik benzersiz soru üretici (statik 24 soru biterse veya çeşitlilik için)
+    function generateUniqueDynamicPuzzle() {
+      for (let attempt = 0; attempt < 40; attempt++) {
+        state.puzzleDynamicCounter += 1;
+        const topic = state.puzzleDynamicCounter % 4;
+
+        if (topic === 0) {
+          // Konu 1: Menzil & Şarj
+          const sc = SCOOTERS[Math.floor(Math.random() * SCOOTERS.length)];
+          const range = sc.rangeKm >= 20 ? sc.rangeKm : 60;
+          const startPct = [60, 70, 80, 90, 100][Math.floor(Math.random() * 5)];
+          const drainPct = [10, 20, 25, 30, 40][Math.floor(Math.random() * 5)];
+          if (drainPct >= startPct) continue;
+          const kmDriven = Math.round((range * drainPct) / 100);
+          if ((kmDriven * 100) / range !== drainPct) continue;
+          const ans = startPct - drainPct;
+          const uid = `dyn_range_${range}_${startPct}_${kmDriven}`;
+          if (state.askedPuzzleIds.has(uid)) continue;
+
+          const wrongSet = new Set([ans]);
+          while (wrongSet.size < 4) {
+            const candidate = Math.max(5, Math.min(95, ans + (Math.floor(Math.random() * 7) - 3) * 5));
+            wrongSet.add(candidate);
+          }
+          const opts = Array.from(wrongSet).sort(() => Math.random() - 0.5).map(v => `%${v}`);
+          return {
+            id: uid,
+            category: "Menzil & Şarj Hesabı",
+            question: `${range} km menzilli bir scooterın şarjı %${startPct} iken ${kmDriven} km yol gidersen şarjın yüzde kaç kalır?`,
+            options: opts,
+            correctIndex: opts.indexOf(`%${ans}`)
+          };
+        } else if (topic === 1) {
+          // Konu 2: Özellik Tahmini
+          const sc = SCOOTERS[Math.floor(Math.random() * SCOOTERS.length)];
+          const uid = `dyn_riddle_${sc.id}`;
+          if (state.askedPuzzleIds.has(uid)) continue;
+
+          const others = SCOOTERS.filter(s => s.id !== sc.id).sort(() => Math.random() - 0.5).slice(0, 3);
+          const all = [sc, ...others].sort(() => Math.random() - 0.5);
+          return {
+            id: uid,
+            category: "Scooter Bilmecesi",
+            question: `${sc.powerW}W motor gücüne, ${sc.topSpeedKmh} km/h son hıza ve ${sc.rangeKm} km menzile sahip model hangisidir?`,
+            options: all.map(s => s.name),
+            correctIndex: all.findIndex(s => s.id === sc.id)
+          };
+        } else if (topic === 2) {
+          // Konu 3: Hız - Süre - Yol
+          const speeds = [40, 50, 60, 75, 80, 90, 100, 120];
+          const mins = [12, 15, 20, 30, 45];
+          const spd = speeds[Math.floor(Math.random() * speeds.length)];
+          const min = mins[Math.floor(Math.random() * mins.length)];
+          const dist = (spd * min) / 60;
+          if (!Number.isInteger(dist)) continue;
+          const uid = `dyn_speed_${spd}_${min}`;
+          if (state.askedPuzzleIds.has(uid)) continue;
+
+          const wrongSet = new Set([dist]);
+          while (wrongSet.size < 4) {
+            const candidate = Math.max(5, dist + (Math.floor(Math.random() * 7) - 3) * 5);
+            wrongSet.add(candidate);
+          }
+          const opts = Array.from(wrongSet).sort(() => Math.random() - 0.5).map(v => `${v} km`);
+          return {
+            id: uid,
+            category: "Hız - Süre - Yol",
+            question: `${spd} km/h sabit hızla ${min} dakika boyunca sürüş yaparsan kaç km yol alırsın?`,
+            options: opts,
+            correctIndex: opts.indexOf(`${dist} km`)
+          };
+        } else {
+          // Konu 4: Karşılaştırma
+          const pool = [...SCOOTERS].sort(() => Math.random() - 0.5).slice(0, 4);
+          const sortedByPower = [...pool].sort((a, b) => b.powerW - a.powerW);
+          if (sortedByPower[0].powerW === sortedByPower[1].powerW) continue;
+          const winner = sortedByPower[0];
+          const uid = `dyn_comp_${pool.map(p => p.id).sort().join("_")}`;
+          if (state.askedPuzzleIds.has(uid)) continue;
+
+          return {
+            id: uid,
+            category: "Model Karşılaştırma",
+            question: "Aşağıdaki 4 scooter modelinden hangisinin motor gücü (Watt) en yüksektir?",
+            options: pool.map(s => s.name),
+            correctIndex: pool.findIndex(s => s.id === winner.id)
+          };
+        }
+      }
+      return null;
+    }
+
+    function pickNextUniquePuzzle() {
+      const remainingStatic = STATIC_PUZZLES.filter(p => !state.askedPuzzleIds.has(p.id));
+      if (remainingStatic.length > 0) {
+        const chosen = remainingStatic[Math.floor(Math.random() * remainingStatic.length)];
+        return chosen;
+      }
+      const dyn = generateUniqueDynamicPuzzle();
+      if (dyn) return dyn;
+
+      // Çok uç durumda havuz tamamen tükenirse tekrar sıfırdan aç
+      state.askedPuzzleIds.clear();
+      return STATIC_PUZZLES[Math.floor(Math.random() * STATIC_PUZZLES.length)];
+    }
+
+    const puzzleOverlay = document.getElementById("puzzleOverlay");
+    const puzzleCategoryBadge = document.getElementById("puzzleCategoryBadge");
+    const puzzleCountdownBadge = document.getElementById("puzzleCountdownBadge");
+    const puzzleQuestionText = document.getElementById("puzzleQuestionText");
+    const puzzleOptionsContainer = document.getElementById("puzzleOptionsContainer");
+    const puzzleFeedbackText = document.getElementById("puzzleFeedbackText");
+    const puzzleTimerPill = document.getElementById("puzzleTimerPill");
+
+    function formatClock(sec) {
+      const s = Math.max(0, Math.ceil(sec));
+      const mm = String(Math.floor(s / 60)).padStart(2, "0");
+      const ss = String(s % 60).padStart(2, "0");
+      return `${mm}:${ss}`;
+    }
+
+    function updatePuzzleHudTimer() {
+      if (state.puzzle.isOpen) {
+        puzzleTimerPill.textContent = "Bonus Soru: AKTİF";
+      } else {
+        puzzleTimerPill.textContent = `Bonus Soru: ${formatClock(state.puzzle.timeUntilNextSec)}`;
+      }
+    }
+
+    function closePuzzleModal() {
+      state.puzzle.isOpen = false;
+      state.puzzle.answered = false;
+      state.puzzle.current = null;
+      state.puzzle.timeUntilNextSec = PUZZLE_INTERVAL_SEC;
+      puzzleOverlay.classList.remove("open");
+      updatePuzzleHudTimer();
+      saveProgress();
+    }
+
+    function handlePuzzleAnswer(selectedIndex) {
+      if (!state.puzzle.isOpen || state.puzzle.answered || !state.puzzle.current) return;
+      state.puzzle.answered = true;
+      const q = state.puzzle.current;
+      const buttons = puzzleOptionsContainer.querySelectorAll("button");
+
+      buttons.forEach((btn, idx) => {
+        btn.disabled = true;
+        if (idx === q.correctIndex) {
+          btn.classList.add("correct");
+        } else if (idx === selectedIndex) {
+          btn.classList.add("wrong");
+        }
+      });
+
+      if (selectedIndex === q.correctIndex) {
+        state.money += PUZZLE_REWARD;
+        playChargeSound();
+        puzzleFeedbackText.style.color = "#4ade80";
+        puzzleFeedbackText.textContent = `Doğru cevap! +${formatMoney(PUZZLE_REWARD)} bonus hesabına eklendi!`;
+        showToast(`Bonus Soru Doğru! +${formatMoney(PUZZLE_REWARD)} kazandın!`);
+        renderHUD();
+        renderGarage();
+      } else {
+        puzzleFeedbackText.style.color = "#f87171";
+        puzzleFeedbackText.textContent = `Yanlış cevap! Doğrusu: ${q.options[q.correctIndex]}. Yoluna devam ediyorsun.`;
+        showToast("Soruyu bilemedin, ceza yok — sürüşe devam!");
+      }
+
+      saveProgress();
+      setTimeout(() => {
+        closePuzzleModal();
+      }, 1700);
+    }
+
+    function handlePuzzleTimeout() {
+      if (!state.puzzle.isOpen || state.puzzle.answered || !state.puzzle.current) return;
+      state.puzzle.answered = true;
+      const q = state.puzzle.current;
+      const buttons = puzzleOptionsContainer.querySelectorAll("button");
+      buttons.forEach((btn, idx) => {
+        btn.disabled = true;
+        if (idx === q.correctIndex) btn.classList.add("correct");
+      });
+
+      puzzleFeedbackText.style.color = "#fbbf24";
+      puzzleFeedbackText.textContent = `Süre doldu! Doğru cevap: ${q.options[q.correctIndex]}.`;
+      showToast("Süre doldu — sorunsuz devam ediyorsun!");
+      saveProgress();
+      setTimeout(() => {
+        closePuzzleModal();
+      }, 1600);
+    }
+
+    function openBonusPuzzle() {
+      if (state.puzzle.isOpen) return;
+      const q = pickNextUniquePuzzle();
+      if (!q) return;
+
+      // Bir daha çıkmaması için sorulduğu anda kaydet
+      state.askedPuzzleIds.add(q.id);
+      saveProgress();
+
+      // Basılı kalan gaz/fren kontrollerini sıfırla ki oyun durunca takılı kalmasın
+      state.controls.gas = false;
+      state.controls.brake = false;
+      document.getElementById("gasBtn").classList.remove("pressed");
+      document.getElementById("brakeBtn").classList.remove("pressed");
+      updateMotorSound(0, false, false);
+
+      state.puzzle.isOpen = true;
+      state.puzzle.answered = false;
+      state.puzzle.remainingAnswerSec = PUZZLE_DURATION_SEC;
+      state.puzzle.current = q;
+
+      puzzleCategoryBadge.textContent = `${q.category} • Ödül: ${formatMoney(PUZZLE_REWARD)}`;
+      puzzleCountdownBadge.textContent = `${PUZZLE_DURATION_SEC} sn`;
+      puzzleCountdownBadge.classList.remove("urgent");
+      puzzleQuestionText.textContent = q.question;
+      puzzleFeedbackText.textContent = "";
+
+      puzzleOptionsContainer.innerHTML = "";
+      const letters = ["A", "B", "C", "D"];
+      q.options.forEach((optText, idx) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "puzzle-opt-btn";
+        btn.textContent = `${letters[idx]}) ${optText}`;
+        btn.addEventListener("click", () => handlePuzzleAnswer(idx));
+        puzzleOptionsContainer.appendChild(btn);
+      });
+
+      puzzleOverlay.classList.add("open");
+      updatePuzzleHudTimer();
     }
 
     const audioCtxHolder = {
@@ -647,7 +1226,7 @@
     function updateMotorSound(speedRatio, isGas, isBrake) {
       if (!audioCtxHolder.ctx || !audioCtxHolder.motorGain) return;
       const now = audioCtxHolder.ctx.currentTime;
-      if (!state.soundEnabled) {
+      if (!state.soundEnabled || state.puzzle.isOpen) {
         audioCtxHolder.motorGain.gain.setTargetAtTime(0.0001, now, 0.05);
         return;
       }
@@ -660,7 +1239,7 @@
     }
 
     function playBrakeSound() {
-      if (!state.soundEnabled) return;
+      if (!state.soundEnabled || state.puzzle.isOpen) return;
       ensureAudio();
       if (!audioCtxHolder.ctx) return;
       const ctx = audioCtxHolder.ctx;
@@ -682,7 +1261,7 @@
     }
 
     function playHornSound() {
-      if (!state.soundEnabled) return;
+      if (!state.soundEnabled || state.puzzle.isOpen) return;
       ensureAudio();
       if (!audioCtxHolder.ctx) return;
       const ctx = audioCtxHolder.ctx;
@@ -766,7 +1345,6 @@
       const sc = getCurrentScooter();
       state.passedNpcsInMission = 0;
 
-      // Dengeli ödüller: 2-3 turda 30.000 TL yerine makul kazanç
       const baseReward = 650 + Math.min(1800, mIndex * 110);
       const eventPattern = mIndex % 4;
 
@@ -859,6 +1437,7 @@
       document.getElementById("moneyPill").textContent = formatMoney(state.money);
       document.getElementById("activeScooterPill").textContent = `Araç: #${sc.rank} ${sc.name} (${sc.powerW}W)`;
       updateBatteryUI();
+      updatePuzzleHudTimer();
       updateMissionUI();
     }
 
@@ -896,6 +1475,7 @@
     }
 
     window.buyScooter = function(id) {
+      if (state.puzzle.isOpen) return;
       ensureAudio();
       const sc = SCOOTERS.find(s => s.id === id);
       if (!sc || state.ownedIds.has(id)) return;
@@ -917,6 +1497,7 @@
     };
 
     window.selectScooter = function(id) {
+      if (state.puzzle.isOpen) return;
       ensureAudio();
       if (!state.ownedIds.has(id)) return;
       const sc = SCOOTERS.find(s => s.id === id);
@@ -932,6 +1513,7 @@
     const missionMapBtn = document.getElementById("missionMapBtn");
 
     freeMapBtn.addEventListener("click", () => {
+      if (state.puzzle.isOpen) return;
       ensureAudio();
       state.mapMode = "free";
       freeMapBtn.classList.add("active");
@@ -940,6 +1522,7 @@
     });
 
     missionMapBtn.addEventListener("click", () => {
+      if (state.puzzle.isOpen) return;
       ensureAudio();
       state.mapMode = "mission";
       missionMapBtn.classList.add("active");
@@ -960,6 +1543,7 @@
     });
 
     function changeLane(targetLane) {
+      if (state.puzzle.isOpen) return;
       ensureAudio();
       const clamped = Math.max(0, Math.min(1, targetLane));
       if (clamped !== state.lane) {
@@ -977,6 +1561,7 @@
     function bindHold(btn, prop, onPressExtra) {
       const press = (e) => {
         e.preventDefault();
+        if (state.puzzle.isOpen) return;
         ensureAudio();
         state.controls[prop] = true;
         btn.classList.add("pressed");
@@ -995,12 +1580,22 @@
     bindHold(gasBtn, "gas", null);
     bindHold(brakeBtn, "brake", playBrakeSound);
     hornBtn.addEventListener("click", () => {
+      if (state.puzzle.isOpen) return;
       hornBtn.classList.add("pressed");
       playHornSound();
       setTimeout(() => hornBtn.classList.remove("pressed"), 180);
     });
 
     window.addEventListener("keydown", (e) => {
+      if (state.puzzle.isOpen) {
+        // Soru açıkken klavyeden A/B/C/D veya 1/2/3/4 ile de cevap verilebilsin
+        const keyMap = { "1": 0, "a": 0, "A": 0, "2": 1, "b": 1, "B": 1, "3": 2, "c": 2, "C": 2, "4": 3, "d": 3, "D": 3 };
+        if (e.key in keyMap) {
+          handlePuzzleAnswer(keyMap[e.key]);
+        }
+        return;
+      }
+
       ensureAudio();
       if (e.key === "w" || e.key === "W" || e.key === "ArrowUp") {
         state.controls.gas = true;
@@ -1067,10 +1662,34 @@
     }
 
     function step(dt) {
+      // Bonus Puzzle açıkken oyun tamamen durur (scooter ve trafik donar)
+      if (state.puzzle.isOpen) {
+        updateMotorSound(0, false, false);
+        if (!state.puzzle.answered) {
+          state.puzzle.remainingAnswerSec = Math.max(0, state.puzzle.remainingAnswerSec - dt);
+          const secLeft = Math.ceil(state.puzzle.remainingAnswerSec);
+          puzzleCountdownBadge.textContent = `${secLeft} sn`;
+          if (secLeft <= 5) {
+            puzzleCountdownBadge.classList.add("urgent");
+          }
+          if (state.puzzle.remainingAnswerSec <= 0) {
+            handlePuzzleTimeout();
+          }
+        }
+        return;
+      }
+
+      // 5 dakikalık (300 sn) bonus soru sayacı (iki haritada da çalışır)
+      state.puzzle.timeUntilNextSec -= dt;
+      updatePuzzleHudTimer();
+      if (state.puzzle.timeUntilNextSec <= 0) {
+        openBonusPuzzle();
+        return;
+      }
+
       const sc = getCurrentScooter();
       const currentBat = getCurrentBattery();
 
-      // Şarj durumuna göre hız ve ivmelenme çarpanı
       const batteryFactor = currentBat > 0 ? (currentBat <= 15 ? 0.65 : 1) : 0.25;
       const effectiveTopSpeed = sc.topSpeedKmh * batteryFactor;
       const accelRate = (18 + (sc.powerW / 13000) * 44) * batteryFactor;
@@ -1094,7 +1713,6 @@
       state.distanceM += deltaM;
       state.roadOffset = (state.roadOffset + deltaM * 18) % 80;
 
-      // Menzile (rangeKm) göre şarj tüketimi
       if (deltaM > 0 && sc.rangeKm > 0) {
         const rangeMeters = sc.rangeKm * 1000;
         const drainPct = (deltaM / rangeMeters) * 100;
@@ -1105,7 +1723,6 @@
         }
       }
 
-      // Her 5 km'de (5000m) bir şarj checkpoint'ini toplama
       while (state.distanceM >= state.nextChargeCheckpointM) {
         setCurrentBattery(100);
         const kmMark = Math.round(state.nextChargeCheckpointM / 1000);
@@ -1218,7 +1835,6 @@
       ctx.stroke();
       ctx.setLineDash([]);
 
-      // 5 km'de bir çıkan Şarj Checkpoint çizgisi/kapısı
       const chargeRemM = Math.max(0, state.nextChargeCheckpointM - state.distanceM);
       const chargeY = playerY - chargeRemM * 1.1;
       if (chargeY > -35 && chargeY < h + 35) {
