@@ -146,6 +146,12 @@
       color: #38bdf8;
     }
 
+    .banner-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
     .sound-btn {
       background: #1e293b;
       color: #f8fafc;
@@ -367,7 +373,9 @@
       <div id="missionText" class="mission-text">
         <strong>Serbest Harita:</strong> 2 şeritli yolda serbest sürüş yap. Şerit: A/D veya ←/→ • Gaz: W/↑ • Fren: S/↓ • Korna: H
       </div>
-      <button id="soundToggleBtn" class="sound-btn" type="button">Ses: Açık</button>
+      <div class="banner-actions">
+        <button id="soundToggleBtn" class="sound-btn" type="button">Ses: Açık</button>
+      </div>
     </div>
 
     <div class="drive-controls">
@@ -385,13 +393,15 @@
     <div class="garage-section">
       <div class="garage-head">
         <div class="garage-title">Scooter Mağazası &amp; Garaj (İyiden Kötüye Sıralı)</div>
-        <div class="garage-sub">En güçlü/hızlı model en pahalıdır • Başlangıçta 1. model açık</div>
+        <div class="garage-sub">Kazandığın scooterlar otomatik kaydedilir • Başlangıçta 1. model açık</div>
       </div>
       <div id="scooterList" class="scooter-list"></div>
     </div>
   </div>
 
   <script>
+    const SAVE_KEY = "scooter_ride_save_v1";
+
     // Performans puanına (güç + hız) göre iyiden kötüye sıralanmış scooter listesi
     const RAW_SCOOTERS = [
       { id: "x-limited", name: "Dualtron X Limited", powerW: 13000, topSpeedKmh: 130, battery: "84V 60A", rangeKm: 170, color: "#8b5cf6" },
@@ -430,7 +440,6 @@
       { id: "kx-01k", name: "ONVO KX-01K 150W", powerW: 150, topSpeedKmh: 15, battery: "21.6V 2.4A", rangeKm: 8, color: "#f43f5e" }
     ];
 
-    // Performansa göre iyiden kötüye sıralama ve gerçekçi oyun parası fiyatı
     const SCOOTERS = RAW_SCOOTERS
       .map(s => ({
         ...s,
@@ -449,14 +458,48 @@
       });
 
     const starterScooter = SCOOTERS[SCOOTERS.length - 1];
+    const validScooterIds = new Set(SCOOTERS.map(s => s.id));
+
+    function loadSavedState() {
+      try {
+        const raw = localStorage.getItem(SAVE_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (!parsed || typeof parsed !== "object") return null;
+
+        const savedOwned = Array.isArray(parsed.ownedIds)
+          ? parsed.ownedIds.filter(id => validScooterIds.has(id))
+          : [];
+        if (!savedOwned.includes(starterScooter.id)) {
+          savedOwned.push(starterScooter.id);
+        }
+
+        const savedSelected = validScooterIds.has(parsed.selectedId) && savedOwned.includes(parsed.selectedId)
+          ? parsed.selectedId
+          : (savedOwned[0] || starterScooter.id);
+
+        return {
+          money: typeof parsed.money === "number" && Number.isFinite(parsed.money) ? Math.max(0, parsed.money) : 15000,
+          ownedIds: new Set(savedOwned),
+          selectedId: savedSelected,
+          npcDensity: typeof parsed.npcDensity === "number" ? Math.max(0, Math.min(100, parsed.npcDensity)) : 50,
+          soundEnabled: typeof parsed.soundEnabled === "boolean" ? parsed.soundEnabled : true,
+          completedCount: typeof parsed.completedCount === "number" ? Math.max(0, parsed.completedCount) : 0
+        };
+      } catch (_) {
+        return null;
+      }
+    }
+
+    const saved = loadSavedState();
 
     const state = {
-      money: 15000,
-      ownedIds: new Set([starterScooter.id]),
-      selectedId: starterScooter.id,
+      money: saved ? saved.money : 15000,
+      ownedIds: saved ? saved.ownedIds : new Set([starterScooter.id]),
+      selectedId: saved ? saved.selectedId : starterScooter.id,
       mapMode: "free",
-      soundEnabled: true,
-      npcDensity: 50, // 0 (Kapalı) - 100 (Çok Yoğun)
+      soundEnabled: saved ? saved.soundEnabled : true,
+      npcDensity: saved ? saved.npcDensity : 50,
       lane: 1,
       laneVisualX: 1,
       speedKmh: 0,
@@ -472,14 +515,28 @@
         type: "checkpoint",
         targetM: 220,
         reward: 3500,
-        completedCount: 0,
+        completedCount: saved ? saved.completedCount : 0,
         statusText: "Kontrol noktasına ulaş (220m)"
       },
       flashMessage: "",
       flashTimer: 0
     };
 
-    // Web Audio API Ses Motoru (Elektrikli scooter uğultusu, fren ve korna)
+    function saveProgress() {
+      try {
+        const payload = {
+          money: state.money,
+          ownedIds: Array.from(state.ownedIds),
+          selectedId: state.selectedId,
+          npcDensity: state.npcDensity,
+          soundEnabled: state.soundEnabled,
+          completedCount: state.mission.completedCount
+        };
+        localStorage.setItem(SAVE_KEY, JSON.stringify(payload));
+      } catch (_) {}
+    }
+
+    // Web Audio API Ses Motoru
     const audioCtxHolder = {
       ctx: null,
       motorOsc: null,
@@ -618,9 +675,14 @@
     const npcDensitySlider = document.getElementById("npcDensitySlider");
     const npcDensityLabel = document.getElementById("npcDensityLabel");
 
+    function syncNpcControlUI() {
+      npcDensitySlider.value = String(state.npcDensity);
+      npcDensityLabel.textContent = getNpcDensityText(state.npcDensity);
+    }
+
     npcDensitySlider.addEventListener("input", () => {
       state.npcDensity = Number(npcDensitySlider.value);
-      npcDensityLabel.textContent = getNpcDensityText(state.npcDensity);
+      syncNpcControlUI();
 
       if (state.npcDensity === 0) {
         state.npcs = [];
@@ -630,6 +692,7 @@
           state.npcs = state.npcs.slice(0, maxAllowed);
         }
       }
+      saveProgress();
     });
 
     function assignNextMission() {
@@ -722,7 +785,8 @@
       state.ownedIds.add(id);
       state.selectedId = id;
       state.speedKmh = Math.min(state.speedKmh, sc.topSpeedKmh);
-      showToast(`${sc.name} satın alındı ve seçildi!`);
+      saveProgress();
+      showToast(`${sc.name} satın alındı ve kaydedildi!`);
       renderHUD();
       renderGarage();
     };
@@ -733,6 +797,7 @@
       const sc = SCOOTERS.find(s => s.id === id);
       state.selectedId = id;
       state.speedKmh = Math.min(state.speedKmh, sc.topSpeedKmh);
+      saveProgress();
       showToast(`${sc.name} seçildi.`);
       renderHUD();
       renderGarage();
@@ -761,9 +826,13 @@
 
     // Ses aç/kapat
     const soundBtn = document.getElementById("soundToggleBtn");
+    function syncSoundBtnUI() {
+      soundBtn.textContent = state.soundEnabled ? "Ses: Açık" : "Ses: Kapalı";
+    }
     soundBtn.addEventListener("click", () => {
       state.soundEnabled = !state.soundEnabled;
-      soundBtn.textContent = state.soundEnabled ? "Ses: Açık" : "Ses: Kapalı";
+      syncSoundBtnUI();
+      saveProgress();
       if (state.soundEnabled) ensureAudio();
     });
 
@@ -841,7 +910,7 @@
       }
     });
 
-    // NPC Araç Üretimi (Ayarlanabilir NPC Yoğunluğu ile)
+    // NPC Araç Üretimi
     const NPC_COLORS = ["#f97316", "#06b6d4", "#eab308", "#ec4899", "#a855f7", "#10b981"];
 
     function spawnNpc() {
@@ -899,7 +968,6 @@
 
       state.laneVisualX += (state.lane - state.laneVisualX) * Math.min(1, dt * 13);
 
-      // NPC yoğunluğuna göre üretim sıklığı
       if (state.npcDensity > 0) {
         const spawnRatePerSec = (state.npcDensity / 100) * 3.2;
         if (Math.random() < dt * spawnRatePerSec) {
@@ -923,12 +991,12 @@
 
       state.npcs = state.npcs.filter(n => n.y > -120 && n.y < canvas.getBoundingClientRect().height + 120);
 
-      // Görev haritası kontrolü
       if (state.mapMode === "mission" && state.mission.active) {
         if (state.distanceM >= state.mission.targetM) {
           const earned = state.mission.reward;
           state.money += earned;
           state.mission.completedCount += 1;
+          saveProgress();
           showToast(`Görev tamamlandı! +${formatMoney(earned)} kazandın!`);
           assignNextMission();
           renderGarage();
@@ -996,7 +1064,6 @@
         }
       }
 
-      // NPC araçlar
       state.npcs.forEach(npc => {
         const nx = roadLeft + laneW * (npc.lane + 0.5);
         ctx.save();
@@ -1019,7 +1086,6 @@
         ctx.restore();
       });
 
-      // Oyuncu Scooter
       const px = roadLeft + laneW * (state.laneVisualX + 0.5);
       const py = h * 0.74;
 
@@ -1055,7 +1121,6 @@
 
       ctx.restore();
 
-      // Üst hız / mesafe göstergesi
       ctx.fillStyle = "rgba(15, 23, 42, 0.82)";
       ctx.beginPath();
       ctx.roundRect(10, 10, 235, 52, 10);
@@ -1093,6 +1158,8 @@
 
     window.addEventListener("resize", resizeCanvas);
     resizeCanvas();
+    syncNpcControlUI();
+    syncSoundBtnUI();
     renderHUD();
     renderGarage();
     requestAnimationFrame(loop);
