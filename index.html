@@ -322,6 +322,13 @@
       align-items: center;
       justify-content: space-between;
       gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .card-actions {
+      display: flex;
+      align-items: center;
+      gap: 5px;
     }
 
     .price-tag {
@@ -339,7 +346,7 @@
     .action-mini {
       border: none;
       border-radius: 8px;
-      padding: 6px 10px;
+      padding: 6px 9px;
       font-size: 11px;
       font-weight: 800;
       cursor: pointer;
@@ -359,6 +366,15 @@
     .btn-select {
       background: #0284c7;
       color: #ffffff;
+    }
+
+    .btn-sell {
+      background: #b45309;
+      color: #fef3c7;
+    }
+
+    .btn-sell:hover {
+      background: #d97706;
     }
 
     /* Bonus Puzzle Modal */
@@ -546,7 +562,7 @@
     <div class="garage-section">
       <div class="garage-head">
         <div class="garage-title">Scooter Mağazası &amp; Garaj (İyiden Kötüye Sıralı)</div>
-        <div class="garage-sub">Kazandığın scooterlar, şarj ve oynama süren kaydedilir • Her 5 km'de şarj noktası</div>
+        <div class="garage-sub">2. el satış fiyatı: 4/3 (3/4 = %75) • Kazandığın scooterlar, şarj ve oynama süren kaydedilir</div>
       </div>
       <div id="scooterList" class="scooter-list"></div>
     </div>
@@ -623,6 +639,11 @@
 
     const starterScooter = SCOOTERS[SCOOTERS.length - 1];
     const validScooterIds = new Set(SCOOTERS.map(s => s.id));
+
+    // 2. el satış fiyatı: fiyatının 4/3'ü (3/4 = 0.75x) -> örn. 10.000 TL -> 7.500 TL
+    function getSecondHandSellPrice(scooter) {
+      return Math.round((scooter.price * 3) / 4);
+    }
 
     const STATIC_PUZZLES = [
       {
@@ -948,7 +969,6 @@
       } catch (_) {}
     }
 
-    // Sayfa gizlendiğinde, sekme değiştiğinde veya çıkıldığında oynama sayacını durdurup kaydet
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState !== "visible") {
         state.controls.gas = false;
@@ -1490,14 +1510,21 @@
         const isSelected = state.selectedId === sc.id;
         const canAfford = state.money >= sc.price;
         const batPct = Math.round(typeof state.batteryByScooter[sc.id] === "number" ? state.batteryByScooter[sc.id] : 100);
+        const sellPrice = getSecondHandSellPrice(sc);
+        const canSell = owned && state.ownedIds.size > 1 && sc.id !== starterScooter.id;
 
-        let btnHtml = "";
-        if (isSelected) {
-          btnHtml = `<span class="owned-tag">Sürülüyor</span>`;
-        } else if (owned) {
-          btnHtml = `<button class="action-mini btn-select" onclick="selectScooter('${sc.id}')">Seç</button>`;
+        let actionsHtml = "";
+        if (owned) {
+          if (isSelected) {
+            actionsHtml += `<span class="owned-tag">Sürülüyor</span>`;
+          } else {
+            actionsHtml += `<button class="action-mini btn-select" onclick="selectScooter('${sc.id}')">Seç</button>`;
+          }
+          if (canSell) {
+            actionsHtml += `<button class="action-mini btn-sell" title="2. El (4/3 fiyatına sat)" onclick="sellScooter('${sc.id}')">Sat (${formatMoney(sellPrice)})</button>`;
+          }
         } else {
-          btnHtml = `<button class="action-mini btn-buy" ${canAfford ? "" : "disabled"} onclick="buyScooter('${sc.id}')">Satın Al</button>`;
+          actionsHtml = `<button class="action-mini btn-buy" ${canAfford ? "" : "disabled"} onclick="buyScooter('${sc.id}')">Satın Al</button>`;
         }
 
         return `
@@ -1508,8 +1535,8 @@
               <div class="scooter-meta">Pil: ${sc.battery} • Menzil: ${sc.rangeKm} km • Şarj: %${batPct}</div>
             </div>
             <div class="card-footer">
-              <div class="price-tag">${owned ? "Sahip Olunan" : formatMoney(sc.price)}</div>
-              ${btnHtml}
+              <div class="price-tag">${owned ? `2. El (4/3): ${formatMoney(sellPrice)}` : formatMoney(sc.price)}</div>
+              <div class="card-actions">${actionsHtml}</div>
             </div>
           </div>
         `;
@@ -1547,6 +1574,32 @@
       state.speedKmh = Math.min(state.speedKmh, sc.topSpeedKmh);
       saveProgress();
       showToast(`${sc.name} seçildi (Şarj: %${Math.round(getCurrentBattery())}).`);
+      renderHUD();
+      renderGarage();
+    };
+
+    window.sellScooter = function(id) {
+      if (state.puzzle.isOpen) return;
+      ensureAudio();
+      const sc = SCOOTERS.find(s => s.id === id);
+      if (!sc || !state.ownedIds.has(id)) return;
+      if (id === starterScooter.id || state.ownedIds.size <= 1) {
+        showToast("Son scooterın satılamaz!");
+        return;
+      }
+
+      const sellAmount = getSecondHandSellPrice(sc);
+      state.ownedIds.delete(id);
+      state.money += sellAmount;
+
+      if (state.selectedId === id) {
+        const nextOwned = SCOOTERS.find(s => state.ownedIds.has(s.id)) || starterScooter;
+        state.selectedId = nextOwned.id;
+        state.speedKmh = Math.min(state.speedKmh, nextOwned.topSpeedKmh);
+      }
+
+      saveProgress();
+      showToast(`${sc.name} 2. el (4/3) fiyatına ${formatMoney(sellAmount)} karşılığında satıldı!`);
       renderHUD();
       renderGarage();
     };
@@ -1703,14 +1756,12 @@
     }
 
     function step(dt) {
-      // Oyundan çıkıldığında / sekme arkaplana alındığında oynama sayacı durur
       if (!isGameActiveForPlaytime()) {
         updatePlaytimeUI();
         updateMotorSound(0, false, false);
         return;
       }
 
-      // Açık ve odaklanmış olduğu sürece oynama süresini say ve periyodik kaydet
       state.totalPlaySeconds += dt;
       state.playSaveAccumulator += dt;
       if (state.playSaveAccumulator >= 5) {
