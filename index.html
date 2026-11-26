@@ -247,6 +247,132 @@
       background: linear-gradient(135deg, #d97706, #f59e0b);
     }
 
+    /* En Çok Oynayanlar Sıralaması */
+    .leaderboard-section {
+      background: #131c31;
+      border: 1px solid rgba(52, 211, 153, 0.25);
+      border-radius: 14px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .leaderboard-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .leaderboard-title {
+      font-size: 14px;
+      font-weight: 800;
+      color: #34d399;
+    }
+
+    .leaderboard-sub {
+      font-size: 11px;
+      color: #94a3b8;
+    }
+
+    .name-form {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .name-input {
+      background: #1e293b;
+      color: #f8fafc;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 9px;
+      padding: 7px 11px;
+      font-size: 12px;
+      font-weight: 700;
+      min-width: 180px;
+      user-select: text;
+      -webkit-user-select: text;
+    }
+
+    .name-input:focus {
+      outline: none;
+      border-color: #38bdf8;
+    }
+
+    .name-save-btn {
+      background: #0284c7;
+      color: #ffffff;
+      border: none;
+      border-radius: 9px;
+      padding: 7px 12px;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .sync-status {
+      font-size: 11px;
+      font-weight: 700;
+      color: #cbd5e1;
+      background: #1e293b;
+      border-radius: 999px;
+      padding: 5px 10px;
+    }
+
+    .leaderboard-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 220px;
+      overflow-y: auto;
+    }
+
+    .leader-row {
+      background: #1e293b;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      padding: 8px 11px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 12px;
+    }
+
+    .leader-row.is-me {
+      border-color: #34d399;
+      background: rgba(16, 185, 129, 0.14);
+    }
+
+    .leader-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 800;
+    }
+
+    .leader-rank {
+      color: #fbbf24;
+      min-width: 34px;
+    }
+
+    .leader-me-tag {
+      background: #34d399;
+      color: #06281e;
+      font-size: 10px;
+      font-weight: 900;
+      border-radius: 999px;
+      padding: 2px 7px;
+    }
+
+    .leader-time {
+      font-weight: 800;
+      color: #38bdf8;
+    }
+
     .garage-section {
       background: #131c31;
       border: 1px solid rgba(255, 255, 255, 0.08);
@@ -582,6 +708,24 @@
       </div>
     </div>
 
+    <!-- Gerçek Oyuncular için Oynama Süresi Sıralaması (NPC'ler Asla Dahil Edilmez) -->
+    <div class="leaderboard-section">
+      <div class="leaderboard-head">
+        <div>
+          <div class="leaderboard-title">En Çok Oynayanlar Sıralaması (Sadece Gerçek Oyuncular)</div>
+          <div class="leaderboard-sub">NPC'ler listeye girmez • En çok vakit geçiren 1. olur • İsim yazıp herkesle görünür ol</div>
+        </div>
+        <div id="syncStatusPill" class="sync-status">Mod: Yerel Cihaz</div>
+      </div>
+
+      <div class="name-form">
+        <input id="playerNameInput" class="name-input" type="text" maxlength="20" placeholder="Adını veya takma adını yaz..." />
+        <button id="savePlayerNameBtn" class="name-save-btn" type="button">Adı Kaydet</button>
+      </div>
+
+      <div id="leaderboardList" class="leaderboard-list"></div>
+    </div>
+
     <div class="garage-section">
       <div class="garage-head">
         <div class="garage-title">Scooter Mağazası &amp; Garaj (İyiden Kötüye Sıralı)</div>
@@ -606,8 +750,15 @@
   </div>
 
   <script>
+    // İsteğe bağlı ortak Firebase Realtime Database kökü (örnek: "https://senin-proje-default-rtdb.firebaseio.com")
+    // Doldurulduğunda farklı cihazlardaki gerçek oyuncular da sıralamada görünür.
+    const LEADERBOARD_DB_URL = "";
+
     const SAVE_KEY = "scooter_ride_save_v3";
     const LEGACY_SAVE_KEY = "scooter_ride_save_v2";
+    const LOCAL_PLAYERS_KEY = "scooter_ride_real_players_v1";
+    const PLAYER_ID_KEY = "scooter_ride_player_id_v1";
+
     const CHARGE_INTERVAL_M = 5000;
     const BIOME_INTERVAL_M = 3000;
     const PUZZLE_INTERVAL_SEC = 300;
@@ -731,6 +882,19 @@
 
     const starterScooter = SCOOTERS[SCOOTERS.length - 1];
     const validScooterIds = new Set(SCOOTERS.map(s => s.id));
+
+    function getOrCreatePlayerId() {
+      try {
+        let id = localStorage.getItem(PLAYER_ID_KEY);
+        if (!id || typeof id !== "string" || id.trim().length < 4) {
+          id = "player_" + Math.random().toString(36).slice(2, 10) + "_" + Date.now().toString(36);
+          localStorage.setItem(PLAYER_ID_KEY, id);
+        }
+        return id;
+      } catch (_) {
+        return "player_guest";
+      }
+    }
 
     function getSecondHandSellPrice(scooter) {
       return Math.round((scooter.price * 3) / 4);
@@ -932,7 +1096,12 @@
           ? parsed.askedPuzzleIds.filter(id => typeof id === "string")
           : [];
 
+        const savedPlayerName = typeof parsed.playerName === "string" && parsed.playerName.trim().length > 0
+          ? parsed.playerName.trim().slice(0, 20)
+          : "Oyuncu";
+
         return {
+          playerName: savedPlayerName,
           money: typeof parsed.money === "number" && Number.isFinite(parsed.money) ? Math.max(0, parsed.money) : 15000,
           ownedIds: new Set(savedOwned),
           selectedId: savedSelected,
@@ -960,7 +1129,11 @@
       defaultKms[s.id] = 0;
     });
 
+    const playerId = getOrCreatePlayerId();
+
     const state = {
+      playerId,
+      playerName: saved ? saved.playerName : "Oyuncu",
       money: saved ? saved.money : 15000,
       ownedIds: saved ? saved.ownedIds : new Set([starterScooter.id]),
       selectedId: saved ? saved.selectedId : starterScooter.id,
@@ -970,6 +1143,8 @@
       puzzleDynamicCounter: saved ? saved.puzzleDynamicCounter : 0,
       totalPlaySeconds: saved ? saved.totalPlaySeconds : 0,
       playSaveAccumulator: 0,
+      leaderboardSyncAccumulator: 0,
+      remotePlayers: {},
       mapMode: "free",
       soundEnabled: saved ? saved.soundEnabled : true,
       npcDensity: saved ? saved.npcDensity : 50,
@@ -1066,9 +1241,179 @@
       playtimePill.textContent = `Oynama: ${formatPlaytime(state.totalPlaySeconds)}${active ? "" : " (Durdu)"}`;
     }
 
+    // Sadece gerçek oyuncuların süresini sakla ve sırala (NPC'ler asla eklenmez)
+    function loadLocalRealPlayers() {
+      try {
+        const raw = localStorage.getItem(LOCAL_PLAYERS_KEY);
+        if (!raw) return {};
+        const parsed = JSON.parse(raw);
+        if (!parsed || typeof parsed !== "object") return {};
+        const clean = {};
+        Object.entries(parsed).forEach(([id, entry]) => {
+          if (!id || typeof id !== "string" || id.startsWith("npc_")) return;
+          if (!entry || typeof entry !== "object") return;
+          if (typeof entry.totalPlaySeconds !== "number" || !Number.isFinite(entry.totalPlaySeconds)) return;
+          clean[id] = {
+            id,
+            name: typeof entry.name === "string" && entry.name.trim() ? entry.name.trim().slice(0, 20) : "Oyuncu",
+            totalPlaySeconds: Math.max(0, entry.totalPlaySeconds),
+            updatedAt: typeof entry.updatedAt === "number" ? entry.updatedAt : Date.now()
+          };
+        });
+        return clean;
+      } catch (_) {
+        return {};
+      }
+    }
+
+    function saveLocalRealPlayerEntry() {
+      try {
+        const map = loadLocalRealPlayers();
+        map[state.playerId] = {
+          id: state.playerId,
+          name: state.playerName,
+          totalPlaySeconds: Math.max(0, state.totalPlaySeconds),
+          updatedAt: Date.now()
+        };
+        localStorage.setItem(LOCAL_PLAYERS_KEY, JSON.stringify(map));
+      } catch (_) {}
+    }
+
+    function getCleanLeaderboardDbUrl() {
+      return typeof LEADERBOARD_DB_URL === "string" ? LEADERBOARD_DB_URL.trim().replace(/\/+$/, "") : "";
+    }
+
+    async function syncWithSharedLeaderboard() {
+      saveLocalRealPlayerEntry();
+      const dbUrl = getCleanLeaderboardDbUrl();
+      if (!dbUrl) {
+        renderLeaderboard();
+        return;
+      }
+
+      const payload = {
+        id: state.playerId,
+        name: state.playerName,
+        totalPlaySeconds: Math.floor(state.totalPlaySeconds),
+        updatedAt: Date.now()
+      };
+
+      try {
+        await fetch(`${dbUrl}/real_players/${encodeURIComponent(state.playerId)}.json`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        const res = await fetch(`${dbUrl}/real_players.json`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && typeof data === "object") {
+            const nextRemote = {};
+            Object.entries(data).forEach(([id, entry]) => {
+              if (!id || id.startsWith("npc_") || !entry || typeof entry !== "object") return;
+              if (typeof entry.totalPlaySeconds !== "number" || !Number.isFinite(entry.totalPlaySeconds)) return;
+              nextRemote[id] = {
+                id,
+                name: typeof entry.name === "string" && entry.name.trim() ? entry.name.trim().slice(0, 20) : "Oyuncu",
+                totalPlaySeconds: Math.max(0, entry.totalPlaySeconds),
+                updatedAt: typeof entry.updatedAt === "number" ? entry.updatedAt : 0
+              };
+            });
+            state.remotePlayers = nextRemote;
+          }
+        }
+        renderLeaderboard();
+      } catch (_) {
+        renderLeaderboard();
+      }
+    }
+
+    function renderLeaderboard() {
+      const listEl = document.getElementById("leaderboardList");
+      const syncPill = document.getElementById("syncStatusPill");
+      const hasSharedDb = Boolean(getCleanLeaderboardDbUrl());
+      syncPill.textContent = hasSharedDb ? "Mod: Ortak Oyuncu Listesi" : "Mod: Yerel Cihaz";
+
+      const merged = new Map();
+
+      const localMap = loadLocalRealPlayers();
+      Object.values(localMap).forEach(p => {
+        if (!p.id.startsWith("npc_")) {
+          merged.set(p.id, { ...p });
+        }
+      });
+
+      Object.values(state.remotePlayers).forEach(p => {
+        if (!p.id.startsWith("npc_")) {
+          const existing = merged.get(p.id);
+          if (!existing || p.totalPlaySeconds > existing.totalPlaySeconds) {
+            merged.set(p.id, { ...p });
+          }
+        }
+      });
+
+      // Kendi aktif süreni her zaman en güncel haliyle yaz
+      merged.set(state.playerId, {
+        id: state.playerId,
+        name: state.playerName,
+        totalPlaySeconds: Math.max(0, state.totalPlaySeconds),
+        updatedAt: Date.now()
+      });
+
+      const sorted = Array.from(merged.values())
+        .sort((a, b) => b.totalPlaySeconds - a.totalPlaySeconds);
+
+      listEl.innerHTML = sorted.map((player, index) => {
+        const isMe = player.id === state.playerId;
+        const rankNo = index + 1;
+        return `
+          <div class="leader-row ${isMe ? "is-me" : ""}">
+            <div class="leader-left">
+              <span class="leader-rank">#${rankNo}</span>
+              <span>${escapeHtml(player.name)}</span>
+              ${isMe ? `<span class="leader-me-tag">SEN</span>` : ""}
+            </div>
+            <div class="leader-time">${formatPlaytime(player.totalPlaySeconds)}</div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    const playerNameInput = document.getElementById("playerNameInput");
+    const savePlayerNameBtn = document.getElementById("savePlayerNameBtn");
+
+    function applyPlayerName() {
+      const cleaned = playerNameInput.value.trim().slice(0, 20);
+      state.playerName = cleaned || "Oyuncu";
+      playerNameInput.value = state.playerName;
+      saveProgress();
+      saveLocalRealPlayerEntry();
+      renderLeaderboard();
+      syncWithSharedLeaderboard();
+      showToast(`Adın kaydedildi: ${state.playerName}`);
+    }
+
+    savePlayerNameBtn.addEventListener("click", applyPlayerName);
+    playerNameInput.addEventListener("keydown", (e) => {
+      e.stopPropagation();
+      if (e.key === "Enter") {
+        applyPlayerName();
+      }
+    });
+
     function saveProgress() {
       try {
         const payload = {
+          playerName: state.playerName,
           money: state.money,
           ownedIds: Array.from(state.ownedIds),
           selectedId: state.selectedId,
@@ -1082,6 +1427,7 @@
           completedCount: state.mission.completedCount
         };
         localStorage.setItem(SAVE_KEY, JSON.stringify(payload));
+        saveLocalRealPlayerEntry();
       } catch (_) {}
     }
 
@@ -1091,6 +1437,7 @@
         state.controls.brake = false;
         updateMotorSound(0, false, false);
         saveProgress();
+        syncWithSharedLeaderboard();
       }
       updatePlaytimeUI();
     });
@@ -1109,6 +1456,7 @@
 
     window.addEventListener("pagehide", () => {
       saveProgress();
+      syncWithSharedLeaderboard();
     });
 
     function chooseDifficultyByRatio() {
@@ -1867,6 +2215,8 @@
     });
 
     window.addEventListener("keydown", (e) => {
+      if (document.activeElement === playerNameInput) return;
+
       if (state.puzzle.isOpen) {
         const keyMap = { "1": 0, "a": 0, "A": 0, "2": 1, "b": 1, "B": 1, "3": 2, "c": 2, "C": 2, "4": 3, "d": 3, "D": 3 };
         if (e.key in keyMap) {
@@ -1919,6 +2269,7 @@
 
       const maxSpeed = 35 + Math.random() * 45;
       state.npcs.push({
+        isNpc: true,
         lane,
         y: -45,
         speed: maxSpeed * 0.75,
@@ -1973,10 +2324,19 @@
 
       state.totalPlaySeconds += dt;
       state.playSaveAccumulator += dt;
+      state.leaderboardSyncAccumulator += dt;
+
       if (state.playSaveAccumulator >= 5) {
         state.playSaveAccumulator = 0;
         saveProgress();
+        renderLeaderboard();
       }
+
+      if (state.leaderboardSyncAccumulator >= 10) {
+        state.leaderboardSyncAccumulator = 0;
+        syncWithSharedLeaderboard();
+      }
+
       updatePlaytimeUI();
 
       if (state.puzzle.isOpen) {
@@ -2598,10 +2958,14 @@
 
     window.addEventListener("resize", resizeCanvas);
     resizeCanvas();
+    playerNameInput.value = state.playerName;
+    saveLocalRealPlayerEntry();
     initInitialScenery();
     syncNpcControlUI();
     syncSoundBtnUI();
     renderHUD();
+    renderLeaderboard();
+    syncWithSharedLeaderboard();
     renderGarage();
     requestAnimationFrame(loop);
   </script>
