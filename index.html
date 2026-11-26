@@ -707,9 +707,15 @@
       gap: 8px;
     }
 
+    .scooter-card.chrono-vip {
+      background: linear-gradient(145deg, rgba(14, 116, 144, 0.28), rgba(88, 28, 135, 0.28));
+      border-color: rgba(56, 189, 248, 0.65);
+      box-shadow: 0 0 16px rgba(56, 189, 248, 0.2);
+    }
+
     .scooter-card.active {
       border-color: #38bdf8;
-      box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.35);
+      box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.45);
     }
 
     .scooter-rank {
@@ -717,6 +723,10 @@
       font-weight: 800;
       color: #fbbf24;
       text-transform: uppercase;
+    }
+
+    .scooter-card.chrono-vip .scooter-rank {
+      color: #67e8f9;
     }
 
     .scooter-name {
@@ -1089,7 +1099,7 @@
     const ONLINE_VISUAL_SCALE = 4.2;
 
     const INITIAL_PLAYER_MONEY = 2000000;
-    const SAVE_KEY = "scooter_ride_save_v4";
+    const SAVE_KEY = "scooter_ride_save_v5";
     const LOCAL_PLAYERS_KEY = "scooter_ride_real_players_v1";
     const LOCAL_CHAT_KEY = "scooter_ride_chat_messages_v1";
     const LOCAL_ROOMS_KEY = "scooter_ride_local_rooms_v1";
@@ -1150,13 +1160,20 @@
       { id: "kx-01k", name: "ONVO KX-01K 150W", price: 9999, powerW: 150, topSpeedKmh: 15, battery: "21.6V 2.4A", rangeKm: 8, color: "#f43f5e" }
     ];
 
-    const SCOOTERS = RAW_SCOOTERS
-      .map(s => ({ ...s, score: s.powerW * 1.4 + s.topSpeedKmh * 180 }))
-      .sort((a, b) => b.score - a.score)
-      .map((s, idx) => ({ ...s, rank: idx + 1 }));
-
-    const starterScooter = SCOOTERS[SCOOTERS.length - 1];
-    const validScooterIds = new Set(SCOOTERS.map(s => s.id));
+    const OWNER_ONLY_SCOOTERS = [
+      {
+        id: "chrono-3000-vip",
+        name: "CHRONO-3000 X (3000 Yılı Işıklı Süper)",
+        price: 550000,
+        powerW: 95000,
+        topSpeedKmh: 1000,
+        battery: "256V Plazma Çekirdek",
+        rangeKm: 999,
+        color: "#38bdf8",
+        ownerOnly: true,
+        is3000Light: true
+      }
+    ];
 
     function getOrCreatePlayerId() {
       try {
@@ -1170,6 +1187,23 @@
         return "player_guest";
       }
     }
+
+    const playerId = getOrCreatePlayerId();
+
+    function getAvailableScootersForPlayer(currentPlayerId) {
+      const combined = [
+        ...RAW_SCOOTERS,
+        ...OWNER_ONLY_SCOOTERS.filter(s => s.ownerOnly && currentPlayerId === playerId)
+      ];
+      return combined
+        .map(s => ({ ...s, score: s.powerW * 1.4 + s.topSpeedKmh * 180 }))
+        .sort((a, b) => b.score - a.score)
+        .map((s, idx) => ({ ...s, rank: idx + 1 }));
+    }
+
+    let SCOOTERS = getAvailableScootersForPlayer(playerId);
+    let starterScooter = SCOOTERS[SCOOTERS.length - 1];
+    let validScooterIds = new Set(SCOOTERS.map(s => s.id));
 
     function getSecondHandSellPrice(scooter) {
       return Math.round((scooter.price * 3) / 4);
@@ -1200,7 +1234,7 @@
       },
       {
         id: "hard_riddle_1", difficulty: "hard", category: "Scooter Bilmecesi",
-        question: "13.000W gücü, 130 km/h hızı ve 170 km menzili ile garajın 1 numaralı modeli hangisidir?",
+        question: "13.000W gücü, 130 km/h hızı ve 170 km menzili ile Dualtron serisindeki yüksek güçlü model hangisidir?",
         options: ["Dualtron Sonic Alien", "Dualtron Thunder 3", "Dualtron X Limited", "Hiley Tiger Supra"], correctIndex: 2
       }
     ];
@@ -1255,8 +1289,6 @@
     const defaultBatteries = {};
     const defaultKms = {};
     SCOOTERS.forEach(s => { defaultBatteries[s.id] = 100; defaultKms[s.id] = 0; });
-
-    const playerId = getOrCreatePlayerId();
 
     const state = {
       playerId,
@@ -2572,6 +2604,7 @@
         const scKm = getScooterKm(sc.id);
         const sellPrice = getSecondHandSellPrice(sc);
         const canSell = owned && state.ownedIds.size > 1 && sc.id !== starterScooter.id;
+        const isChrono = Boolean(sc.is3000Light);
 
         let actionsHtml = "";
         if (owned) {
@@ -2583,9 +2616,9 @@
         }
 
         return `
-          <div class="scooter-card ${isSelected ? "active" : ""}">
+          <div class="scooter-card ${isChrono ? "chrono-vip" : ""} ${isSelected ? "active" : ""}">
             <div>
-              <div class="scooter-rank">Sıra #${sc.rank} • ${sc.powerW}W • ${sc.topSpeedKmh} km/h</div>
+              <div class="scooter-rank">${isChrono ? "✦ SADECE SANA ÖZEL • 3000 YILI • " : ""}Sıra #${sc.rank} • ${sc.powerW}W • ${sc.topSpeedKmh} km/h</div>
               <div class="scooter-name">${sc.name}</div>
               <div class="scooter-meta">Pil: ${sc.battery} • Menzil: ${sc.rangeKm} km • Şarj: %${batPct} • KM: ${formatKm(scKm)}</div>
             </div>
@@ -2881,9 +2914,9 @@
       const currentBat = getCurrentBattery();
       const batteryFactor = currentBat > 0 ? (currentBat <= 15 ? 0.65 : 1) : 0.25;
       const effectiveTopSpeed = sc.topSpeedKmh * batteryFactor;
-      const accelRate = (22 + (sc.powerW / 13000) * 52) * batteryFactor;
-      const brakeRate = 64;
-      const coastDrag = 10;
+      const accelRate = (22 + (sc.powerW / 13000) * 52 + (sc.is3000Light ? 360 : 0)) * batteryFactor;
+      const brakeRate = sc.is3000Light ? 240 : 64;
+      const coastDrag = sc.is3000Light ? 28 : 10;
 
       if (state.speedKmh > effectiveTopSpeed) state.speedKmh = Math.max(effectiveTopSpeed, state.speedKmh - brakeRate * 0.6 * dt);
       if (state.controls.gas && !state.controls.brake) state.speedKmh = Math.min(effectiveTopSpeed, state.speedKmh + accelRate * dt);
@@ -2894,7 +2927,8 @@
       const deltaM = speedMps * dt;
       state.distanceM += deltaM;
       addScooterMeters(sc.id, deltaM);
-      state.roadOffset = (state.roadOffset + deltaM * 24) % 80;
+      const visualScrollSpeed = Math.min(1800, state.speedKmh);
+      state.roadOffset = (state.roadOffset + ((visualScrollSpeed * 1000) / 3600) * dt * 24) % 80;
 
       const newBiomeIdx = Math.floor(state.distanceM / BIOME_INTERVAL_M) % ISTANBUL_SUBREGIONS.length;
       if (newBiomeIdx !== state.currentBiomeIndex) {
@@ -2905,7 +2939,7 @@
         }
       }
 
-      const scrollPx = deltaM * 24;
+      const scrollPx = ((visualScrollSpeed * 1000) / 3600) * dt * 24;
       state.sceneryItems.forEach(item => { item.y += scrollPx; item.animPhase += dt * 5.2; });
       state.sceneryItems = state.sceneryItems.filter(item => item.y < canvas.getBoundingClientRect().height + 70);
       if (state.distanceM >= state.nextScenerySpawnM) {
@@ -2929,7 +2963,7 @@
         renderGarage();
       }
 
-      state.laneVisualX += (state.lane - state.laneVisualX) * Math.min(1, dt * 14);
+      state.laneVisualX += (state.lane - state.laneVisualX) * Math.min(1, dt * (sc.is3000Light ? 22 : 14));
 
       if (state.npcDensity > 0 && Math.random() < dt * ((state.npcDensity / 100) * 3.2)) spawnNpc();
 
@@ -2966,7 +3000,8 @@
       }
 
       state.npcs.forEach(npc => {
-        const relSpeedMps = ((state.speedKmh - npc.speed) * 1000) / 3600;
+        const relVisualSpeed = Math.min(1800, state.speedKmh) - npc.speed;
+        const relSpeedMps = (relVisualSpeed * 1000) / 3600;
         npc.y += relSpeedMps * dt * 20 + 35 * dt;
       });
 
@@ -3199,9 +3234,100 @@
       });
     }
 
-    function drawScooterSprite(ctx, x, y, color, isPlayer, isHonking) {
+    function drawScooterSprite(ctx, x, y, color, isPlayer, isHonking, is3000Light = false) {
       ctx.save();
       ctx.translate(x, y);
+
+      if (is3000Light) {
+        const pulse = 0.65 + 0.35 * Math.sin(performance.now() * 0.012);
+
+        const auraGrad = ctx.createRadialGradient(0, 0, 4, 0, 0, 34);
+        auraGrad.addColorStop(0, `rgba(56, 189, 248, ${0.45 * pulse})`);
+        auraGrad.addColorStop(0.55, `rgba(168, 85, 247, ${0.24 * pulse})`);
+        auraGrad.addColorStop(1, "rgba(56, 189, 248, 0)");
+        ctx.fillStyle = auraGrad;
+        ctx.beginPath();
+        ctx.arc(0, 0, 34, 0, Math.PI * 2);
+        ctx.fill();
+
+        const trailGrad = ctx.createLinearGradient(0, 12, 0, 56);
+        trailGrad.addColorStop(0, `rgba(56, 189, 248, ${0.75 * pulse})`);
+        trailGrad.addColorStop(0.5, `rgba(192, 132, 252, ${0.38 * pulse})`);
+        trailGrad.addColorStop(1, "rgba(56, 189, 248, 0)");
+        ctx.fillStyle = trailGrad;
+        ctx.beginPath();
+        ctx.moveTo(-10, 12);
+        ctx.lineTo(10, 12);
+        ctx.lineTo(16, 56);
+        ctx.lineTo(-16, 56);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = "#090d1a";
+        ctx.beginPath();
+        ctx.moveTo(0, -25);
+        ctx.lineTo(14, -6);
+        ctx.lineTo(22, 8);
+        ctx.lineTo(9, 22);
+        ctx.lineTo(-9, 22);
+        ctx.lineTo(-22, 8);
+        ctx.lineTo(-14, -6);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.strokeStyle = "#38bdf8";
+        ctx.lineWidth = 2.4;
+        ctx.shadowColor = "#38bdf8";
+        ctx.shadowBlur = 12;
+        ctx.stroke();
+
+        ctx.strokeStyle = "#e879f9";
+        ctx.lineWidth = 1.6;
+        ctx.beginPath();
+        ctx.moveTo(-18, 4);
+        ctx.lineTo(-7, -2);
+        ctx.moveTo(18, 4);
+        ctx.lineTo(7, -2);
+        ctx.stroke();
+
+        ctx.fillStyle = "#67e8f9";
+        ctx.beginPath();
+        ctx.moveTo(0, -23);
+        ctx.lineTo(4, -7);
+        ctx.lineTo(0, 14);
+        ctx.lineTo(-4, -7);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.shadowBlur = 0;
+
+        ctx.fillStyle = "#1e293b";
+        ctx.beginPath();
+        ctx.ellipse(0, 1, 8.5, 5, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "#f8fafc";
+        ctx.beginPath();
+        ctx.arc(0, -1, 5.8, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "#e879f9";
+        ctx.beginPath();
+        ctx.arc(0, -3, 3.8, Math.PI * 1.1, Math.PI * 1.9);
+        ctx.fill();
+
+        if (isHonking) {
+          const hPulse = ((performance.now() / 110) % 1);
+          ctx.strokeStyle = `rgba(103, 232, 249, ${1 - hPulse * 0.7})`;
+          ctx.lineWidth = 2.2;
+          ctx.beginPath();
+          ctx.arc(0, -20, 10 + hPulse * 12, Math.PI * 1.15, Math.PI * 1.85);
+          ctx.stroke();
+        }
+
+        ctx.restore();
+        return;
+      }
 
       ctx.fillStyle = "rgba(0, 0, 0, 0.38)";
       ctx.beginPath();
@@ -3451,7 +3577,7 @@
           const rLaneX = typeof rp.laneVisualX === "number" ? rp.laneVisualX : (rp.lane || 0);
           const rx = roadLeft + laneW * (rLaneX + 0.5);
 
-          drawScooterSprite(ctx, rx, ry, rp.scooterColor || "#5eead4", false, false);
+          drawScooterSprite(ctx, rx, ry, rp.scooterColor || "#5eead4", false, false, false);
 
           ctx.save();
           ctx.translate(rx, ry);
@@ -3469,7 +3595,7 @@
       }
 
       const px = roadLeft + laneW * (state.laneVisualX + 0.5);
-      drawScooterSprite(ctx, px, playerY, sc.color, true, state.controls.horn);
+      drawScooterSprite(ctx, px, playerY, sc.color, true, state.controls.horn, Boolean(sc.is3000Light));
 
       drawOnlineRightSidePanel(ctx, w, h, roadRight, w - roadRight, playerY);
 
