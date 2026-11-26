@@ -950,7 +950,7 @@
     <div class="hud-top">
       <div class="title-group">
         <div class="brand">SCOOTER RIDE</div>
-        <div id="moneyPill" class="pill money">₺15.000,00</div>
+        <div id="moneyPill" class="pill money">₺2.000.000,00</div>
         <div id="batteryPill" class="pill battery-ok">Şarj: %100</div>
         <div id="scooterKmPill" class="pill odo" title="Bu scooter ile yaptığın toplam kilometre">Araç KM: 0,0 km</div>
         <div id="biomePill" class="pill biome" title="Harita bölgesi ve rota bilgisi">Harita: İstanbul</div>
@@ -1088,8 +1088,8 @@
     const ONLINE_PLAYER_STALE_MS = 35000;
     const ONLINE_VISUAL_SCALE = 4.2;
 
-    const SAVE_KEY = "scooter_ride_save_v3";
-    const LEGACY_SAVE_KEY = "scooter_ride_save_v2";
+    const INITIAL_PLAYER_MONEY = 2000000;
+    const SAVE_KEY = "scooter_ride_save_v4";
     const LOCAL_PLAYERS_KEY = "scooter_ride_real_players_v1";
     const LOCAL_CHAT_KEY = "scooter_ride_chat_messages_v1";
     const LOCAL_ROOMS_KEY = "scooter_ride_local_rooms_v1";
@@ -1207,7 +1207,7 @@
 
     function loadSavedState() {
       try {
-        const raw = localStorage.getItem(SAVE_KEY) || localStorage.getItem(LEGACY_SAVE_KEY);
+        const raw = localStorage.getItem(SAVE_KEY);
         if (!raw) return null;
         const parsed = JSON.parse(raw);
         if (!parsed || typeof parsed !== "object") return null;
@@ -1233,7 +1233,7 @@
         return {
           playerName: typeof parsed.playerName === "string" && parsed.playerName.trim().length > 0
             ? parsed.playerName.trim().slice(0, 20) : "Oyuncu",
-          money: typeof parsed.money === "number" && Number.isFinite(parsed.money) ? Math.max(0, parsed.money) : 15000,
+          money: typeof parsed.money === "number" && Number.isFinite(parsed.money) ? Math.max(0, parsed.money) : INITIAL_PLAYER_MONEY,
           ownedIds: new Set(savedOwned),
           selectedId: savedSelected,
           batteryByScooter,
@@ -1261,7 +1261,7 @@
     const state = {
       playerId,
       playerName: saved ? saved.playerName : "Oyuncu",
-      money: saved ? saved.money : 15000,
+      money: saved ? saved.money : INITIAL_PLAYER_MONEY,
       ownedIds: saved ? saved.ownedIds : new Set([starterScooter.id]),
       selectedId: saved ? saved.selectedId : starterScooter.id,
       batteryByScooter: saved ? saved.batteryByScooter : defaultBatteries,
@@ -3060,7 +3060,6 @@
       ctx.lineWidth = 1.2;
       ctx.stroke();
 
-      // Çatı / kemer detayı
       if (cityKey === "kahramanmaras") {
         ctx.fillStyle = "#78350f";
         ctx.fillRect(-bw / 2 + 2, -bh / 2 + 2, bw - 4, 6);
@@ -3069,7 +3068,6 @@
         ctx.fillRect(-bw / 2, -bh / 2, bw, 6);
       }
 
-      // Pencereler
       const winColor = cityKey === "erzurum" ? "#fde047" : "#bae6fd";
       ctx.fillStyle = winColor;
       for (let wy = -bh / 2 + 10; wy < bh / 2 - 8; wy += 10) {
@@ -3089,7 +3087,6 @@
       ctx.fillRect(roadRight, 0, w - roadRight, h);
 
       if (theme.hasSea) {
-        // İstanbul: Sol taraf Boğaz / deniz, dalgalar ve tekneler; sağ taraf sahil kaldırımı ve şehir
         ctx.fillStyle = "#0369a1";
         ctx.fillRect(0, 0, Math.max(0, roadLeft - 14), h);
 
@@ -3102,20 +3099,16 @@
           ctx.stroke();
         }
 
-        // Kıyı bordürü
         ctx.fillStyle = "#cbd5e1";
         ctx.fillRect(Math.max(0, roadLeft - 14), 0, 14, h);
 
-        // Sağ kaldırım şeridi
         ctx.fillStyle = "#64748b";
         ctx.fillRect(roadRight, 0, Math.min(18, w - roadRight), h);
       } else if (theme.cityKey === "kahramanmaras") {
-        // Kahramanmaraş: İki yanda kaldırım ve sıcak taş/çarşı dokusu
         ctx.fillStyle = "#d97706";
         ctx.fillRect(Math.max(0, roadLeft - 14), 0, 14, h);
         ctx.fillRect(roadRight, 0, Math.min(14, w - roadRight), h);
       } else {
-        // Erzurum: Karlı kenarlar ve kaldırım
         ctx.fillStyle = "#f1f5f9";
         ctx.fillRect(Math.max(0, roadLeft - 14), 0, 14, h);
         ctx.fillRect(roadRight, 0, Math.min(14, w - roadRight), h);
@@ -3126,7 +3119,6 @@
         const areaW = item.side === "left" ? roadLeft - 16 : (w - roadRight - 16);
         if (areaW < 18) return;
 
-        // İstanbul sol tarafta deniz üzerinde tekne çizimi
         if (theme.hasSea && item.side === "left") {
           if (item.kind === "building" || item.kind === "tree") {
             const bx = Math.max(14, roadLeft * 0.42);
