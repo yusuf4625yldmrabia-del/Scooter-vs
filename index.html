@@ -303,6 +303,10 @@
       cursor: pointer;
     }
 
+    .room-join-btn.joined {
+      background: #0d9488;
+    }
+
     .room-leave-btn {
       background: #b91c1c;
       color: #ffffff;
@@ -936,7 +940,7 @@
         <div id="moneyPill" class="pill money">₺15.000,00</div>
         <div id="batteryPill" class="pill battery-ok">Şarj: %100</div>
         <div id="scooterKmPill" class="pill odo" title="Bu scooter ile yaptığın toplam kilometre">Araç KM: 0,0 km</div>
-        <div id="biomePill" class="pill biome" title="Her 3.000 metrede bir harita bölgesi ve yol kenarı hayvanları değişir">Bölge: Yeşil Vadi</div>
+        <div id="biomePill" class="pill biome" title="Harita bölgesi ve rota bilgisi">Harita: İstanbul</div>
         <div id="onlineRoomPill" class="pill online-pill" style="display:none;">Oda: Seçilmedi</div>
         <div id="activeScooterPill" class="pill">Araç: -</div>
         <div id="playtimePill" class="pill playtime" title="Oyuna başladığından beri toplam oynama süren (çıkınca durur)">Oynama: 00:00:00</div>
@@ -948,16 +952,16 @@
         </label>
       </div>
       <div class="map-switch">
-        <button id="freeMapBtn" class="map-btn active" type="button">Serbest Harita</button>
-        <button id="missionMapBtn" class="map-btn" type="button">Görev Haritası</button>
-        <button id="onlineMapBtn" class="map-btn online-btn" type="button">Online Harita</button>
+        <button id="freeMapBtn" class="map-btn active" type="button">İstanbul Haritası</button>
+        <button id="missionMapBtn" class="map-btn" type="button">Kahramanmaraş Haritası</button>
+        <button id="onlineMapBtn" class="map-btn online-btn" type="button">Erzurum Haritası</button>
       </div>
     </div>
 
     <div id="roomsSection" class="rooms-section">
       <div class="rooms-head">
         <div>
-          <div class="rooms-title">Online Harita — Odalar (En Fazla 200 Kişi)</div>
+          <div class="rooms-title">Erzurum Online Harita — Odalar (En Fazla 200 Kişi)</div>
           <div class="rooms-sub">İsimle oda kur • İstersen şifre koy • Sağ şeritte oyuncuların ismini, hızını ve km/m uzaklığını gör</div>
         </div>
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
@@ -967,7 +971,7 @@
       </div>
 
       <form id="createRoomForm" class="room-create-form">
-        <input id="roomNameInput" class="room-input" type="text" maxlength="28" placeholder="Oda adı (örn: Sahil Turu)" required />
+        <input id="roomNameInput" class="room-input" type="text" maxlength="28" placeholder="Oda adı (örn: Palandöken Turu)" required />
         <input id="roomPasswordInput" class="room-input" type="password" maxlength="20" placeholder="Şifre (isteğe bağlı)" />
         <button id="createRoomBtn" class="room-create-btn" type="submit">Oda Kur ve Gir</button>
       </form>
@@ -981,7 +985,7 @@
 
     <div class="mission-banner">
       <div id="missionText" class="mission-text">
-        <strong>Serbest Harita:</strong> Yeni bölge: <strong>3000m</strong> • Şarj noktası: <strong>5000m</strong> • Şerit: A/D veya ←/→ • Gaz: W/↑ • Fren: S/↓
+        <strong>İstanbul Haritası (Boğaz &amp; Deniz):</strong> Yeni bölge: <strong>3000m</strong> • Şarj noktası: <strong>5000m</strong> • Şerit: A/D veya ←/→ • Gaz: W/↑ • Fren: S/↓
       </div>
       <button id="soundToggleBtn" class="sound-btn" type="button">Ses: Açık</button>
     </div>
@@ -1073,51 +1077,11 @@
     const PUZZLE_INTERVAL_SEC = 300;
     const PUZZLE_DURATION_SEC = 15;
 
-    const BIOMES = [
-      {
-        id: "valley",
-        name: "Yeşil Vadi",
-        bgOuter: "#0b1724",
-        vergeFree: "#166534",
-        vergeMission: "#115e59",
-        roadFill: "#1e293b",
-        roadEdge: "#e2e8f0",
-        laneDash: "#facc15",
-        props: ["pine", "sheep", "rabbit", "scooter_poser", "photo_crew"]
-      },
-      {
-        id: "desert",
-        name: "Kızgın Çöl",
-        bgOuter: "#271608",
-        vergeFree: "#d97706",
-        vergeMission: "#b45309",
-        roadFill: "#292524",
-        roadEdge: "#fde68a",
-        laneDash: "#fb923c",
-        props: ["camel_real", "fat_blond_kid", "cactus", "camel_real", "fat_blond_kid"]
-      },
-      {
-        id: "autumn",
-        name: "Sonbahar Ormanı",
-        bgOuter: "#23120b",
-        vergeFree: "#9a3412",
-        vergeMission: "#7c2d12",
-        roadFill: "#1c1917",
-        roadEdge: "#fed7aa",
-        laneDash: "#fbbf24",
-        props: ["autumn_tree", "deer", "squirrel", "scooter_poser", "photo_crew"]
-      },
-      {
-        id: "winter",
-        name: "Karlı Dağlar",
-        bgOuter: "#0c192c",
-        vergeFree: "#cbd5e1",
-        vergeMission: "#94a3b8",
-        roadFill: "#1e293b",
-        roadEdge: "#ffffff",
-        laneDash: "#38bdf8",
-        props: ["snow_pine", "polar_bear", "penguin", "photo_crew", "scooter_poser"]
-      }
+    const ISTANBUL_SUBREGIONS = [
+      "İstanbul • Boğaz Sahili",
+      "İstanbul • Çamlıca Tepesi",
+      "İstanbul • Adalar Kıyısı",
+      "İstanbul • Kuzey Ormanları"
     ];
 
     const DIFFICULTY_CONFIG = {
@@ -1188,7 +1152,6 @@
       return Math.round((scooter.price * 3) / 4);
     }
 
-    // Düşük hızlı scooterların (ör. ONVO KX-01K: 15 km/h) ulaşamayacağı hız görevlerini engeller
     function getAchievableMissionSpeed(scooter) {
       const top = Math.max(8, Number(scooter.topSpeedKmh) || 15);
       const safeCeiling = Math.max(6, top - 2);
@@ -1294,7 +1257,7 @@
       currentRoomName: "",
       currentRoomPassword: "",
       roomPlayers: {},
-      mapMode: "free",
+      mapMode: "free", // "free" -> İstanbul, "mission" -> Kahramanmaraş, "online" -> Erzurum
       soundEnabled: saved ? saved.soundEnabled : true,
       npcDensity: saved ? saved.npcDensity : 50,
       lane: 1,
@@ -1329,9 +1292,46 @@
       return SCOOTERS.find(s => s.id === state.selectedId) || SCOOTERS[0];
     }
 
-    function getCurrentBiome() {
-      const idx = Math.floor(state.distanceM / BIOME_INTERVAL_M) % BIOMES.length;
-      return BIOMES[idx];
+    // Seçili haritaya göre şehir/bölge bilgisini döndürür
+    function getActiveCityTheme() {
+      if (state.mapMode === "free") {
+        const subName = ISTANBUL_SUBREGIONS[Math.floor(state.distanceM / BIOME_INTERVAL_M) % ISTANBUL_SUBREGIONS.length];
+        return {
+          cityKey: "istanbul",
+          label: subName,
+          bgOuter: "#082f49",
+          leftVerge: "#0284c7", // İstanbul Boğazı / Deniz şeridi
+          rightVerge: "#15803d",
+          roadFill: "#1e293b",
+          roadEdge: "#e2e8f0",
+          laneDash: "#facc15",
+          hasSea: true
+        };
+      }
+      if (state.mapMode === "mission") {
+        return {
+          cityKey: "kahramanmaras",
+          label: "Kahramanmaraş",
+          bgOuter: "#291408",
+          leftVerge: "#b45309",
+          rightVerge: "#92400e",
+          roadFill: "#26211d",
+          roadEdge: "#fde68a",
+          laneDash: "#fb923c",
+          hasSea: false
+        };
+      }
+      return {
+        cityKey: "erzurum",
+        label: "Erzurum",
+        bgOuter: "#0b192c",
+        leftVerge: "#cbd5e1",
+        rightVerge: "#94a3b8",
+        roadFill: "#1e293b",
+        roadEdge: "#ffffff",
+        laneDash: "#38bdf8",
+        hasSea: false
+      };
     }
 
     function getCurrentBattery() {
@@ -1605,10 +1605,10 @@
 
       if (state.currentRoomId) {
         const count = getActiveRoomPlayersCount(state.currentRoomId);
-        onlineRoomPill.textContent = `Oda: ${state.currentRoomName} (${count}/${MAX_ROOM_PLAYERS})`;
+        onlineRoomPill.textContent = `Erzurum Oda: ${state.currentRoomName} (${count}/${MAX_ROOM_PLAYERS})`;
         roomCountBadge.textContent = `Odadaki Kişi: ${count}/${MAX_ROOM_PLAYERS}`;
       } else {
-        onlineRoomPill.textContent = "Oda: Seçilmedi";
+        onlineRoomPill.textContent = "Erzurum Oda: Seçilmedi";
         roomCountBadge.textContent = `Odadaki Kişi: 0/${MAX_ROOM_PLAYERS}`;
       }
     }
@@ -1621,7 +1621,7 @@
         .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 
       if (roomEntries.length === 0) {
-        roomListEl.innerHTML = `<div class="chat-empty" style="grid-column:1/-1;">Henüz oda yok. Yukarıdan isim yazıp ilk odayı sen kur!</div>`;
+        roomListEl.innerHTML = `<div class="chat-empty" style="grid-column:1/-1;">Erzurum haritasında henüz oda yok. Yukarıdan isim yazıp ilk odayı sen kur!</div>`;
         return;
       }
 
@@ -2382,7 +2382,6 @@
       saveProgress();
     });
 
-    // Eski çoklu görev sistemi geri getirildi; hız görevi seçilen scooterın gerçek hızına göre ayarlandı
     function assignNextMission() {
       const mIndex = state.mission.completedCount;
       const sc = getCurrentScooter();
@@ -2403,7 +2402,7 @@
           targetOvertakes: 0,
           reward: baseReward,
           completedCount: mIndex,
-          statusText: `Kontrol noktasına ulaş (${dist}m)`
+          statusText: `Kahramanmaraş kontrol noktasına ulaş (${dist}m)`
         };
       } else if (eventPattern === 1) {
         const dist = Math.round((300 + Math.min(420, mIndex * 25)) * speedScale);
@@ -2430,7 +2429,7 @@
           targetOvertakes: overtakes,
           reward: Math.round(baseReward * 1.25),
           completedCount: mIndex,
-          statusText: `Trafikte ${overtakes} NPC araç geç`
+          statusText: `Kahramanmaraş trafiğinde ${overtakes} NPC araç geç`
         };
       } else {
         const dist = Math.round((360 + Math.min(520, mIndex * 30)) * speedScale);
@@ -2462,12 +2461,12 @@
       const nextChargeRem = Math.max(0, Math.round(state.nextChargeCheckpointM - state.distanceM));
       const nextBiomeRem = Math.max(0, BIOME_INTERVAL_M - (Math.floor(state.distanceM) % BIOME_INTERVAL_M));
       if (state.mapMode === "free") {
-        el.innerHTML = `<strong>Serbest Harita:</strong> Yeni bölge: <strong>${nextBiomeRem}m</strong> • Şarj noktası: <strong>${nextChargeRem}m</strong> • Şerit: A/D veya ←/→ • Gaz: W/↑ • Fren: S/↓`;
+        el.innerHTML = `<strong>İstanbul Haritası (Boğaz &amp; Deniz):</strong> Yeni bölge: <strong>${nextBiomeRem}m</strong> • Şarj noktası: <strong>${nextChargeRem}m</strong> • Şerit: A/D veya ←/→ • Gaz: W/↑ • Fren: S/↓`;
       } else if (state.mapMode === "online") {
         const roomLabel = state.currentRoomId
-          ? `Oda: <strong>${escapeHtml(state.currentRoomName)}</strong> (${getActiveRoomPlayersCount(state.currentRoomId)}/${MAX_ROOM_PLAYERS} kişi)`
-          : `Bir oda seç veya kur`;
-        el.innerHTML = `<strong>Online Harita:</strong> ${roomLabel} • Sağ şeritte oyuncuların mesafesi &amp; hızı görünür`;
+          ? `Erzurum Oda: <strong>${escapeHtml(state.currentRoomName)}</strong> (${getActiveRoomPlayersCount(state.currentRoomId)}/${MAX_ROOM_PLAYERS} kişi)`
+          : `Erzurum'da bir oda seç veya kur`;
+        el.innerHTML = `<strong>Erzurum Online Haritası:</strong> ${roomLabel} • Sağ şeritte oyuncuların mesafesi &amp; hızı görünür`;
       } else {
         let progressText = "";
         if (state.mission.type === "overtake") {
@@ -2476,7 +2475,7 @@
           const remaining = Math.max(0, Math.round(state.mission.targetM - state.distanceM));
           progressText = `Kalan mesafe: <strong>${remaining}m</strong>`;
         }
-        el.innerHTML = `<strong>Görev (${state.mission.statusText}):</strong> ${progressText} • Yeni bölge: <strong>${nextBiomeRem}m</strong> • Şarj: <strong>${nextChargeRem}m</strong> • Ödül: <strong>${formatMoney(state.mission.reward)}</strong>`;
+        el.innerHTML = `<strong>Kahramanmaraş Görevi (${state.mission.statusText}):</strong> ${progressText} • Şarj: <strong>${nextChargeRem}m</strong> • Ödül: <strong>${formatMoney(state.mission.reward)}</strong>`;
       }
     }
 
@@ -2496,7 +2495,7 @@
     }
 
     function updateBiomeUI() {
-      document.getElementById("biomePill").textContent = `Bölge: ${getCurrentBiome().name}`;
+      document.getElementById("biomePill").textContent = `Harita: ${getActiveCityTheme().label}`;
     }
 
     function renderHUD() {
@@ -2724,11 +2723,10 @@
       });
     }
 
-    function spawnSceneryAtY(yPos, biome) {
+    function spawnSceneryAtY(yPos) {
       state.sceneryItems.push({
         side: Math.random() < 0.5 ? "left" : "right",
-        kind: biome.props[Math.floor(Math.random() * biome.props.length)],
-        offsetRatio: 0.2 + Math.random() * 0.45,
+        offsetRatio: 0.25 + Math.random() * 0.4,
         y: yPos,
         animPhase: Math.random() * Math.PI * 2,
         accentColor: NPC_COLORS[Math.floor(Math.random() * NPC_COLORS.length)]
@@ -2737,8 +2735,7 @@
 
     function initInitialScenery() {
       state.sceneryItems = [];
-      const biome = getCurrentBiome();
-      for (let y = 15; y <= 380; y += 44) spawnSceneryAtY(y, biome);
+      for (let y = 15; y <= 380; y += 44) spawnSceneryAtY(y);
     }
 
     const canvas = document.getElementById("roadCanvas");
@@ -2807,19 +2804,20 @@
       addScooterMeters(sc.id, deltaM);
       state.roadOffset = (state.roadOffset + deltaM * 24) % 80;
 
-      const newBiomeIdx = Math.floor(state.distanceM / BIOME_INTERVAL_M) % BIOMES.length;
+      const newBiomeIdx = Math.floor(state.distanceM / BIOME_INTERVAL_M) % ISTANBUL_SUBREGIONS.length;
       if (newBiomeIdx !== state.currentBiomeIndex) {
         state.currentBiomeIndex = newBiomeIdx;
         updateBiomeUI();
-        showToast(`Yeni Bölgeye Girdin: ${BIOMES[newBiomeIdx].name}!`);
+        if (state.mapMode === "free") {
+          showToast(`Yeni Bölge: ${ISTANBUL_SUBREGIONS[newBiomeIdx]}!`);
+        }
       }
 
       const scrollPx = deltaM * 24;
-      const currentBiome = getCurrentBiome();
       state.sceneryItems.forEach(item => { item.y += scrollPx; item.animPhase += dt * 5.2; });
       state.sceneryItems = state.sceneryItems.filter(item => item.y < canvas.getBoundingClientRect().height + 65);
       if (state.distanceM >= state.nextScenerySpawnM) {
-        spawnSceneryAtY(-38, currentBiome);
+        spawnSceneryAtY(-38);
         state.nextScenerySpawnM = state.distanceM + 2.0 + Math.random() * 2.2;
       }
 
@@ -2873,7 +2871,7 @@
           state.money += earned;
           state.mission.completedCount += 1;
           saveProgress();
-          showToast(`Görev tamamlandı! +${formatMoney(earned)} kazandın.`);
+          showToast(`Kahramanmaraş görevi tamamlandı! +${formatMoney(earned)} kazandın.`);
           assignNextMission();
           renderGarage();
         }
@@ -2891,23 +2889,57 @@
       updateMotorSound(state.speedKmh / Math.max(1, sc.topSpeedKmh), state.controls.gas, state.controls.brake);
     }
 
-    function drawSceneryProp(ctx, x, y, item) {
-      ctx.save();
-      ctx.translate(x, y);
-      if (item.kind === "pine" || item.kind === "snow_pine") {
-        ctx.fillStyle = "#5c3a21";
-        ctx.fillRect(-3, 4, 6, 10);
-        ctx.fillStyle = item.kind === "snow_pine" ? "#0f766e" : "#14532d";
-        ctx.beginPath();
-        ctx.moveTo(0, -18); ctx.lineTo(-14, 4); ctx.lineTo(14, 4); ctx.closePath();
-        ctx.fill();
-      } else {
-        ctx.fillStyle = item.accentColor || "#facc15";
-        ctx.beginPath();
-        ctx.arc(0, 0, 8, 0, Math.PI * 2);
-        ctx.fill();
+    // İstanbul haritasında sol şeritte Boğaz/deniz dalgaları, diğer haritalarda şehir prop'ları
+    function drawCityEnvironment(ctx, w, h, roadLeft, roadRight, theme) {
+      ctx.fillStyle = theme.leftVerge;
+      ctx.fillRect(0, 0, roadLeft, h);
+
+      ctx.fillStyle = theme.rightVerge;
+      ctx.fillRect(roadRight, 0, w - roadRight, h);
+
+      if (theme.hasSea) {
+        // İstanbul Boğazı / Deniz dalga çizgileri ve sahil şeridi
+        ctx.strokeStyle = "rgba(186, 230, 253, 0.45)";
+        ctx.lineWidth = 2;
+        for (let y = -20 + (state.roadOffset % 36); y < h + 20; y += 36) {
+          ctx.beginPath();
+          ctx.moveTo(8, y);
+          ctx.quadraticCurveTo(roadLeft * 0.45, y - 6, Math.max(16, roadLeft - 14), y);
+          ctx.stroke();
+        }
+        ctx.fillStyle = "#e2e8f0";
+        ctx.fillRect(Math.max(0, roadLeft - 8), 0, 8, h);
       }
-      ctx.restore();
+
+      state.sceneryItems.forEach(item => {
+        if (item.side === "right" && state.mapMode === "online") return;
+        if (theme.hasSea && item.side === "left") return;
+        const sx = item.side === "left"
+          ? roadLeft * item.offsetRatio
+          : roadRight + (w - roadRight) * item.offsetRatio;
+
+        ctx.save();
+        ctx.translate(sx, item.y);
+        if (theme.cityKey === "erzurum") {
+          ctx.fillStyle = "#5c3a21";
+          ctx.fillRect(-3, 4, 6, 10);
+          ctx.fillStyle = "#0f766e";
+          ctx.beginPath();
+          ctx.moveTo(0, -18); ctx.lineTo(-13, 4); ctx.lineTo(13, 4); ctx.closePath();
+          ctx.fill();
+        } else if (theme.cityKey === "kahramanmaras") {
+          ctx.fillStyle = "#fbbf24";
+          ctx.beginPath();
+          ctx.arc(0, 0, 7, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          ctx.fillStyle = "#14532d";
+          ctx.beginPath();
+          ctx.arc(0, 0, 8, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+      });
     }
 
     function drawOnlineRightSidePanel(ctx, w, h, rightAreaLeft, rightAreaW, playerY) {
@@ -2932,7 +2964,7 @@
       ctx.fillStyle = "#5eead4";
       ctx.font = "bold 10px sans-serif";
       ctx.textAlign = "center";
-      ctx.fillText("ONLINE", rightAreaLeft + rightAreaW / 2, 22);
+      ctx.fillText("ERZURUM", rightAreaLeft + rightAreaW / 2, 22);
 
       const now = Date.now();
       const others = Object.values(state.roomPlayers)
@@ -2990,10 +3022,10 @@
       const w = rect.width;
       const h = rect.height;
       const sc = getCurrentScooter();
-      const biome = getCurrentBiome();
+      const theme = getActiveCityTheme();
       const playerY = h * 0.74;
 
-      ctx.fillStyle = biome.bgOuter;
+      ctx.fillStyle = theme.bgOuter;
       ctx.fillRect(0, 0, w, h);
 
       const roadW = Math.min(310, w * 0.56);
@@ -3001,27 +3033,17 @@
       const roadRight = roadLeft + roadW;
       const laneW = roadW / 2;
 
-      ctx.fillStyle = state.mapMode === "mission" ? biome.vergeMission : biome.vergeFree;
-      ctx.fillRect(0, 0, roadLeft, h);
-      ctx.fillRect(roadRight, 0, w - roadRight, h);
+      drawCityEnvironment(ctx, w, h, roadLeft, roadRight, theme);
 
-      state.sceneryItems.forEach(item => {
-        if (item.side === "right" && state.mapMode === "online") return;
-        const sx = item.side === "left"
-          ? roadLeft * item.offsetRatio
-          : roadRight + (w - roadRight) * item.offsetRatio;
-        drawSceneryProp(ctx, sx, item.y, item);
-      });
-
-      ctx.fillStyle = biome.roadFill;
+      ctx.fillStyle = theme.roadFill;
       ctx.fillRect(roadLeft, 0, roadW, h);
 
-      ctx.fillStyle = biome.roadEdge;
+      ctx.fillStyle = theme.roadEdge;
       ctx.fillRect(roadLeft, 0, 5, h);
       ctx.fillRect(roadRight - 5, 0, 5, h);
 
       const midX = roadLeft + laneW;
-      ctx.strokeStyle = biome.laneDash;
+      ctx.strokeStyle = theme.laneDash;
       ctx.lineWidth = 4;
       ctx.setLineDash([26, 24]);
       ctx.lineDashOffset = -state.roadOffset;
@@ -3116,7 +3138,7 @@
 
       ctx.fillStyle = "#cbd5e1";
       ctx.font = "bold 11px sans-serif";
-      ctx.fillText(`Araç KM: ${formatKm(getScooterKm(sc.id))} • Şarj: %${Math.round(getCurrentBattery())} • ${biome.name}`, 20, 49);
+      ctx.fillText(`Araç KM: ${formatKm(getScooterKm(sc.id))} • Şarj: %${Math.round(getCurrentBattery())} • ${theme.label}`, 20, 49);
 
       if (state.flashMessage) {
         ctx.fillStyle = "rgba(15, 23, 42, 0.9)";
