@@ -107,12 +107,6 @@
       border-color: rgba(251, 146, 60, 0.4);
     }
 
-    .pill.speaker {
-      color: #f472b6;
-      border-color: rgba(244, 114, 182, 0.4);
-      cursor: pointer;
-    }
-
     .npc-control {
       background: #1e293b;
       border: 1px solid rgba(255, 255, 255, 0.1);
@@ -185,13 +179,6 @@
 
     .mission-text strong {
       color: #38bdf8;
-    }
-
-    .banner-actions {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      flex-wrap: wrap;
     }
 
     .sound-btn {
@@ -557,7 +544,6 @@
         <div id="batteryPill" class="pill battery-ok">Şarj: %100</div>
         <div id="scooterKmPill" class="pill odo" title="Bu scooter ile yaptığın toplam kilometre">Araç KM: 0,0 km</div>
         <div id="biomePill" class="pill biome" title="Her 3.000 metrede bir harita bölgesi ve yol kenarı hayvanları değişir">Bölge: Yeşil Vadi</div>
-        <div id="speakerPill" class="pill speaker" title="Tıklayarak hoparlör parçasını değiştir (Yes BBs / Bende Kavaklar Baş Çekiyor)">🔊 Yes BBs</div>
         <div id="activeScooterPill" class="pill">Araç: -</div>
         <div id="playtimePill" class="pill playtime" title="Oyuna başladığından beri toplam oynama süren (çıkınca durur)">Oynama: 00:00:00</div>
         <div id="puzzleTimerPill" class="pill puzzle-timer" title="Her 5 dakikada bir Kolay 2.000₺ / Orta 3.500₺ / Zor 5.000₺ soru çıkar">Bonus Soru: 05:00</div>
@@ -581,10 +567,7 @@
       <div id="missionText" class="mission-text">
         <strong>Serbest Harita:</strong> Yeni bölge: <strong>3000m</strong> • Şarj noktası: <strong>5000m</strong> • Şerit: A/D veya ←/→ • Gaz: W/↑ • Fren: S/↓
       </div>
-      <div class="banner-actions">
-        <button id="trackSwitchBtn" class="sound-btn" type="button">Hoparlör: Yes BBs</button>
-        <button id="soundToggleBtn" class="sound-btn" type="button">Ses: Açık</button>
-      </div>
+      <button id="soundToggleBtn" class="sound-btn" type="button">Ses: Açık</button>
     </div>
 
     <div class="drive-controls">
@@ -625,12 +608,11 @@
   <script>
     const SAVE_KEY = "scooter_ride_save_v3";
     const LEGACY_SAVE_KEY = "scooter_ride_save_v2";
-    const CHARGE_INTERVAL_M = 5000; // Her 5 km'de (5000m) bir şarj checkpoint'i
-    const BIOME_INTERVAL_M = 3000; // Her 3 km'de (3000m) bir harita/biyom değişimi
-    const PUZZLE_INTERVAL_SEC = 300; // 5 dakika (300 saniye) aralık
-    const PUZZLE_DURATION_SEC = 15; // 15 saniye cevap süresi
+    const CHARGE_INTERVAL_M = 5000;
+    const BIOME_INTERVAL_M = 3000;
+    const PUZZLE_INTERVAL_SEC = 300;
+    const PUZZLE_DURATION_SEC = 15;
 
-    // Her 3000m'de bir değişen harita bölgeleri ve yol kenarı hayvanları/karakterleri
     const BIOMES = [
       {
         id: "valley",
@@ -675,24 +657,6 @@
         roadEdge: "#ffffff",
         laneDash: "#38bdf8",
         props: ["snow_pine", "polar_bear", "penguin", "photo_crew", "scooter_poser"]
-      }
-    ];
-
-    // Hoparlör melodileri: "Yes BBs" ve "Bende Kavaklar Baş Çekiyor"
-    const SPEAKER_TRACKS = [
-      {
-        id: "yes_bbs",
-        label: "Yes BBs",
-        stepSec: 0.22,
-        // Ritmik synth-bass/lead motif (Hz)
-        notes: [392.00, 392.00, 466.16, 523.25, 392.00, 587.33, 523.25, 466.16]
-      },
-      {
-        id: "kavaklar",
-        label: "Bende Kavaklar Baş Çekiyor",
-        stepSec: 0.28,
-        // Anadolu/Karadeniz esintili melodik motif (Hz)
-        notes: [440.00, 523.25, 587.33, 659.25, 587.33, 523.25, 493.88, 440.00]
       }
     ];
 
@@ -981,7 +945,6 @@
             : 0,
           npcDensity: typeof parsed.npcDensity === "number" ? Math.max(0, Math.min(100, parsed.npcDensity)) : 50,
           soundEnabled: typeof parsed.soundEnabled === "boolean" ? parsed.soundEnabled : true,
-          speakerTrackIndex: typeof parsed.speakerTrackIndex === "number" ? Math.abs(parsed.speakerTrackIndex) % SPEAKER_TRACKS.length : 0,
           completedCount: typeof parsed.completedCount === "number" ? Math.max(0, parsed.completedCount) : 0
         };
       } catch (_) {
@@ -1009,9 +972,6 @@
       playSaveAccumulator: 0,
       mapMode: "free",
       soundEnabled: saved ? saved.soundEnabled : true,
-      speakerTrackIndex: saved ? saved.speakerTrackIndex : 0,
-      speakerNoteIndex: 0,
-      speakerNoteTimer: 0,
       npcDensity: saved ? saved.npcDensity : 50,
       lane: 1,
       laneVisualX: 1,
@@ -1057,10 +1017,6 @@
     function getCurrentBiome() {
       const idx = Math.floor(state.distanceM / BIOME_INTERVAL_M) % BIOMES.length;
       return BIOMES[idx];
-    }
-
-    function getCurrentTrack() {
-      return SPEAKER_TRACKS[state.speakerTrackIndex % SPEAKER_TRACKS.length];
     }
 
     function getCurrentBattery() {
@@ -1123,7 +1079,6 @@
           totalPlaySeconds: state.totalPlaySeconds,
           npcDensity: state.npcDensity,
           soundEnabled: state.soundEnabled,
-          speakerTrackIndex: state.speakerTrackIndex,
           completedCount: state.mission.completedCount
         };
         localStorage.setItem(SAVE_KEY, JSON.stringify(payload));
@@ -1458,47 +1413,6 @@
       }
     }
 
-    function playSpeakerNote(freq, durationSec) {
-      if (!state.soundEnabled || !audioCtxHolder.ctx || state.puzzle.isOpen || !isGameActiveForPlaytime()) return;
-      const ctx = audioCtxHolder.ctx;
-      const now = ctx.currentTime;
-
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = "sawtooth";
-      osc.frequency.setValueAtTime(freq, now);
-
-      gain.gain.setValueAtTime(0.001, now);
-      gain.gain.linearRampToValueAtTime(0.032, now + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.0001, now + Math.max(0.06, durationSec * 0.9));
-
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start(now);
-      osc.stop(now + durationSec);
-    }
-
-    function updateSpeakerMusic(dt) {
-      if (!state.soundEnabled || state.puzzle.isOpen || !isGameActiveForPlaytime()) {
-        state.speakerNoteTimer = 0;
-        return;
-      }
-      // Scooter hareket halindeyken veya gaza basıldığında hoparlörden çalar
-      if (state.speedKmh < 3 && !state.controls.gas) {
-        state.speakerNoteTimer = 0;
-        return;
-      }
-      ensureAudio();
-      const track = getCurrentTrack();
-      state.speakerNoteTimer -= dt;
-      if (state.speakerNoteTimer <= 0) {
-        const freq = track.notes[state.speakerNoteIndex % track.notes.length];
-        playSpeakerNote(freq, track.stepSec);
-        state.speakerNoteIndex = (state.speakerNoteIndex + 1) % track.notes.length;
-        state.speakerNoteTimer = track.stepSec;
-      }
-    }
-
     function playChargeSound() {
       if (!state.soundEnabled) return;
       ensureAudio();
@@ -1747,31 +1661,6 @@
       document.getElementById("biomePill").textContent = `Bölge: ${biome.name}`;
     }
 
-    function updateSpeakerUI() {
-      const track = getCurrentTrack();
-      document.getElementById("speakerPill").textContent = `🔊 ${track.label}`;
-      document.getElementById("trackSwitchBtn").textContent = `Hoparlör: ${track.label}`;
-    }
-
-    function cycleSpeakerTrack() {
-      state.speakerTrackIndex = (state.speakerTrackIndex + 1) % SPEAKER_TRACKS.length;
-      state.speakerNoteIndex = 0;
-      state.speakerNoteTimer = 0;
-      updateSpeakerUI();
-      saveProgress();
-      showToast(`Hoparlör çalıyor: ${getCurrentTrack().label}`);
-    }
-
-    document.getElementById("speakerPill").addEventListener("click", () => {
-      ensureAudio();
-      cycleSpeakerTrack();
-    });
-
-    document.getElementById("trackSwitchBtn").addEventListener("click", () => {
-      ensureAudio();
-      cycleSpeakerTrack();
-    });
-
     function renderHUD() {
       const sc = getCurrentScooter();
       document.getElementById("moneyPill").textContent = formatMoney(state.money);
@@ -1779,7 +1668,6 @@
       updateBatteryUI();
       updateScooterKmUI();
       updateBiomeUI();
-      updateSpeakerUI();
       updatePlaytimeUI();
       updatePuzzleHudTimer();
       updateMissionUI();
@@ -2141,7 +2029,6 @@
       addScooterMeters(sc.id, deltaM);
       state.roadOffset = (state.roadOffset + deltaM * 18) % 80;
 
-      // Her 3000m'de bir sürpriz harita bölgesi değişimi
       const newBiomeIdx = Math.floor(state.distanceM / BIOME_INTERVAL_M) % BIOMES.length;
       if (newBiomeIdx !== state.currentBiomeIndex) {
         state.currentBiomeIndex = newBiomeIdx;
@@ -2237,9 +2124,7 @@
         }
       }
 
-      // Hem Serbest Harita hem Görev Haritasında sayaçları sürekli güncelle
       updateMissionUI();
-      updateSpeakerMusic(dt);
 
       if (state.flashTimer > 0) {
         state.flashTimer = Math.max(0, state.flashTimer - dt);
@@ -2261,7 +2146,6 @@
       ctx.translate(x, y);
 
       if (kind === "camel_real") {
-        // Gerçekçi anatomik deve: kum gölgesi, uzun bacaklar, kavisli gövde, hörgüç, kuyruk, S-kavisli boyun, kafa ve kulaklar
         ctx.fillStyle = "rgba(0, 0, 0, 0.24)";
         ctx.beginPath();
         ctx.ellipse(0, 14, 16, 4.5, 0, 0, Math.PI * 2);
@@ -2269,12 +2153,10 @@
 
         ctx.translate(0, -bob * 0.8);
 
-        // Arka & ön bacaklar (adım animasyonlu)
         ctx.strokeStyle = "#78350f";
         ctx.lineWidth = 2.6;
         ctx.lineCap = "round";
 
-        // Sol arka / sol ön
         ctx.beginPath();
         ctx.moveTo(-10, 3);
         ctx.lineTo(-10 - stride, 13);
@@ -2282,7 +2164,6 @@
         ctx.lineTo(8 + stride, 13);
         ctx.stroke();
 
-        // Sağ arka / sağ ön (biraz daha açık ton)
         ctx.strokeStyle = "#b45309";
         ctx.beginPath();
         ctx.moveTo(-7, 3);
@@ -2291,7 +2172,6 @@
         ctx.lineTo(11 - stride, 13);
         ctx.stroke();
 
-        // Kuyruk
         ctx.strokeStyle = "#78350f";
         ctx.lineWidth = 1.8;
         ctx.beginPath();
@@ -2299,19 +2179,16 @@
         ctx.quadraticCurveTo(-18, 4 + Math.sin(animPhase * 1.5) * 2, -16, 9);
         ctx.stroke();
 
-        // Gövde + hörgüç
         ctx.fillStyle = "#c26d1f";
         ctx.beginPath();
         ctx.ellipse(-1, 0, 14, 6.5, -0.06, 0, Math.PI * 2);
         ctx.fill();
 
-        // Hörgüç
         ctx.fillStyle = "#a15212";
         ctx.beginPath();
         ctx.arc(-1, -5, 6.8, Math.PI, 0);
         ctx.fill();
 
-        // Kavisli boyun ve deve başı
         ctx.fillStyle = "#c26d1f";
         ctx.beginPath();
         ctx.moveTo(9, -3);
@@ -2321,12 +2198,10 @@
         ctx.closePath();
         ctx.fill();
 
-        // Kafa ve burun
         ctx.beginPath();
         ctx.ellipse(16.5, -15.5, 5.2, 3.2, 0.15, 0, Math.PI * 2);
         ctx.fill();
 
-        // Kulak ve göz
         ctx.fillStyle = "#78350f";
         ctx.beginPath();
         ctx.moveTo(13, -17);
@@ -2339,7 +2214,6 @@
         ctx.arc(17.5, -16, 1.1, 0, Math.PI * 2);
         ctx.fill();
       } else if (kind === "fat_blond_kid") {
-        // Çölde gezen şişman, sarı saçlı çocuk
         ctx.fillStyle = "rgba(0, 0, 0, 0.22)";
         ctx.beginPath();
         ctx.ellipse(0, 13, 10, 3.5, 0, 0, Math.PI * 2);
@@ -2347,7 +2221,6 @@
 
         ctx.translate(0, -bob);
 
-        // Kısa bacaklar
         ctx.strokeStyle = "#fde68a";
         ctx.lineWidth = 3;
         ctx.lineCap = "round";
@@ -2358,19 +2231,16 @@
         ctx.lineTo(4 + stride * 0.6, 12);
         ctx.stroke();
 
-        // Şişman/yuvarlak tişört gövde
         ctx.fillStyle = accentColor;
         ctx.beginPath();
         ctx.ellipse(0, 1, 9.5, 7.5, 0, 0, Math.PI * 2);
         ctx.fill();
 
-        // Kafa
         ctx.fillStyle = "#fcd34d";
         ctx.beginPath();
         ctx.arc(0, -8, 6.2, 0, Math.PI * 2);
         ctx.fill();
 
-        // Gür sarı saçlar
         ctx.fillStyle = "#facc15";
         ctx.beginPath();
         ctx.arc(0, -10, 6.8, Math.PI * 0.9, Math.PI * 2.1);
@@ -2380,20 +2250,17 @@
         ctx.arc(5, -8, 2.6, 0, Math.PI * 2);
         ctx.fill();
 
-        // Gözler
         ctx.fillStyle = "#0f172a";
         ctx.beginPath();
         ctx.arc(-2.2, -8, 1.1, 0, Math.PI * 2);
         ctx.arc(2.2, -8, 1.1, 0, Math.PI * 2);
         ctx.fill();
       } else if (kind === "scooter_poser") {
-        // Piyasa yapan scooterlı genç (yan yana 2 kişi)
         for (let i = -1; i <= 1; i += 2) {
           const gx = i * 8;
           const gy = (i === -1 ? -2 : 2) + Math.sin(animPhase * 0.7) * 0.8;
           ctx.save();
           ctx.translate(gx, gy);
-          // Scooter gövde & gidon
           ctx.fillStyle = "#38bdf8";
           ctx.beginPath();
           ctx.roundRect(-4, 2, 8, 11, 2);
@@ -2404,7 +2271,6 @@
           ctx.moveTo(-6, 3);
           ctx.lineTo(6, 3);
           ctx.stroke();
-          // Genç ceket & baş
           ctx.fillStyle = i === -1 ? "#f43f5e" : "#a855f7";
           ctx.beginPath();
           ctx.arc(0, -2, 4.5, 0, Math.PI * 2);
@@ -2416,8 +2282,6 @@
           ctx.restore();
         }
       } else if (kind === "photo_crew") {
-        // Yan yana durup fotoğraf çeken gençler
-        // 1. kişi: elinde telefon/kamera ile çekim yapıyor
         ctx.fillStyle = "#22c55e";
         ctx.beginPath();
         ctx.arc(-7, -1, 4.8, 0, Math.PI * 2);
@@ -2426,7 +2290,6 @@
         ctx.beginPath();
         ctx.arc(-7, -7.5, 4, 0, Math.PI * 2);
         ctx.fill();
-        // Telefon/kamera + flaş efekti
         ctx.fillStyle = "#0f172a";
         ctx.fillRect(-3, -6, 4.5, 3);
         if (Math.sin(animPhase * 2.2) > 0.85) {
@@ -2435,7 +2298,6 @@
           ctx.arc(2, -4.5, 5, 0, Math.PI * 2);
           ctx.fill();
         }
-        // 2. kişi: poz veren arkadaş
         ctx.fillStyle = "#f97316";
         ctx.beginPath();
         ctx.arc(6, 0, 4.8, 0, Math.PI * 2);
@@ -2570,7 +2432,6 @@
       const h = rect.height;
       const sc = getCurrentScooter();
       const biome = getCurrentBiome();
-      const track = getCurrentTrack();
       const playerY = h * 0.74;
 
       ctx.fillStyle = biome.bgOuter;
@@ -2610,7 +2471,6 @@
       ctx.stroke();
       ctx.setLineDash([]);
 
-      // Sürpriz bölge geçişi: "YENİ BÖLGE" yazısı/çizgisi kaldırıldı; yalnızca şarj noktası ve görev kapısı görünür.
       const chargeRemM = Math.max(0, state.nextChargeCheckpointM - state.distanceM);
       const chargeY = playerY - chargeRemM * 1.1;
       if (chargeY > -35 && chargeY < h + 35) {
@@ -2694,16 +2554,6 @@
       ctx.arc(0, -2, 7, 0, Math.PI * 2);
       ctx.fill();
 
-      // Hoparlör aktif çalıyorsa ses dalgaları çiz
-      if (state.soundEnabled && (state.speedKmh >= 3 || state.controls.gas)) {
-        const pulse = (Math.sin(performance.now() * 0.015) + 1) * 0.5;
-        ctx.strokeStyle = `rgba(244, 114, 182, ${0.4 + pulse * 0.5})`;
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.arc(0, -14, 14 + pulse * 5, Math.PI * 1.15, Math.PI * 1.85);
-        ctx.stroke();
-      }
-
       if (state.controls.brake) {
         ctx.fillStyle = "#ef4444";
         ctx.fillRect(-7, 12, 14, 4);
@@ -2713,7 +2563,7 @@
 
       ctx.fillStyle = "rgba(15, 23, 42, 0.86)";
       ctx.beginPath();
-      ctx.roundRect(10, 10, 305, 70, 10);
+      ctx.roundRect(10, 10, 305, 52, 10);
       ctx.fill();
 
       ctx.fillStyle = "#38bdf8";
@@ -2723,10 +2573,6 @@
       ctx.fillStyle = "#cbd5e1";
       ctx.font = "bold 11px sans-serif";
       ctx.fillText(`Araç KM: ${formatKm(getScooterKm(sc.id))} • Şarj: %${Math.round(getCurrentBattery())} • ${biome.name}`, 20, 49);
-
-      ctx.fillStyle = state.soundEnabled && (state.speedKmh >= 3 || state.controls.gas) ? "#f472b6" : "#94a3b8";
-      ctx.font = "bold 11px sans-serif";
-      ctx.fillText(`🔊 ${track.label}`, 20, 67);
 
       if (state.flashMessage) {
         ctx.fillStyle = "rgba(15, 23, 42, 0.9)";
