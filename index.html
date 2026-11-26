@@ -331,7 +331,7 @@
     canvas {
       display: block;
       width: 100%;
-      height: 360px;
+      height: 390px;
     }
 
     .mission-banner {
@@ -616,7 +616,6 @@
       color: #38bdf8;
     }
 
-    /* Sadece kendi mesajlarındaki ismin kırmızı görünmesi */
     .chat-item.is-me .chat-author {
       color: #f87171;
     }
@@ -928,7 +927,7 @@
         grid-template-columns: 1fr;
       }
       canvas {
-        height: 320px;
+        height: 360px;
       }
     }
   </style>
@@ -963,7 +962,7 @@
       <div class="rooms-head">
         <div>
           <div class="rooms-title">Online Harita — Odalar (En Fazla 200 Kişi)</div>
-          <div class="rooms-sub">İsimle oda kur • İstersen şifre koy • Arkadaşlarınla aynı odada yan yana sür</div>
+          <div class="rooms-sub">İsimle oda kur • İstersen şifre koy • Sağ şeritte oyuncuların ismini, hızını ve km/m uzaklığını gör</div>
         </div>
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
           <div id="roomCountBadge" class="sync-status">Odadaki Kişi: 0/200</div>
@@ -1064,6 +1063,7 @@
 
     const MAX_ROOM_PLAYERS = 200;
     const ONLINE_PLAYER_STALE_MS = 35000;
+    const ONLINE_VISUAL_SCALE = 4.2;
 
     const SAVE_KEY = "scooter_ride_save_v3";
     const LEGACY_SAVE_KEY = "scooter_ride_save_v2";
@@ -1125,24 +1125,9 @@
     ];
 
     const DIFFICULTY_CONFIG = {
-      easy: {
-        label: "Kolay",
-        reward: 2000,
-        weight: 3,
-        badgeClass: "diff-easy"
-      },
-      medium: {
-        label: "Orta Zorluk",
-        reward: 3500,
-        weight: 2,
-        badgeClass: "diff-medium"
-      },
-      hard: {
-        label: "Zor",
-        reward: 5000,
-        weight: 1,
-        badgeClass: "diff-hard"
-      }
+      easy: { label: "Kolay", reward: 2000, weight: 3, badgeClass: "diff-easy" },
+      medium: { label: "Orta Zorluk", reward: 3500, weight: 2, badgeClass: "diff-medium" },
+      hard: { label: "Zor", reward: 5000, weight: 1, badgeClass: "diff-hard" }
     };
 
     const RAW_SCOOTERS = [
@@ -1158,7 +1143,7 @@
       { id: "rx10", name: "ONVO RX-10 3000W", price: 73990, powerW: 3000, topSpeedKmh: 80, battery: "60.8V 21.8A", rangeKm: 80, color: "#06b6d4" },
       { id: "rovoron-r7", name: "Rovoron R7 Elektrikli", price: 98900, powerW: 3000, topSpeedKmh: 80, battery: "60V 42.4A", rangeKm: 120, color: "#14b8a6" },
       { id: "tiger-10-v4", name: "Hiley Tiger 10 V4", price: 104999, powerW: 3000, topSpeedKmh: 70, battery: "52V 21A", rangeKm: 80, color: "#f59e0b" },
-      { id: "rx09-3000", name: "ONVO RX-09 3000W", price: 64999, powerW: 3000, topSpeedKmh: 65, battery: "60V 20A", rangeKm: 8, color: "#2563eb" },
+      { id: "rx09-3000", name: "ONVO RX-09 3000W", price: 64999, powerW: 3000, topSpeedKmh: 65, battery: "60V 20A", rangeKm: 80, color: "#2563eb" },
       { id: "togo-limited", name: "Dualtron Togo Limited", price: 69900, powerW: 2900, topSpeedKmh: 60, battery: "60V 15A", rangeKm: 60, color: "#14b8a6" },
       { id: "aminia-long", name: "Dualtron Aminia Long", price: 72900, powerW: 2900, topSpeedKmh: 60, battery: "52V 21A", rangeKm: 60, color: "#22c55e" },
       { id: "rx05", name: "Onvo RX-05 Elektrikli", price: 47000, powerW: 2400, topSpeedKmh: 75, battery: "60V 25A", rangeKm: 60, color: "#22c55e" },
@@ -1183,15 +1168,9 @@
     ];
 
     const SCOOTERS = RAW_SCOOTERS
-      .map(s => ({
-        ...s,
-        score: s.powerW * 1.4 + s.topSpeedKmh * 180
-      }))
+      .map(s => ({ ...s, score: s.powerW * 1.4 + s.topSpeedKmh * 180 }))
       .sort((a, b) => b.score - a.score)
-      .map((s, idx) => ({
-        ...s,
-        rank: idx + 1
-      }));
+      .map((s, idx) => ({ ...s, rank: idx + 1 }));
 
     const starterScooter = SCOOTERS[SCOOTERS.length - 1];
     const validScooterIds = new Set(SCOOTERS.map(s => s.id));
@@ -1221,148 +1200,24 @@
 
     const STATIC_PUZZLES = [
       {
-        id: "easy_range_1",
-        difficulty: "easy",
-        category: "Menzil & Şarj Hesabı",
+        id: "easy_range_1", difficulty: "easy", category: "Menzil & Şarj Hesabı",
         question: "40 km menzilli bir scooterın şarjı %50 ise maksimum kaç km daha yol gidebilir?",
-        options: ["15 km", "20 km", "25 km", "30 km"],
-        correctIndex: 1
+        options: ["15 km", "20 km", "25 km", "30 km"], correctIndex: 1
       },
       {
-        id: "easy_range_2",
-        difficulty: "easy",
-        category: "Menzil & Şarj Hesabı",
-        question: "60 km menzilli bir scooterın şarjı %75 iken 15 km sürersen şarjın yüzde kaç kalır?",
-        options: ["%40", "%50", "%55", "%60"],
-        correctIndex: 1
-      },
-      {
-        id: "easy_riddle_1",
-        difficulty: "easy",
-        category: "Scooter Bilmecesi",
+        id: "easy_riddle_1", difficulty: "easy", category: "Scooter Bilmecesi",
         question: "150W motor gücü ve 15 km/h son hızıyla garajdaki başlangıç scooterı hangisidir?",
-        options: ["Onvo KX-02 Elektrikli", "ONVO KX-01K 150W", "ONVO OV-008 500W", "Segway-Ninebot E3 Pro"],
-        correctIndex: 1
+        options: ["Onvo KX-02 Elektrikli", "ONVO KX-01K 150W", "ONVO OV-008 500W", "Segway-Ninebot E3 Pro"], correctIndex: 1
       },
       {
-        id: "easy_speed_1",
-        difficulty: "easy",
-        category: "Hız - Süre - Yol",
-        question: "60 km/h sabit hızla 30 dakika boyunca gidersen kaç km yol alırsın?",
-        options: ["20 km", "25 km", "30 km", "45 km"],
-        correctIndex: 2
-      },
-      {
-        id: "easy_comp_1",
-        difficulty: "easy",
-        category: "Model Karşılaştırma",
-        question: "Segway-Ninebot ZT3 Pro (40 km/h) ile Segway Ninebot F3 Pro (35 km/h) arasında hangisi daha hızlıdır?",
-        options: ["Segway-Ninebot ZT3 Pro", "Segway Ninebot F3 Pro", "Hızları eşittir", "İkisi de 30 km/h"],
-        correctIndex: 0
-      },
-      {
-        id: "easy_comp_2",
-        difficulty: "easy",
-        category: "Model Karşılaştırma",
-        question: "Aşağıdaki scooterlardan hangisinin motor gücü (Watt) diğerlerinden daha yüksektir?",
-        options: ["ONVO Mx-02 1600W", "ONVO RX-10 3000W", "ONVO KX-01K 150W", "ONVO OV-008 500W"],
-        correctIndex: 1
-      },
-      {
-        id: "med_range_1",
-        difficulty: "medium",
-        category: "Menzil & Şarj Hesabı",
-        question: "100 km menzile sahip Dualtron Achilleus ile %80 şarjla yola çıkıp 35 km gidersen şarjın yüzde kaç kalır?",
-        options: ["%35", "%45", "%50", "%55"],
-        correctIndex: 1
-      },
-      {
-        id: "med_range_2",
-        difficulty: "medium",
-        category: "Menzil & Şarj Hesabı",
-        question: "30 km menzilli ONVO OV-008 ile %60 şarjdayken 9 km gidersen kalan şarjın yüzde kaç olur?",
-        options: ["%20", "%25", "%30", "%35"],
-        correctIndex: 2
-      },
-      {
-        id: "med_riddle_1",
-        difficulty: "medium",
-        category: "Scooter Bilmecesi",
-        question: "4.000W gücünde olup 80 km/h hıza ulaşabilen Onvo modeli hangisidir?",
-        options: ["ONVO RX-10 3000W", "Onvo RX-07 Elektrikli", "Onvo RX-05 Elektrikli", "ONVO Mx-03 2400W"],
-        correctIndex: 1
-      },
-      {
-        id: "med_speed_1",
-        difficulty: "medium",
-        category: "Hız - Süre - Yol",
+        id: "med_speed_1", difficulty: "medium", category: "Hız - Süre - Yol",
         question: "90 km/h sabit hızla giden Hiley Tiger 10 GTR, 20 dakikada kaç km yol kat eder?",
-        options: ["20 km", "25 km", "30 km", "35 km"],
-        correctIndex: 2
+        options: ["20 km", "25 km", "30 km", "35 km"], correctIndex: 2
       },
       {
-        id: "med_speed_2",
-        difficulty: "medium",
-        category: "Hız - Süre - Yol",
-        question: "45 km/h sabit hızla 40 dakika giden Segway Ninebot Max G3 kaç km yol alır?",
-        options: ["25 km", "30 km", "35 km", "40 km"],
-        correctIndex: 1
-      },
-      {
-        id: "med_comp_1",
-        difficulty: "medium",
-        category: "Model Karşılaştırma",
-        question: "Hiley Tiger 10 GTR (4000W) ile Dualtron Victor Limited (4300W) kıyaslandığında hangisinin motoru daha güçlüdür?",
-        options: ["Dualtron Victor Limited", "Hiley Tiger 10 GTR", "Güçleri eşittir", "İkisi de 3000W"],
-        correctIndex: 0
-      },
-      {
-        id: "hard_range_1",
-        difficulty: "hard",
-        category: "Menzil & Şarj Hesabı",
-        question: "80 km menzilli bir scooterda her 5 km'lik şarj noktası arasında bataryanın yüzde kaçı tükenir?",
-        options: ["%5", "%6,25", "%8", "%10"],
-        correctIndex: 1
-      },
-      {
-        id: "hard_range_2",
-        difficulty: "hard",
-        category: "Menzil & Şarj Hesabı",
-        question: "120 km menzilli bir scooter %100 şarjla 30 km yol yaptıktan sonra kalan şarjla en fazla kaç km daha gider?",
-        options: ["75 km", "80 km", "90 km", "96 km"],
-        correctIndex: 2
-      },
-      {
-        id: "hard_riddle_1",
-        difficulty: "hard",
-        category: "Scooter Bilmecesi",
+        id: "hard_riddle_1", difficulty: "hard", category: "Scooter Bilmecesi",
         question: "13.000W gücü, 130 km/h hızı ve 170 km menzili ile garajın 1 numaralı modeli hangisidir?",
-        options: ["Dualtron Sonic Alien", "Dualtron Thunder 3", "Dualtron X Limited", "Hiley Tiger Supra"],
-        correctIndex: 2
-      },
-      {
-        id: "hard_riddle_2",
-        difficulty: "hard",
-        category: "Scooter Bilmecesi",
-        question: "3.000W motor gücüne sahip olmasına rağmen 60V 42.4A bataryasıyla 120 km menzil sunan model hangisidir?",
-        options: ["Rovoron R7 Elektrikli", "ONVO RX-10 3000W", "Hiley Tiger 10 V4", "Dualtron Aminia Long"],
-        correctIndex: 0
-      },
-      {
-        id: "hard_speed_1",
-        difficulty: "hard",
-        category: "Hız - Süre - Yol",
-        question: "120 km/h hızla giden bir scooter, 5 km (5.000 m) mesafedeki şarj noktasına kaç dakikada ulaşır?",
-        options: ["2 dakika", "2,5 dakika", "3 dakika", "5 dakika"],
-        correctIndex: 1
-      },
-      {
-        id: "hard_comp_1",
-        difficulty: "hard",
-        category: "Model Karşılaştırma",
-        question: "Aşağıdaki scooterlardan hangisinin son hızı (km/h) diğerlerinden daha yüksektir?",
-        options: ["Hiley Tiger Supra (100 km/h)", "Dualtron Thunder 3 (110 km/h)", "Hiley Tiger 10 GTR (90 km/h)", "Onvo RX-07 Elektrikli (80 km/h)"],
-        correctIndex: 1
+        options: ["Dualtron Sonic Alien", "Dualtron Thunder 3", "Dualtron X Limited", "Hiley Tiger Supra"], correctIndex: 2
       }
     ];
 
@@ -1373,58 +1228,36 @@
         const parsed = JSON.parse(raw);
         if (!parsed || typeof parsed !== "object") return null;
 
-        const savedOwned = Array.isArray(parsed.ownedIds)
-          ? parsed.ownedIds.filter(id => validScooterIds.has(id))
-          : [];
-        if (!savedOwned.includes(starterScooter.id)) {
-          savedOwned.push(starterScooter.id);
-        }
+        const savedOwned = Array.isArray(parsed.ownedIds) ? parsed.ownedIds.filter(id => validScooterIds.has(id)) : [];
+        if (!savedOwned.includes(starterScooter.id)) savedOwned.push(starterScooter.id);
 
         const savedSelected = validScooterIds.has(parsed.selectedId) && savedOwned.includes(parsed.selectedId)
-          ? parsed.selectedId
-          : (savedOwned[0] || starterScooter.id);
+          ? parsed.selectedId : (savedOwned[0] || starterScooter.id);
 
-        const rawBatteries = parsed.batteryByScooter && typeof parsed.batteryByScooter === "object"
-          ? parsed.batteryByScooter
-          : {};
-        const rawKms = parsed.kmByScooter && typeof parsed.kmByScooter === "object"
-          ? parsed.kmByScooter
-          : {};
+        const rawBatteries = parsed.batteryByScooter && typeof parsed.batteryByScooter === "object" ? parsed.batteryByScooter : {};
+        const rawKms = parsed.kmByScooter && typeof parsed.kmByScooter === "object" ? parsed.kmByScooter : {};
 
         const batteryByScooter = {};
         const kmByScooter = {};
         SCOOTERS.forEach(s => {
-          const batVal = rawBatteries[s.id];
-          batteryByScooter[s.id] = typeof batVal === "number" && Number.isFinite(batVal)
-            ? Math.max(0, Math.min(100, batVal))
-            : 100;
-
-          const kmVal = rawKms[s.id];
-          kmByScooter[s.id] = typeof kmVal === "number" && Number.isFinite(kmVal)
-            ? Math.max(0, kmVal)
-            : 0;
+          batteryByScooter[s.id] = typeof rawBatteries[s.id] === "number" && Number.isFinite(rawBatteries[s.id])
+            ? Math.max(0, Math.min(100, rawBatteries[s.id])) : 100;
+          kmByScooter[s.id] = typeof rawKms[s.id] === "number" && Number.isFinite(rawKms[s.id])
+            ? Math.max(0, rawKms[s.id]) : 0;
         });
 
-        const savedAskedPuzzles = Array.isArray(parsed.askedPuzzleIds)
-          ? parsed.askedPuzzleIds.filter(id => typeof id === "string")
-          : [];
-
-        const savedPlayerName = typeof parsed.playerName === "string" && parsed.playerName.trim().length > 0
-          ? parsed.playerName.trim().slice(0, 20)
-          : "Oyuncu";
-
         return {
-          playerName: savedPlayerName,
+          playerName: typeof parsed.playerName === "string" && parsed.playerName.trim().length > 0
+            ? parsed.playerName.trim().slice(0, 20) : "Oyuncu",
           money: typeof parsed.money === "number" && Number.isFinite(parsed.money) ? Math.max(0, parsed.money) : 15000,
           ownedIds: new Set(savedOwned),
           selectedId: savedSelected,
           batteryByScooter,
           kmByScooter,
-          askedPuzzleIds: new Set(savedAskedPuzzles),
+          askedPuzzleIds: new Set(Array.isArray(parsed.askedPuzzleIds) ? parsed.askedPuzzleIds : []),
           puzzleDynamicCounter: typeof parsed.puzzleDynamicCounter === "number" ? Math.max(0, parsed.puzzleDynamicCounter) : 0,
           totalPlaySeconds: typeof parsed.totalPlaySeconds === "number" && Number.isFinite(parsed.totalPlaySeconds)
-            ? Math.max(0, parsed.totalPlaySeconds)
-            : 0,
+            ? Math.max(0, parsed.totalPlaySeconds) : 0,
           npcDensity: typeof parsed.npcDensity === "number" ? Math.max(0, Math.min(100, parsed.npcDensity)) : 50,
           soundEnabled: typeof parsed.soundEnabled === "boolean" ? parsed.soundEnabled : true,
           completedCount: typeof parsed.completedCount === "number" ? Math.max(0, parsed.completedCount) : 0
@@ -1437,10 +1270,7 @@
     const saved = loadSavedState();
     const defaultBatteries = {};
     const defaultKms = {};
-    SCOOTERS.forEach(s => {
-      defaultBatteries[s.id] = 100;
-      defaultKms[s.id] = 0;
-    });
+    SCOOTERS.forEach(s => { defaultBatteries[s.id] = 100; defaultKms[s.id] = 0; });
 
     const playerId = getOrCreatePlayerId();
 
@@ -1478,26 +1308,17 @@
       nextScenerySpawnM: 12,
       nextChargeCheckpointM: CHARGE_INTERVAL_M,
       roadOffset: 0,
-      controls: {
-        gas: false,
-        brake: false
-      },
+      controls: { gas: false, brake: false },
       npcs: [],
       passedNpcsInMission: 0,
       mission: {
-        active: true,
-        type: "checkpoint",
-        targetM: 320,
-        missionDistM: 320,
-        minSpeedKmh: 0,
-        targetOvertakes: 0,
-        reward: 650,
+        active: true, type: "checkpoint", targetM: 320, missionDistM: 320,
+        minSpeedKmh: 0, targetOvertakes: 0, reward: 650,
         completedCount: saved ? saved.completedCount : 0,
         statusText: "Kontrol noktasına ulaş (320m)"
       },
       puzzle: {
-        isOpen: false,
-        answered: false,
+        isOpen: false, answered: false,
         timeUntilNextSec: PUZZLE_INTERVAL_SEC,
         remainingAnswerSec: PUZZLE_DURATION_SEC,
         current: null
@@ -1541,6 +1362,15 @@
         minimumFractionDigits: 1,
         maximumFractionDigits: 1
       }) + " km";
+    }
+
+    function formatRelativeDistance(deltaMeters) {
+      const absM = Math.abs(deltaMeters);
+      const sign = deltaMeters >= 0 ? "+" : "-";
+      if (absM >= 1000) {
+        return `${sign}${(absM / 1000).toFixed(1).replace(".", ",")} km`;
+      }
+      return `${sign}${Math.round(absM)} m`;
     }
 
     function isGameActiveForPlaytime() {
@@ -1589,8 +1419,7 @@
             totalPlaySeconds: Math.max(0, entry.totalPlaySeconds),
             scooterId: scObj ? scObj.id : starterScooter.id,
             scooterName: typeof entry.scooterName === "string" && entry.scooterName.trim()
-              ? entry.scooterName.trim().slice(0, 32)
-              : (scObj ? scObj.name : starterScooter.name),
+              ? entry.scooterName.trim().slice(0, 32) : (scObj ? scObj.name : starterScooter.name),
             updatedAt: typeof entry.updatedAt === "number" ? entry.updatedAt : Date.now()
           };
         });
@@ -1661,8 +1490,7 @@
                 totalPlaySeconds: Math.max(0, entry.totalPlaySeconds),
                 scooterId: scObj ? scObj.id : starterScooter.id,
                 scooterName: typeof entry.scooterName === "string" && entry.scooterName.trim()
-                  ? entry.scooterName.trim().slice(0, 32)
-                  : (scObj ? scObj.name : starterScooter.name),
+                  ? entry.scooterName.trim().slice(0, 32) : (scObj ? scObj.name : starterScooter.name),
                 updatedAt: typeof entry.updatedAt === "number" ? entry.updatedAt : 0
               };
             });
@@ -1686,9 +1514,7 @@
 
       const localMap = loadLocalRealPlayers();
       Object.values(localMap).forEach(p => {
-        if (!p.id.startsWith("npc_")) {
-          merged.set(p.id, { ...p });
-        }
+        if (!p.id.startsWith("npc_")) merged.set(p.id, { ...p });
       });
 
       Object.values(state.remotePlayers).forEach(p => {
@@ -1716,19 +1542,16 @@
         updatedAt: Date.now()
       });
 
-      const sorted = Array.from(merged.values())
-        .sort((a, b) => b.totalPlaySeconds - a.totalPlaySeconds);
+      const sorted = Array.from(merged.values()).sort((a, b) => b.totalPlaySeconds - a.totalPlaySeconds);
 
       listEl.innerHTML = sorted.map((player, index) => {
         const isMe = player.id === state.playerId;
-        const rankNo = index + 1;
-        const scooterLabel = player.scooterName || starterScooter.name;
         return `
           <div class="leader-row ${isMe ? "is-me" : ""}">
             <div class="leader-left">
-              <span class="leader-rank">#${rankNo}</span>
+              <span class="leader-rank">#${index + 1}</span>
               <span>${escapeHtml(player.name)}</span>
-              <span class="leader-scooter">🛴 ${escapeHtml(scooterLabel)}</span>
+              <span class="leader-scooter">🛴 ${escapeHtml(player.scooterName || starterScooter.name)}</span>
               ${isMe ? `<span class="leader-me-tag">SEN</span>` : ""}
             </div>
             <div class="leader-time">${formatPlaytime(player.totalPlaySeconds)}</div>
@@ -1737,7 +1560,6 @@
       }).join("");
     }
 
-    // Online Oda & Çok Oyunculu Sistem (En Fazla 200 Kişi)
     const roomsSection = document.getElementById("roomsSection");
     const roomListEl = document.getElementById("roomList");
     const roomCountBadge = document.getElementById("roomCountBadge");
@@ -1771,9 +1593,7 @@
       let count = 0;
       Object.values(source).forEach(p => {
         if (!p || typeof p !== "object") return;
-        if (now - (p.updatedAt || 0) <= ONLINE_PLAYER_STALE_MS) {
-          count += 1;
-        }
+        if (now - (p.updatedAt || 0) <= ONLINE_PLAYER_STALE_MS) count += 1;
       });
       return Math.max(roomId === state.currentRoomId ? 1 : 0, count);
     }
@@ -1810,9 +1630,7 @@
       roomListEl.innerHTML = roomEntries.map(room => {
         const isJoined = state.currentRoomId === room.id;
         const hasPass = Boolean(room.password && String(room.password).length > 0);
-        const memberCount = isJoined
-          ? getActiveRoomPlayersCount(room.id)
-          : (room.playerCount || 0);
+        const memberCount = isJoined ? getActiveRoomPlayersCount(room.id) : (room.playerCount || 0);
 
         return `
           <div class="room-card ${isJoined ? "joined" : ""}">
@@ -1852,9 +1670,7 @@
               let activeCount = 0;
               if (r.players && typeof r.players === "object") {
                 Object.values(r.players).forEach(p => {
-                  if (p && now - (p.updatedAt || 0) <= ONLINE_PLAYER_STALE_MS) {
-                    activeCount += 1;
-                  }
+                  if (p && now - (p.updatedAt || 0) <= ONLINE_PLAYER_STALE_MS) activeCount += 1;
                 });
               }
               cleanRooms[id] = {
@@ -1967,9 +1783,7 @@
             let count = 0;
             if (playersData && typeof playersData === "object") {
               Object.entries(playersData).forEach(([pid, p]) => {
-                if (pid !== state.playerId && p && now - (p.updatedAt || 0) <= ONLINE_PLAYER_STALE_MS) {
-                  count += 1;
-                }
+                if (pid !== state.playerId && p && now - (p.updatedAt || 0) <= ONLINE_PLAYER_STALE_MS) count += 1;
               });
             }
             if (count >= MAX_ROOM_PLAYERS) {
@@ -2009,9 +1823,7 @@
 
       updateOnlineRoomUI();
       renderRoomsList();
-      if (prevName) {
-        showToast(`"${prevName}" odasından ayrıldın.`);
-      }
+      if (prevName) showToast(`"${prevName}" odasından ayrıldın.`);
     };
 
     createRoomForm.addEventListener("submit", async (e) => {
@@ -2075,7 +1887,6 @@
     roomNameInput.addEventListener("keydown", (e) => e.stopPropagation());
     roomPasswordInput.addEventListener("keydown", (e) => e.stopPropagation());
 
-    // Canlı Chat Fonksiyonları
     const chatForm = document.getElementById("chatForm");
     const chatMessageInput = document.getElementById("chatMessageInput");
     const chatMessagesList = document.getElementById("chatMessagesList");
@@ -2087,9 +1898,7 @@
         if (!raw) return [];
         const parsed = JSON.parse(raw);
         if (!Array.isArray(parsed)) return [];
-        return parsed
-          .filter(m => m && typeof m === "object" && typeof m.text === "string" && m.text.trim().length > 0)
-          .slice(-40);
+        return parsed.filter(m => m && typeof m === "object" && typeof m.text === "string" && m.text.trim().length > 0).slice(-40);
       } catch (_) {
         return [];
       }
@@ -2108,15 +1917,8 @@
       const localMsgs = loadLocalChatMessages();
       const combinedMap = new Map();
 
-      localMsgs.forEach((m, idx) => {
-        const key = m.id || `local_${idx}_${m.createdAt || 0}`;
-        combinedMap.set(key, m);
-      });
-
-      state.chatMessages.forEach((m, idx) => {
-        const key = m.id || `remote_${idx}_${m.createdAt || 0}`;
-        combinedMap.set(key, m);
-      });
+      localMsgs.forEach((m, idx) => combinedMap.set(m.id || `local_${idx}_${m.createdAt || 0}`, m));
+      state.chatMessages.forEach((m, idx) => combinedMap.set(m.id || `remote_${idx}_${m.createdAt || 0}`, m));
 
       const sortedMsgs = Array.from(combinedMap.values())
         .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0))
@@ -2222,9 +2024,7 @@
       await sendChatMessage(text);
     });
 
-    chatMessageInput.addEventListener("keydown", (e) => {
-      e.stopPropagation();
-    });
+    chatMessageInput.addEventListener("keydown", (e) => e.stopPropagation());
 
     function escapeHtml(str) {
       return String(str)
@@ -2252,9 +2052,7 @@
     savePlayerNameBtn.addEventListener("click", applyPlayerName);
     playerNameInput.addEventListener("keydown", (e) => {
       e.stopPropagation();
-      if (e.key === "Enter") {
-        applyPlayerName();
-      }
+      if (e.key === "Enter") applyPlayerName();
     });
 
     function saveProgress() {
@@ -2322,126 +2120,12 @@
       return "easy";
     }
 
-    function generateUniqueDynamicPuzzleForDifficulty(difficulty) {
-      const cfg = DIFFICULTY_CONFIG[difficulty];
-      for (let attempt = 0; attempt < 40; attempt++) {
-        state.puzzleDynamicCounter += 1;
-        const topic = state.puzzleDynamicCounter % 4;
-
-        if (topic === 0) {
-          const sc = SCOOTERS[Math.floor(Math.random() * SCOOTERS.length)];
-          const range = sc.rangeKm >= 20 ? sc.rangeKm : 60;
-          const startPct = [60, 70, 80, 90, 100][Math.floor(Math.random() * 5)];
-          const drainPct = [10, 20, 25, 30, 40][Math.floor(Math.random() * 5)];
-          if (drainPct >= startPct) continue;
-          const kmDriven = Math.round((range * drainPct) / 100);
-          if ((kmDriven * 100) / range !== drainPct) continue;
-          const ans = startPct - drainPct;
-          const uid = `dyn_${difficulty}_range_${range}_${startPct}_${kmDriven}`;
-          if (state.askedPuzzleIds.has(uid)) continue;
-
-          const wrongSet = new Set([ans]);
-          while (wrongSet.size < 4) {
-            const candidate = Math.max(5, Math.min(95, ans + (Math.floor(Math.random() * 7) - 3) * 5));
-            wrongSet.add(candidate);
-          }
-          const opts = Array.from(wrongSet).sort(() => Math.random() - 0.5).map(v => `%${v}`);
-          return {
-            id: uid,
-            difficulty,
-            reward: cfg.reward,
-            category: "Menzil & Şarj Hesabı",
-            question: `${range} km menzilli bir scooterın şarjı %${startPct} iken ${kmDriven} km yol gidersen şarjın yüzde kaç kalır?`,
-            options: opts,
-            correctIndex: opts.indexOf(`%${ans}`)
-          };
-        } else if (topic === 1) {
-          const sc = SCOOTERS[Math.floor(Math.random() * SCOOTERS.length)];
-          const uid = `dyn_${difficulty}_riddle_${sc.id}`;
-          if (state.askedPuzzleIds.has(uid)) continue;
-
-          const others = SCOOTERS.filter(s => s.id !== sc.id).sort(() => Math.random() - 0.5).slice(0, 3);
-          const all = [sc, ...others].sort(() => Math.random() - 0.5);
-          return {
-            id: uid,
-            difficulty,
-            reward: cfg.reward,
-            category: "Scooter Bilmecesi",
-            question: `${sc.powerW}W motor gücüne, ${sc.topSpeedKmh} km/h son hıza ve ${sc.rangeKm} km menzile sahip model hangisidir?`,
-            options: all.map(s => s.name),
-            correctIndex: all.findIndex(s => s.id === sc.id)
-          };
-        } else if (topic === 2) {
-          const speeds = [40, 50, 60, 75, 80, 90, 100, 120];
-          const mins = [12, 15, 20, 30, 45];
-          const spd = speeds[Math.floor(Math.random() * speeds.length)];
-          const min = mins[Math.floor(Math.random() * mins.length)];
-          const dist = (spd * min) / 60;
-          if (!Number.isInteger(dist)) continue;
-          const uid = `dyn_${difficulty}_speed_${spd}_${min}`;
-          if (state.askedPuzzleIds.has(uid)) continue;
-
-          const wrongSet = new Set([dist]);
-          while (wrongSet.size < 4) {
-            const candidate = Math.max(5, dist + (Math.floor(Math.random() * 7) - 3) * 5);
-            wrongSet.add(candidate);
-          }
-          const opts = Array.from(wrongSet).sort(() => Math.random() - 0.5).map(v => `${v} km`);
-          return {
-            id: uid,
-            difficulty,
-            reward: cfg.reward,
-            category: "Hız - Süre - Yol",
-            question: `${spd} km/h sabit hızla ${min} dakika boyunca sürüş yaparsan kaç km yol alırsın?`,
-            options: opts,
-            correctIndex: opts.indexOf(`${dist} km`)
-          };
-        } else {
-          const pool = [...SCOOTERS].sort(() => Math.random() - 0.5).slice(0, 4);
-          const sortedByPower = [...pool].sort((a, b) => b.powerW - a.powerW);
-          if (sortedByPower[0].powerW === sortedByPower[1].powerW) continue;
-          const winner = sortedByPower[0];
-          const uid = `dyn_${difficulty}_comp_${pool.map(p => p.id).sort().join("_")}`;
-          if (state.askedPuzzleIds.has(uid)) continue;
-
-          return {
-            id: uid,
-            difficulty,
-            reward: cfg.reward,
-            category: "Model Karşılaştırma",
-            question: "Aşağıdaki 4 scooter modelinden hangisinin motor gücü (Watt) en yüksektir?",
-            options: pool.map(s => s.name),
-            correctIndex: pool.findIndex(s => s.id === winner.id)
-          };
-        }
-      }
-      return null;
-    }
-
     function pickNextUniquePuzzle() {
       const targetDifficulty = chooseDifficultyByRatio();
-      const order = [targetDifficulty, "easy", "medium", "hard"];
-
-      for (const diff of order) {
-        const candidates = STATIC_PUZZLES.filter(p => p.difficulty === diff && !state.askedPuzzleIds.has(p.id));
-        if (candidates.length > 0) {
-          const picked = candidates[Math.floor(Math.random() * candidates.length)];
-          return {
-            ...picked,
-            reward: DIFFICULTY_CONFIG[picked.difficulty].reward
-          };
-        }
-        const dyn = generateUniqueDynamicPuzzleForDifficulty(diff);
-        if (dyn) return dyn;
-      }
-
-      state.askedPuzzleIds.clear();
-      const fallbackPool = STATIC_PUZZLES.filter(p => p.difficulty === targetDifficulty);
-      const picked = (fallbackPool.length > 0 ? fallbackPool : STATIC_PUZZLES)[0];
-      return {
-        ...picked,
-        reward: DIFFICULTY_CONFIG[picked.difficulty].reward
-      };
+      const candidates = STATIC_PUZZLES.filter(p => p.difficulty === targetDifficulty && !state.askedPuzzleIds.has(p.id));
+      const pool = candidates.length > 0 ? candidates : STATIC_PUZZLES;
+      const picked = pool[Math.floor(Math.random() * pool.length)];
+      return { ...picked, reward: DIFFICULTY_CONFIG[picked.difficulty].reward };
     }
 
     const puzzleOverlay = document.getElementById("puzzleOverlay");
@@ -2454,17 +2138,12 @@
 
     function formatClock(sec) {
       const s = Math.max(0, Math.ceil(sec));
-      const mm = String(Math.floor(s / 60)).padStart(2, "0");
-      const ss = String(s % 60).padStart(2, "0");
-      return `${mm}:${ss}`;
+      return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
     }
 
     function updatePuzzleHudTimer() {
-      if (state.puzzle.isOpen) {
-        puzzleTimerPill.textContent = "Bonus Soru: AKTİF";
-      } else {
-        puzzleTimerPill.textContent = `Bonus Soru: ${formatClock(state.puzzle.timeUntilNextSec)}`;
-      }
+      puzzleTimerPill.textContent = state.puzzle.isOpen
+        ? "Bonus Soru: AKTİF" : `Bonus Soru: ${formatClock(state.puzzle.timeUntilNextSec)}`;
     }
 
     function closePuzzleModal() {
@@ -2482,14 +2161,10 @@
       state.puzzle.answered = true;
       const q = state.puzzle.current;
       const buttons = puzzleOptionsContainer.querySelectorAll("button");
-
       buttons.forEach((btn, idx) => {
         btn.disabled = true;
-        if (idx === q.correctIndex) {
-          btn.classList.add("correct");
-        } else if (idx === selectedIndex) {
-          btn.classList.add("wrong");
-        }
+        if (idx === q.correctIndex) btn.classList.add("correct");
+        else if (idx === selectedIndex) btn.classList.add("wrong");
       });
 
       if (selectedIndex === q.correctIndex) {
@@ -2497,52 +2172,33 @@
         playChargeSound();
         puzzleFeedbackText.style.color = "#4ade80";
         puzzleFeedbackText.textContent = `Doğru cevap! +${formatMoney(q.reward)} bonus hesabına eklendi!`;
-        showToast(`Bonus Soru Doğru! +${formatMoney(q.reward)} kazandın!`);
         renderHUD();
         renderGarage();
       } else {
         puzzleFeedbackText.style.color = "#f87171";
-        puzzleFeedbackText.textContent = `Yanlış cevap! Doğrusu: ${q.options[q.correctIndex]}. Yoluna devam ediyorsun.`;
-        showToast("Soruyu bilemedin, ceza yok — sürüşe devam!");
+        puzzleFeedbackText.textContent = `Yanlış cevap! Doğrusu: ${q.options[q.correctIndex]}.`;
       }
-
       saveProgress();
-      setTimeout(() => {
-        closePuzzleModal();
-      }, 1700);
+      setTimeout(closePuzzleModal, 1700);
     }
 
     function handlePuzzleTimeout() {
       if (!state.puzzle.isOpen || state.puzzle.answered || !state.puzzle.current) return;
       state.puzzle.answered = true;
-      const q = state.puzzle.current;
-      const buttons = puzzleOptionsContainer.querySelectorAll("button");
-      buttons.forEach((btn, idx) => {
-        btn.disabled = true;
-        if (idx === q.correctIndex) btn.classList.add("correct");
-      });
-
       puzzleFeedbackText.style.color = "#fbbf24";
-      puzzleFeedbackText.textContent = `Süre doldu! Doğru cevap: ${q.options[q.correctIndex]}.`;
-      showToast("Süre doldu — sorunsuz devam ediyorsun!");
+      puzzleFeedbackText.textContent = `Süre doldu! Doğru cevap: ${state.puzzle.current.options[state.puzzle.current.correctIndex]}.`;
       saveProgress();
-      setTimeout(() => {
-        closePuzzleModal();
-      }, 1600);
+      setTimeout(closePuzzleModal, 1600);
     }
 
     function openBonusPuzzle() {
       if (state.puzzle.isOpen) return;
       const q = pickNextUniquePuzzle();
-      if (!q) return;
-
       state.askedPuzzleIds.add(q.id);
       saveProgress();
 
       state.controls.gas = false;
       state.controls.brake = false;
-      document.getElementById("gasBtn").classList.remove("pressed");
-      document.getElementById("brakeBtn").classList.remove("pressed");
       updateMotorSound(0, false, false);
 
       state.puzzle.isOpen = true;
@@ -2573,12 +2229,7 @@
       updatePuzzleHudTimer();
     }
 
-    const audioCtxHolder = {
-      ctx: null,
-      motorOsc: null,
-      motorSubOsc: null,
-      motorGain: null
-    };
+    const audioCtxHolder = { ctx: null, motorOsc: null, motorSubOsc: null, motorGain: null };
 
     function ensureAudio() {
       if (!state.soundEnabled) return;
@@ -2589,20 +2240,16 @@
         const osc = ctx.createOscillator();
         const subOsc = ctx.createOscillator();
         const gain = ctx.createGain();
-
         osc.type = "triangle";
         subOsc.type = "sine";
         osc.frequency.value = 75;
         subOsc.frequency.value = 150;
-
         gain.gain.value = 0.0001;
         osc.connect(gain);
         subOsc.connect(gain);
         gain.connect(ctx.destination);
-
         osc.start();
         subOsc.start();
-
         audioCtxHolder.ctx = ctx;
         audioCtxHolder.motorOsc = osc;
         audioCtxHolder.motorSubOsc = subOsc;
@@ -2619,17 +2266,14 @@
       if (!audioCtxHolder.ctx) return;
       const ctx = audioCtxHolder.ctx;
       const now = ctx.currentTime;
-
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = "sine";
       osc.frequency.setValueAtTime(523.25, now);
       osc.frequency.setValueAtTime(659.25, now + 0.08);
       osc.frequency.setValueAtTime(783.99, now + 0.16);
-
       gain.gain.setValueAtTime(0.055, now);
       gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.32);
-
       osc.connect(gain);
       gain.connect(ctx.destination);
       osc.start(now);
@@ -2646,7 +2290,6 @@
       const baseFreq = 70 + speedRatio * 230 + (isGas ? 22 : 0);
       audioCtxHolder.motorOsc.frequency.setTargetAtTime(baseFreq, now, 0.06);
       audioCtxHolder.motorSubOsc.frequency.setTargetAtTime(baseFreq * 2, now, 0.06);
-
       const targetGain = speedRatio > 0.02 || isGas ? Math.min(0.065, 0.012 + speedRatio * 0.04 + (isGas ? 0.012 : 0)) : 0.0001;
       audioCtxHolder.motorGain.gain.setTargetAtTime(targetGain * (isBrake ? 0.65 : 1), now, 0.06);
     }
@@ -2657,16 +2300,13 @@
       if (!audioCtxHolder.ctx) return;
       const ctx = audioCtxHolder.ctx;
       const now = ctx.currentTime;
-
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = "sawtooth";
       osc.frequency.setValueAtTime(520, now);
       osc.frequency.exponentialRampToValueAtTime(160, now + 0.16);
-
       gain.gain.setValueAtTime(0.04, now);
       gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.17);
-
       osc.connect(gain);
       gain.connect(ctx.destination);
       osc.start(now);
@@ -2679,43 +2319,28 @@
       if (!audioCtxHolder.ctx) return;
       const ctx = audioCtxHolder.ctx;
       const now = ctx.currentTime;
-
       const osc1 = ctx.createOscillator();
       const osc2 = ctx.createOscillator();
       const gain = ctx.createGain();
-
       osc1.type = "square";
       osc2.type = "sawtooth";
       osc1.frequency.setValueAtTime(440, now);
       osc2.frequency.setValueAtTime(554.37, now);
-
       gain.gain.setValueAtTime(0.001, now);
       gain.gain.linearRampToValueAtTime(0.065, now + 0.02);
       gain.gain.setValueAtTime(0.065, now + 0.22);
       gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.32);
-
       osc1.connect(gain);
       osc2.connect(gain);
       gain.connect(ctx.destination);
-
       osc1.start(now);
       osc2.start(now);
       osc1.stop(now + 0.34);
       osc2.stop(now + 0.34);
-
-      state.npcs.forEach(npc => {
-        if (npc.y > 40 && npc.y < 230 && Math.abs(npc.lane - state.lane) <= 1) {
-          npc.honked = true;
-          npc.speed = Math.min(npc.maxSpeed + 22, npc.speed + 18);
-        }
-      });
     }
 
     function formatMoney(val) {
-      return "₺" + Number(val).toLocaleString("tr-TR", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-      });
+      return "₺" + Number(val).toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
     function showToast(msg) {
@@ -2741,15 +2366,7 @@
     npcDensitySlider.addEventListener("input", () => {
       state.npcDensity = Number(npcDensitySlider.value);
       syncNpcControlUI();
-
-      if (state.npcDensity === 0) {
-        state.npcs = [];
-      } else {
-        const maxAllowed = Math.max(1, Math.round((state.npcDensity / 100) * 10));
-        if (state.npcs.length > maxAllowed) {
-          state.npcs = state.npcs.slice(0, maxAllowed);
-        }
-      }
+      if (state.npcDensity === 0) state.npcs = [];
       saveProgress();
     });
 
@@ -2757,65 +2374,15 @@
       const mIndex = state.mission.completedCount;
       const sc = getCurrentScooter();
       state.passedNpcsInMission = 0;
-
       const baseReward = 650 + Math.min(1800, mIndex * 110);
-      const eventPattern = mIndex % 4;
       const speedScale = Math.max(0.55, Math.min(1, sc.topSpeedKmh / 35));
-
-      if (eventPattern === 0) {
-        const dist = Math.round((320 + Math.min(480, mIndex * 25)) * speedScale);
-        state.mission = {
-          active: true,
-          type: "checkpoint",
-          targetM: state.distanceM + dist,
-          missionDistM: dist,
-          minSpeedKmh: 0,
-          targetOvertakes: 0,
-          reward: baseReward,
-          completedCount: mIndex,
-          statusText: `Kontrol noktasına ulaş (${dist}m)`
-        };
-      } else if (eventPattern === 1) {
-        const dist = Math.round((300 + Math.min(420, mIndex * 25)) * speedScale);
-        const minSpeed = getAchievableMissionSpeed(sc);
-        state.mission = {
-          active: true,
-          type: "speed_pass",
-          targetM: state.distanceM + dist,
-          missionDistM: dist,
-          minSpeedKmh: minSpeed,
-          targetOvertakes: 0,
-          reward: Math.round(baseReward * 1.2),
-          completedCount: mIndex,
-          statusText: `${dist}m boyunca en az ${minSpeed} km/h hızla git`
-        };
-      } else if (eventPattern === 2) {
-        const overtakes = 3 + Math.min(10, Math.floor(mIndex / 2));
-        state.mission = {
-          active: true,
-          type: "overtake",
-          targetM: state.distanceM + 900,
-          missionDistM: 900,
-          minSpeedKmh: 0,
-          targetOvertakes: overtakes,
-          reward: Math.round(baseReward * 1.25),
-          completedCount: mIndex,
-          statusText: `Trafikte ${overtakes} NPC araç geç`
-        };
-      } else {
-        const dist = Math.round((360 + Math.min(520, mIndex * 30)) * speedScale);
-        state.mission = {
-          active: true,
-          type: "charge_run",
-          targetM: state.distanceM + dist,
-          missionDistM: dist,
-          minSpeedKmh: 0,
-          targetOvertakes: 0,
-          reward: Math.round(baseReward * 1.3),
-          completedCount: mIndex,
-          statusText: `Şarjını bitirmeden ${dist}m hedefe ulaş`
-        };
-      }
+      const dist = Math.round((320 + Math.min(480, mIndex * 25)) * speedScale);
+      state.mission = {
+        active: true, type: "checkpoint", targetM: state.distanceM + dist,
+        missionDistM: dist, minSpeedKmh: 0, targetOvertakes: 0,
+        reward: baseReward, completedCount: mIndex,
+        statusText: `Kontrol noktasına ulaş (${dist}m)`
+      };
       updateMissionUI();
     }
 
@@ -2829,16 +2396,10 @@
         const roomLabel = state.currentRoomId
           ? `Oda: <strong>${escapeHtml(state.currentRoomName)}</strong> (${getActiveRoomPlayersCount(state.currentRoomId)}/${MAX_ROOM_PLAYERS} kişi)`
           : `Bir oda seç veya kur`;
-        el.innerHTML = `<strong>Online Harita:</strong> ${roomLabel} • Yeni bölge: <strong>${nextBiomeRem}m</strong> • Şarj: <strong>${nextChargeRem}m</strong>`;
+        el.innerHTML = `<strong>Online Harita:</strong> ${roomLabel} • Sağ şeritte oyuncuların mesafesi &amp; hızı görünür`;
       } else {
-        let progressText = "";
-        if (state.mission.type === "overtake") {
-          progressText = `Geçilen NPC: <strong>${state.passedNpcsInMission}/${state.mission.targetOvertakes}</strong>`;
-        } else {
-          const remaining = Math.max(0, Math.round(state.mission.targetM - state.distanceM));
-          progressText = `Kalan mesafe: <strong>${remaining}m</strong>`;
-        }
-        el.innerHTML = `<strong>Görev (${state.mission.statusText}):</strong> ${progressText} • Yeni bölge: <strong>${nextBiomeRem}m</strong> • Şarj: <strong>${nextChargeRem}m</strong> • Ödül: <strong>${formatMoney(state.mission.reward)}</strong>`;
+        const remaining = Math.max(0, Math.round(state.mission.targetM - state.distanceM));
+        el.innerHTML = `<strong>Görev (${state.mission.statusText}):</strong> Kalan mesafe: <strong>${remaining}m</strong> • Ödül: <strong>${formatMoney(state.mission.reward)}</strong>`;
       }
     }
 
@@ -2847,13 +2408,9 @@
       const pill = document.getElementById("batteryPill");
       pill.textContent = `Şarj: %${bat}`;
       pill.classList.remove("battery-ok", "battery-low", "battery-empty");
-      if (bat <= 0) {
-        pill.classList.add("battery-empty");
-      } else if (bat <= 20) {
-        pill.classList.add("battery-low");
-      } else {
-        pill.classList.add("battery-ok");
-      }
+      if (bat <= 0) pill.classList.add("battery-empty");
+      else if (bat <= 20) pill.classList.add("battery-low");
+      else pill.classList.add("battery-ok");
     }
 
     function updateScooterKmUI() {
@@ -2862,8 +2419,7 @@
     }
 
     function updateBiomeUI() {
-      const biome = getCurrentBiome();
-      document.getElementById("biomePill").textContent = `Bölge: ${biome.name}`;
+      document.getElementById("biomePill").textContent = `Bölge: ${getCurrentBiome().name}`;
     }
 
     function renderHUD() {
@@ -2892,14 +2448,9 @@
 
         let actionsHtml = "";
         if (owned) {
-          if (isSelected) {
-            actionsHtml += `<span class="owned-tag">Sürülüyor</span>`;
-          } else {
-            actionsHtml += `<button class="action-mini btn-select" onclick="selectScooter('${sc.id}')">Seç</button>`;
-          }
-          if (canSell) {
-            actionsHtml += `<button class="action-mini btn-sell" title="2. El (4/3 fiyatına sat)" onclick="sellScooter('${sc.id}')">Sat (${formatMoney(sellPrice)})</button>`;
-          }
+          if (isSelected) actionsHtml += `<span class="owned-tag">Sürülüyor</span>`;
+          else actionsHtml += `<button class="action-mini btn-select" onclick="selectScooter('${sc.id}')">Seç</button>`;
+          if (canSell) actionsHtml += `<button class="action-mini btn-sell" onclick="sellScooter('${sc.id}')">Sat (${formatMoney(sellPrice)})</button>`;
         } else {
           actionsHtml = `<button class="action-mini btn-buy" ${canAfford ? "" : "disabled"} onclick="buyScooter('${sc.id}')">Satın Al</button>`;
         }
@@ -2920,86 +2471,59 @@
       }).join("");
     }
 
-    function syncActiveMissionSpeedIfNeeded(sc) {
-      if (state.mapMode === "mission" && state.mission.active && state.mission.type === "speed_pass") {
-        const achievable = getAchievableMissionSpeed(sc);
-        if (state.mission.minSpeedKmh > achievable) {
-          state.mission.minSpeedKmh = achievable;
-          state.mission.statusText = `${state.mission.missionDistM}m boyunca en az ${achievable} km/h hızla git`;
-        }
-      }
-    }
-
     window.buyScooter = function(id) {
       if (state.puzzle.isOpen) return;
       ensureAudio();
       const sc = SCOOTERS.find(s => s.id === id);
-      if (!sc || state.ownedIds.has(id)) return;
-      if (state.money < sc.price) {
-        showToast("Yetersiz bakiye! Görev yaparak para kazan.");
-        return;
-      }
+      if (!sc || state.ownedIds.has(id) || state.money < sc.price) return;
       state.money -= sc.price;
       state.ownedIds.add(id);
       state.selectedId = id;
       state.batteryByScooter[id] = 100;
       state.kmByScooter[id] = 0;
       state.speedKmh = Math.min(state.speedKmh, sc.topSpeedKmh);
-      syncActiveMissionSpeedIfNeeded(sc);
       saveProgress();
       renderLeaderboard();
       syncWithSharedLeaderboard();
       pushMyRoomPresence();
-      showToast(`${sc.name} sıfır olarak alındı! Şarj %100, KM 0,0 km.`);
+      showToast(`${sc.name} sıfır olarak alındı!`);
       renderHUD();
       renderGarage();
     };
 
     window.selectScooter = function(id) {
-      if (state.puzzle.isOpen) return;
+      if (state.puzzle.isOpen || !state.ownedIds.has(id)) return;
       ensureAudio();
-      if (!state.ownedIds.has(id)) return;
       const sc = SCOOTERS.find(s => s.id === id);
       state.selectedId = id;
       state.speedKmh = Math.min(state.speedKmh, sc.topSpeedKmh);
-      syncActiveMissionSpeedIfNeeded(sc);
       saveProgress();
       renderLeaderboard();
       syncWithSharedLeaderboard();
       pushMyRoomPresence();
-      showToast(`${sc.name} seçildi (${formatKm(getScooterKm(id))} • Şarj: %${Math.round(getCurrentBattery())}).`);
+      showToast(`${sc.name} seçildi.`);
       renderHUD();
       renderGarage();
     };
 
     window.sellScooter = function(id) {
-      if (state.puzzle.isOpen) return;
+      if (state.puzzle.isOpen || id === starterScooter.id || state.ownedIds.size <= 1) return;
       ensureAudio();
       const sc = SCOOTERS.find(s => s.id === id);
       if (!sc || !state.ownedIds.has(id)) return;
-      if (id === starterScooter.id || state.ownedIds.size <= 1) {
-        showToast("Son scooterın satılamaz!");
-        return;
-      }
-
       const sellAmount = getSecondHandSellPrice(sc);
       state.ownedIds.delete(id);
       state.money += sellAmount;
       state.batteryByScooter[id] = 100;
       state.kmByScooter[id] = 0;
-
       if (state.selectedId === id) {
-        const nextOwned = SCOOTERS.find(s => state.ownedIds.has(s.id)) || starterScooter;
-        state.selectedId = nextOwned.id;
-        state.speedKmh = Math.min(state.speedKmh, nextOwned.topSpeedKmh);
-        syncActiveMissionSpeedIfNeeded(nextOwned);
+        state.selectedId = (SCOOTERS.find(s => state.ownedIds.has(s.id)) || starterScooter).id;
       }
-
       saveProgress();
       renderLeaderboard();
       syncWithSharedLeaderboard();
       pushMyRoomPresence();
-      showToast(`${sc.name} 2. el (4/3) fiyatına ${formatMoney(sellAmount)} karşılığında satıldı!`);
+      showToast(`${sc.name} ${formatMoney(sellAmount)} karşılığında satıldı!`);
       renderHUD();
       renderGarage();
     };
@@ -3015,10 +2539,8 @@
       freeMapBtn.classList.toggle("active", mode === "free");
       missionMapBtn.classList.toggle("active", mode === "mission");
       onlineMapBtn.classList.toggle("active", mode === "online");
-
-      if (mode === "mission") {
-        assignNextMission();
-      } else if (mode === "online") {
+      if (mode === "mission") assignNextMission();
+      else if (mode === "online") {
         fetchRoomsFromFirebase();
         pushMyRoomPresence();
       }
@@ -3030,9 +2552,7 @@
     onlineMapBtn.addEventListener("click", () => setMapMode("online"));
 
     const soundBtn = document.getElementById("soundToggleBtn");
-    function syncSoundBtnUI() {
-      soundBtn.textContent = state.soundEnabled ? "Ses: Açık" : "Ses: Kapalı";
-    }
+    function syncSoundBtnUI() { soundBtn.textContent = state.soundEnabled ? "Ses: Açık" : "Ses: Kapalı"; }
     soundBtn.addEventListener("click", () => {
       state.soundEnabled = !state.soundEnabled;
       syncSoundBtnUI();
@@ -3043,10 +2563,7 @@
     function changeLane(targetLane) {
       if (state.puzzle.isOpen) return;
       ensureAudio();
-      const clamped = Math.max(0, Math.min(1, targetLane));
-      if (clamped !== state.lane) {
-        state.lane = clamped;
-      }
+      state.lane = Math.max(0, Math.min(1, targetLane));
     }
 
     document.getElementById("leftLaneBtn").addEventListener("click", () => changeLane(0));
@@ -3094,89 +2611,53 @@
 
       if (state.puzzle.isOpen) {
         const keyMap = { "1": 0, "a": 0, "A": 0, "2": 1, "b": 1, "B": 1, "3": 2, "c": 2, "C": 2, "4": 3, "d": 3, "D": 3 };
-        if (e.key in keyMap) {
-          handlePuzzleAnswer(keyMap[e.key]);
-        }
+        if (e.key in keyMap) handlePuzzleAnswer(keyMap[e.key]);
         return;
       }
 
       ensureAudio();
-      if (e.key === "w" || e.key === "W" || e.key === "ArrowUp") {
-        state.controls.gas = true;
-        gasBtn.classList.add("pressed");
-      } else if (e.key === "s" || e.key === "S" || e.key === "ArrowDown") {
-        if (!state.controls.brake) playBrakeSound();
-        state.controls.brake = true;
-        brakeBtn.classList.add("pressed");
-      } else if (e.key === "a" || e.key === "A" || e.key === "ArrowLeft") {
-        changeLane(0);
-      } else if (e.key === "d" || e.key === "D" || e.key === "ArrowRight") {
-        changeLane(1);
-      } else if (e.key === "h" || e.key === "H") {
-        playHornSound();
-        hornBtn.classList.add("pressed");
-        setTimeout(() => hornBtn.classList.remove("pressed"), 180);
-      }
+      if (e.key === "w" || e.key === "W" || e.key === "ArrowUp") { state.controls.gas = true; gasBtn.classList.add("pressed"); }
+      else if (e.key === "s" || e.key === "S" || e.key === "ArrowDown") { if (!state.controls.brake) playBrakeSound(); state.controls.brake = true; brakeBtn.classList.add("pressed"); }
+      else if (e.key === "a" || e.key === "A" || e.key === "ArrowLeft") changeLane(0);
+      else if (e.key === "d" || e.key === "D" || e.key === "ArrowRight") changeLane(1);
+      else if (e.key === "h" || e.key === "H") { playHornSound(); hornBtn.classList.add("pressed"); setTimeout(() => hornBtn.classList.remove("pressed"), 180); }
     });
 
     window.addEventListener("keyup", (e) => {
-      if (e.key === "w" || e.key === "W" || e.key === "ArrowUp") {
-        state.controls.gas = false;
-        gasBtn.classList.remove("pressed");
-      } else if (e.key === "s" || e.key === "S" || e.key === "ArrowDown") {
-        state.controls.brake = false;
-        brakeBtn.classList.remove("pressed");
-      }
+      if (e.key === "w" || e.key === "W" || e.key === "ArrowUp") { state.controls.gas = false; gasBtn.classList.remove("pressed"); }
+      else if (e.key === "s" || e.key === "S" || e.key === "ArrowDown") { state.controls.brake = false; brakeBtn.classList.remove("pressed"); }
     });
 
     const NPC_COLORS = ["#f97316", "#06b6d4", "#eab308", "#ec4899", "#a855f7", "#10b981"];
 
     function spawnNpc() {
       if (state.npcDensity <= 0) return;
-
       const maxActiveNpcs = Math.max(1, Math.round((state.npcDensity / 100) * 10));
       if (state.npcs.length >= maxActiveNpcs) return;
-
-      const minGapY = Math.max(68, 175 - state.npcDensity * 1.05);
       const lane = Math.random() < 0.5 ? 0 : 1;
-      const sameLaneTooClose = state.npcs.some(n => n.lane === lane && n.y < minGapY);
-      if (sameLaneTooClose) return;
-
+      if (state.npcs.some(n => n.lane === lane && n.y < 110)) return;
       const maxSpeed = 35 + Math.random() * 45;
       state.npcs.push({
-        isNpc: true,
-        lane,
-        y: -45,
-        speed: maxSpeed * 0.75,
-        maxSpeed,
-        color: NPC_COLORS[Math.floor(Math.random() * NPC_COLORS.length)],
-        honked: false,
-        passed: false
+        isNpc: true, lane, y: -45, speed: maxSpeed * 0.75, maxSpeed,
+        color: NPC_COLORS[Math.floor(Math.random() * NPC_COLORS.length)], passed: false
       });
     }
 
     function spawnSceneryAtY(yPos, biome) {
-      const side = Math.random() < 0.5 ? "left" : "right";
-      const kind = biome.props[Math.floor(Math.random() * biome.props.length)];
-      const offsetRatio = 0.25 + Math.random() * 0.5;
-      const animPhase = Math.random() * Math.PI * 2;
-      const accentColor = NPC_COLORS[Math.floor(Math.random() * NPC_COLORS.length)];
       state.sceneryItems.push({
-        side,
-        kind,
-        offsetRatio,
+        side: Math.random() < 0.5 ? "left" : "right",
+        kind: biome.props[Math.floor(Math.random() * biome.props.length)],
+        offsetRatio: 0.2 + Math.random() * 0.45,
         y: yPos,
-        animPhase,
-        accentColor
+        animPhase: Math.random() * Math.PI * 2,
+        accentColor: NPC_COLORS[Math.floor(Math.random() * NPC_COLORS.length)]
       });
     }
 
     function initInitialScenery() {
       state.sceneryItems = [];
       const biome = getCurrentBiome();
-      for (let y = 15; y <= 370; y += 44) {
-        spawnSceneryAtY(y, biome);
-      }
+      for (let y = 15; y <= 380; y += 44) spawnSceneryAtY(y, biome);
     }
 
     const canvas = document.getElementById("roadCanvas");
@@ -3203,26 +2684,10 @@
       state.chatSyncAccumulator += dt;
       state.onlineSyncAccumulator += dt;
 
-      if (state.playSaveAccumulator >= 5) {
-        state.playSaveAccumulator = 0;
-        saveProgress();
-        renderLeaderboard();
-      }
-
-      if (state.leaderboardSyncAccumulator >= 10) {
-        state.leaderboardSyncAccumulator = 0;
-        syncWithSharedLeaderboard();
-      }
-
-      if (state.chatSyncAccumulator >= 5) {
-        state.chatSyncAccumulator = 0;
-        syncChatMessages();
-      }
-
-      if (state.mapMode === "online" && state.onlineSyncAccumulator >= 3) {
-        state.onlineSyncAccumulator = 0;
-        pushMyRoomPresence();
-      }
+      if (state.playSaveAccumulator >= 5) { state.playSaveAccumulator = 0; saveProgress(); renderLeaderboard(); }
+      if (state.leaderboardSyncAccumulator >= 10) { state.leaderboardSyncAccumulator = 0; syncWithSharedLeaderboard(); }
+      if (state.chatSyncAccumulator >= 5) { state.chatSyncAccumulator = 0; syncChatMessages(); }
+      if (state.mapMode === "online" && state.onlineSyncAccumulator >= 1.5) { state.onlineSyncAccumulator = 0; pushMyRoomPresence(); }
 
       updatePlaytimeUI();
 
@@ -3232,79 +2697,54 @@
           state.puzzle.remainingAnswerSec = Math.max(0, state.puzzle.remainingAnswerSec - dt);
           const secLeft = Math.ceil(state.puzzle.remainingAnswerSec);
           puzzleCountdownBadge.textContent = `${secLeft} sn`;
-          if (secLeft <= 5) {
-            puzzleCountdownBadge.classList.add("urgent");
-          }
-          if (state.puzzle.remainingAnswerSec <= 0) {
-            handlePuzzleTimeout();
-          }
+          if (secLeft <= 5) puzzleCountdownBadge.classList.add("urgent");
+          if (state.puzzle.remainingAnswerSec <= 0) handlePuzzleTimeout();
         }
         return;
       }
 
       state.puzzle.timeUntilNextSec -= dt;
       updatePuzzleHudTimer();
-      if (state.puzzle.timeUntilNextSec <= 0) {
-        openBonusPuzzle();
-        return;
-      }
+      if (state.puzzle.timeUntilNextSec <= 0) { openBonusPuzzle(); return; }
 
       const sc = getCurrentScooter();
       const currentBat = getCurrentBattery();
-
       const batteryFactor = currentBat > 0 ? (currentBat <= 15 ? 0.65 : 1) : 0.25;
       const effectiveTopSpeed = sc.topSpeedKmh * batteryFactor;
-      const accelRate = (18 + (sc.powerW / 13000) * 44) * batteryFactor;
-      const brakeRate = 58;
+      const accelRate = (22 + (sc.powerW / 13000) * 52) * batteryFactor;
+      const brakeRate = 64;
       const coastDrag = 10;
 
-      if (state.speedKmh > effectiveTopSpeed) {
-        state.speedKmh = Math.max(effectiveTopSpeed, state.speedKmh - brakeRate * 0.6 * dt);
-      }
-
-      if (state.controls.gas && !state.controls.brake) {
-        state.speedKmh = Math.min(effectiveTopSpeed, state.speedKmh + accelRate * dt);
-      } else if (state.controls.brake) {
-        state.speedKmh = Math.max(0, state.speedKmh - brakeRate * dt);
-      } else {
-        state.speedKmh = Math.max(0, state.speedKmh - coastDrag * dt);
-      }
+      if (state.speedKmh > effectiveTopSpeed) state.speedKmh = Math.max(effectiveTopSpeed, state.speedKmh - brakeRate * 0.6 * dt);
+      if (state.controls.gas && !state.controls.brake) state.speedKmh = Math.min(effectiveTopSpeed, state.speedKmh + accelRate * dt);
+      else if (state.controls.brake) state.speedKmh = Math.max(0, state.speedKmh - brakeRate * dt);
+      else state.speedKmh = Math.max(0, state.speedKmh - coastDrag * dt);
 
       const speedMps = (state.speedKmh * 1000) / 3600;
       const deltaM = speedMps * dt;
       state.distanceM += deltaM;
       addScooterMeters(sc.id, deltaM);
-      state.roadOffset = (state.roadOffset + deltaM * 18) % 80;
+      state.roadOffset = (state.roadOffset + deltaM * 24) % 80;
 
       const newBiomeIdx = Math.floor(state.distanceM / BIOME_INTERVAL_M) % BIOMES.length;
       if (newBiomeIdx !== state.currentBiomeIndex) {
         state.currentBiomeIndex = newBiomeIdx;
-        const b = BIOMES[newBiomeIdx];
         updateBiomeUI();
-        showToast(`Yeni Bölgeye Girdin: ${b.name}!`);
+        showToast(`Yeni Bölgeye Girdin: ${BIOMES[newBiomeIdx].name}!`);
       }
 
-      const scrollPx = deltaM * 18;
+      const scrollPx = deltaM * 24;
       const currentBiome = getCurrentBiome();
-      state.sceneryItems.forEach(item => {
-        item.y += scrollPx;
-        item.animPhase += dt * 5.2;
-      });
+      state.sceneryItems.forEach(item => { item.y += scrollPx; item.animPhase += dt * 5.2; });
       state.sceneryItems = state.sceneryItems.filter(item => item.y < canvas.getBoundingClientRect().height + 65);
-
       if (state.distanceM >= state.nextScenerySpawnM) {
         spawnSceneryAtY(-38, currentBiome);
         state.nextScenerySpawnM = state.distanceM + 2.0 + Math.random() * 2.2;
       }
 
       if (deltaM > 0 && sc.rangeKm > 0) {
-        const rangeMeters = sc.rangeKm * 1000;
-        const drainPct = (deltaM / rangeMeters) * 100;
-        const nextBat = Math.max(0, currentBat - drainPct);
+        const nextBat = Math.max(0, currentBat - (deltaM / (sc.rangeKm * 1000)) * 100);
         setCurrentBattery(nextBat);
-        if (currentBat > 0 && nextBat === 0) {
-          showToast("Şarj bitti! 5 km şarj noktasına git veya yavaşla.");
-        }
       }
 
       while (state.distanceM >= state.nextChargeCheckpointM) {
@@ -3317,62 +2757,34 @@
         renderGarage();
       }
 
-      state.laneVisualX += (state.lane - state.laneVisualX) * Math.min(1, dt * 13);
+      state.laneVisualX += (state.lane - state.laneVisualX) * Math.min(1, dt * 14);
 
-      if (state.npcDensity > 0) {
-        const spawnRatePerSec = (state.npcDensity / 100) * 3.2;
-        if (Math.random() < dt * spawnRatePerSec) {
-          spawnNpc();
-        }
-      }
+      if (state.npcDensity > 0 && Math.random() < dt * ((state.npcDensity / 100) * 3.2)) spawnNpc();
 
       const playerY = canvas.getBoundingClientRect().height * 0.74;
       state.npcs.forEach(npc => {
         npc.speed = Math.min(npc.maxSpeed, npc.speed + 8 * dt);
         const relSpeedMps = ((state.speedKmh - npc.speed) * 1000) / 3600;
-        npc.y += relSpeedMps * dt * 16 + 35 * dt;
-
-        if (!npc.passed && npc.y > playerY + 26) {
-          npc.passed = true;
-          state.passedNpcsInMission += 1;
-        }
-
-        if (Math.abs(npc.lane - state.laneVisualX) < 0.35 && Math.abs(npc.y - playerY) < 34) {
-          if (state.speedKmh > npc.speed + 8) {
-            state.speedKmh = Math.max(0, npc.speed * 0.75);
-            showToast("NPC araca çarptın! Hız düştü.");
-          }
+        npc.y += relSpeedMps * dt * 20 + 35 * dt;
+        if (!npc.passed && npc.y > playerY + 26) { npc.passed = true; state.passedNpcsInMission += 1; }
+        if (Math.abs(npc.lane - state.laneVisualX) < 0.35 && Math.abs(npc.y - playerY) < 34 && state.speedKmh > npc.speed + 8) {
+          state.speedKmh = Math.max(0, npc.speed * 0.75);
+          showToast("NPC araca çarptın! Hız düştü.");
         }
       });
-
       state.npcs = state.npcs.filter(n => n.y > -120 && n.y < canvas.getBoundingClientRect().height + 120);
 
-      if (state.mapMode === "mission" && state.mission.active) {
-        let completed = false;
-        if (state.mission.type === "overtake") {
-          completed = state.passedNpcsInMission >= state.mission.targetOvertakes;
-        } else if (state.distanceM >= state.mission.targetM) {
-          if (state.mission.type === "speed_pass" && state.speedKmh < state.mission.minSpeedKmh) {
-            showToast(`Hedefe ulaştın ama hızın ${state.mission.minSpeedKmh} km/h altında! Mesafe uzatıldı.`);
-            state.mission.targetM += 100;
-          } else {
-            completed = true;
-          }
-        }
-
-        if (completed) {
-          const earned = state.mission.reward;
-          state.money += earned;
-          state.mission.completedCount += 1;
-          saveProgress();
-          showToast(`Görev tamamlandı! +${formatMoney(earned)} kazandın.`);
-          assignNextMission();
-          renderGarage();
-        }
+      if (state.mapMode === "mission" && state.mission.active && state.distanceM >= state.mission.targetM) {
+        const earned = state.mission.reward;
+        state.money += earned;
+        state.mission.completedCount += 1;
+        saveProgress();
+        showToast(`Görev tamamlandı! +${formatMoney(earned)} kazandın.`);
+        assignNextMission();
+        renderGarage();
       }
 
       updateMissionUI();
-
       if (state.flashTimer > 0) {
         state.flashTimer = Math.max(0, state.flashTimer - dt);
         if (state.flashTimer === 0) state.flashMessage = "";
@@ -3385,290 +2797,99 @@
     }
 
     function drawSceneryProp(ctx, x, y, item) {
-      const { kind, animPhase, accentColor } = item;
-      const stride = Math.sin(animPhase) * 3.2;
-      const bob = Math.abs(Math.cos(animPhase)) * 1.4;
-
       ctx.save();
       ctx.translate(x, y);
-
-      if (kind === "camel_real") {
-        ctx.fillStyle = "rgba(0, 0, 0, 0.24)";
-        ctx.beginPath();
-        ctx.ellipse(0, 14, 16, 4.5, 0, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.translate(0, -bob * 0.8);
-
-        ctx.strokeStyle = "#78350f";
-        ctx.lineWidth = 2.6;
-        ctx.lineCap = "round";
-
-        ctx.beginPath();
-        ctx.moveTo(-10, 3);
-        ctx.lineTo(-10 - stride, 13);
-        ctx.moveTo(8, 3);
-        ctx.lineTo(8 + stride, 13);
-        ctx.stroke();
-
-        ctx.strokeStyle = "#b45309";
-        ctx.beginPath();
-        ctx.moveTo(-7, 3);
-        ctx.lineTo(-7 + stride, 13);
-        ctx.moveTo(11, 3);
-        ctx.lineTo(11 - stride, 13);
-        ctx.stroke();
-
-        ctx.strokeStyle = "#78350f";
-        ctx.lineWidth = 1.8;
-        ctx.beginPath();
-        ctx.moveTo(-14, -1);
-        ctx.quadraticCurveTo(-18, 4 + Math.sin(animPhase * 1.5) * 2, -16, 9);
-        ctx.stroke();
-
-        ctx.fillStyle = "#c26d1f";
-        ctx.beginPath();
-        ctx.ellipse(-1, 0, 14, 6.5, -0.06, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.fillStyle = "#a15212";
-        ctx.beginPath();
-        ctx.arc(-1, -5, 6.8, Math.PI, 0);
-        ctx.fill();
-
-        ctx.fillStyle = "#c26d1f";
-        ctx.beginPath();
-        ctx.moveTo(9, -3);
-        ctx.quadraticCurveTo(15, -9, 13, -15);
-        ctx.lineTo(17, -15);
-        ctx.quadraticCurveTo(19, -8, 13, 2);
-        ctx.closePath();
-        ctx.fill();
-
-        ctx.beginPath();
-        ctx.ellipse(16.5, -15.5, 5.2, 3.2, 0.15, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.fillStyle = "#78350f";
-        ctx.beginPath();
-        ctx.moveTo(13, -17);
-        ctx.lineTo(11, -21);
-        ctx.lineTo(15, -18);
-        ctx.fill();
-
-        ctx.fillStyle = "#0f172a";
-        ctx.beginPath();
-        ctx.arc(17.5, -16, 1.1, 0, Math.PI * 2);
-        ctx.fill();
-      } else if (kind === "fat_blond_kid") {
-        ctx.fillStyle = "rgba(0, 0, 0, 0.22)";
-        ctx.beginPath();
-        ctx.ellipse(0, 13, 10, 3.5, 0, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.translate(0, -bob);
-
-        ctx.strokeStyle = "#fde68a";
-        ctx.lineWidth = 3;
-        ctx.lineCap = "round";
-        ctx.beginPath();
-        ctx.moveTo(-4, 6);
-        ctx.lineTo(-4 - stride * 0.6, 12);
-        ctx.moveTo(4, 6);
-        ctx.lineTo(4 + stride * 0.6, 12);
-        ctx.stroke();
-
-        ctx.fillStyle = accentColor;
-        ctx.beginPath();
-        ctx.ellipse(0, 1, 9.5, 7.5, 0, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.fillStyle = "#fcd34d";
-        ctx.beginPath();
-        ctx.arc(0, -8, 6.2, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.fillStyle = "#facc15";
-        ctx.beginPath();
-        ctx.arc(0, -10, 6.8, Math.PI * 0.9, Math.PI * 2.1);
-        ctx.fill();
-        ctx.beginPath();
-        ctx.arc(-5, -8, 2.6, 0, Math.PI * 2);
-        ctx.arc(5, -8, 2.6, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.fillStyle = "#0f172a";
-        ctx.beginPath();
-        ctx.arc(-2.2, -8, 1.1, 0, Math.PI * 2);
-        ctx.arc(2.2, -8, 1.1, 0, Math.PI * 2);
-        ctx.fill();
-      } else if (kind === "scooter_poser") {
-        for (let i = -1; i <= 1; i += 2) {
-          const gx = i * 8;
-          const gy = (i === -1 ? -2 : 2) + Math.sin(animPhase * 0.7) * 0.8;
-          ctx.save();
-          ctx.translate(gx, gy);
-          ctx.fillStyle = "#38bdf8";
-          ctx.beginPath();
-          ctx.roundRect(-4, 2, 8, 11, 2);
-          ctx.fill();
-          ctx.strokeStyle = "#e2e8f0";
-          ctx.lineWidth = 2;
-          ctx.beginPath();
-          ctx.moveTo(-6, 3);
-          ctx.lineTo(6, 3);
-          ctx.stroke();
-          ctx.fillStyle = i === -1 ? "#f43f5e" : "#a855f7";
-          ctx.beginPath();
-          ctx.arc(0, -2, 4.5, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.fillStyle = "#fed7aa";
-          ctx.beginPath();
-          ctx.arc(0, -8, 3.8, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.restore();
-        }
-      } else if (kind === "photo_crew") {
-        ctx.fillStyle = "#22c55e";
-        ctx.beginPath();
-        ctx.arc(-7, -1, 4.8, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = "#fcd34d";
-        ctx.beginPath();
-        ctx.arc(-7, -7.5, 4, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = "#0f172a";
-        ctx.fillRect(-3, -6, 4.5, 3);
-        if (Math.sin(animPhase * 2.2) > 0.85) {
-          ctx.fillStyle = "rgba(254, 249, 195, 0.9)";
-          ctx.beginPath();
-          ctx.arc(2, -4.5, 5, 0, Math.PI * 2);
-          ctx.fill();
-        }
-        ctx.fillStyle = "#f97316";
-        ctx.beginPath();
-        ctx.arc(6, 0, 4.8, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = "#fed7aa";
-        ctx.beginPath();
-        ctx.arc(6, -6.5, 4, 0, Math.PI * 2);
-        ctx.fill();
-      } else if (kind === "pine" || kind === "snow_pine") {
+      if (item.kind === "pine" || item.kind === "snow_pine") {
         ctx.fillStyle = "#5c3a21";
         ctx.fillRect(-3, 4, 6, 10);
-        ctx.fillStyle = kind === "snow_pine" ? "#0f766e" : "#14532d";
+        ctx.fillStyle = item.kind === "snow_pine" ? "#0f766e" : "#14532d";
         ctx.beginPath();
-        ctx.moveTo(0, -18);
-        ctx.lineTo(-14, 4);
-        ctx.lineTo(14, 4);
-        ctx.closePath();
+        ctx.moveTo(0, -18); ctx.lineTo(-14, 4); ctx.lineTo(14, 4); ctx.closePath();
         ctx.fill();
-        if (kind === "snow_pine") {
-          ctx.fillStyle = "#f8fafc";
-          ctx.beginPath();
-          ctx.moveTo(0, -18);
-          ctx.lineTo(-7, -7);
-          ctx.lineTo(7, -7);
-          ctx.closePath();
-          ctx.fill();
-        }
-      } else if (kind === "autumn_tree") {
-        ctx.fillStyle = "#451a03";
-        ctx.fillRect(-3, 4, 6, 11);
-        ctx.fillStyle = "#ea580c";
+      } else {
+        ctx.fillStyle = item.accentColor || "#facc15";
         ctx.beginPath();
-        ctx.arc(0, -4, 13, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = "#facc15";
-        ctx.beginPath();
-        ctx.arc(-5, -7, 7, 0, Math.PI * 2);
-        ctx.fill();
-      } else if (kind === "cactus") {
-        ctx.fillStyle = "#15803d";
-        ctx.beginPath();
-        ctx.roundRect(-3, -15, 6, 24, 3);
-        ctx.roundRect(-10, -8, 7, 4, 2);
-        ctx.roundRect(-10, -13, 4, 8, 2);
-        ctx.roundRect(3, -5, 7, 4, 2);
-        ctx.roundRect(6, -11, 4, 9, 2);
-        ctx.fill();
-      } else if (kind === "sheep") {
-        ctx.translate(0, -bob);
-        ctx.fillStyle = "#1e293b";
-        ctx.fillRect(-7, 4, 2.5, 7);
-        ctx.fillRect(4, 4, 2.5, 7);
-        ctx.fillStyle = "#f8fafc";
-        ctx.beginPath();
-        ctx.arc(-4, 0, 6, 0, Math.PI * 2);
-        ctx.arc(3, 0, 6, 0, Math.PI * 2);
-        ctx.arc(0, -3, 6, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = "#1e293b";
-        ctx.beginPath();
-        ctx.arc(9, -1, 4, 0, Math.PI * 2);
-        ctx.fill();
-      } else if (kind === "rabbit") {
-        ctx.translate(0, -bob * 1.3);
-        ctx.fillStyle = "#e2e8f0";
-        ctx.beginPath();
-        ctx.ellipse(0, 3, 6, 4.5, 0, 0, Math.PI * 2);
-        ctx.arc(5, -1, 3.5, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillRect(3, -9, 2, 6);
-        ctx.fillRect(6, -9, 2, 6);
-      } else if (kind === "deer") {
-        ctx.translate(0, -bob);
-        ctx.fillStyle = "#78350f";
-        ctx.fillRect(-8, 4, 2.5, 10);
-        ctx.fillRect(5, 4, 2.5, 10);
-        ctx.fillStyle = "#92400e";
-        ctx.beginPath();
-        ctx.ellipse(0, 0, 12, 6, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillRect(8, -10, 4, 11);
-        ctx.beginPath();
-        ctx.arc(11, -11, 4, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = "#fde68a";
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.moveTo(10, -14); ctx.lineTo(8, -20);
-        ctx.moveTo(12, -14); ctx.lineTo(15, -20);
-        ctx.stroke();
-      } else if (kind === "squirrel") {
-        ctx.translate(0, -bob);
-        ctx.fillStyle = "#c2410c";
-        ctx.beginPath();
-        ctx.arc(-5, -2, 6, 0, Math.PI * 2);
-        ctx.ellipse(2, 2, 5, 4, 0, 0, Math.PI * 2);
-        ctx.arc(6, -2, 3.5, 0, Math.PI * 2);
-        ctx.fill();
-      } else if (kind === "polar_bear") {
-        ctx.translate(0, -bob);
-        ctx.fillStyle = "#f8fafc";
-        ctx.beginPath();
-        ctx.roundRect(-13, -6, 26, 14, 7);
-        ctx.arc(13, -3, 6, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = "#0f172a";
-        ctx.beginPath();
-        ctx.arc(16, -4, 1.5, 0, Math.PI * 2);
-        ctx.fill();
-      } else if (kind === "penguin") {
-        ctx.translate(0, -bob);
-        ctx.fillStyle = "#0f172a";
-        ctx.beginPath();
-        ctx.ellipse(0, 0, 6, 9, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = "#ffffff";
-        ctx.beginPath();
-        ctx.ellipse(0, 1, 3.8, 6.5, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = "#f97316";
-        ctx.beginPath();
-        ctx.moveTo(3, -4); ctx.lineTo(8, -3); ctx.lineTo(3, -2);
+        ctx.arc(0, 0, 8, 0, Math.PI * 2);
         ctx.fill();
       }
+      ctx.restore();
+    }
+
+    function drawOnlineRightSidePanel(ctx, w, h, rightAreaLeft, rightAreaW, playerY) {
+      if (state.mapMode !== "online" || rightAreaW < 42) return;
+
+      // Sağ çizgili alana dikey uzun radar/liste şeridi
+      ctx.save();
+      ctx.fillStyle = "rgba(7, 14, 28, 0.72)";
+      ctx.fillRect(rightAreaLeft + 4, 8, rightAreaW - 8, h - 16);
+
+      ctx.strokeStyle = "rgba(94, 234, 212, 0.45)";
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(rightAreaLeft + 4, 8, rightAreaW - 8, h - 16);
+
+      // Merkez (Senin konumun) yatay çizgisi
+      ctx.strokeStyle = "rgba(56, 189, 248, 0.45)";
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      ctx.moveTo(rightAreaLeft + 6, playerY);
+      ctx.lineTo(w - 6, playerY);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      ctx.fillStyle = "#5eead4";
+      ctx.font = "bold 10px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("ONLINE", rightAreaLeft + rightAreaW / 2, 22);
+
+      const now = Date.now();
+      const others = Object.values(state.roomPlayers)
+        .filter(rp => rp && rp.id !== state.playerId && (now - (rp.updatedAt || 0) <= ONLINE_PLAYER_STALE_MS))
+        .sort((a, b) => (b.distanceM || 0) - (a.distanceM || 0));
+
+      if (!state.currentRoomId) {
+        ctx.fillStyle = "#cbd5e1";
+        ctx.font = "bold 9px sans-serif";
+        ctx.fillText("Oda Seç", rightAreaLeft + rightAreaW / 2, h / 2);
+        ctx.restore();
+        return;
+      }
+
+      if (others.length === 0) {
+        ctx.fillStyle = "#94a3b8";
+        ctx.font = "bold 9px sans-serif";
+        ctx.fillText("Teksin", rightAreaLeft + rightAreaW / 2, playerY - 10);
+        ctx.restore();
+        return;
+      }
+
+      others.forEach((rp, idx) => {
+        const diffM = (rp.distanceM || 0) - state.distanceM;
+        const rawY = playerY - diffM * 0.25;
+        const clampedY = Math.max(36, Math.min(h - 24, rawY + (idx % 2 === 0 ? 0 : 14)));
+        const distLabel = formatRelativeDistance(diffM);
+        const speedLabel = `${Math.round(rp.speedKmh || 0)} km/h`;
+        const fullName = String(rp.name || "Oyuncu");
+        const shortName = rightAreaW < 85 ? fullName.slice(0, 7) : fullName.slice(0, 14);
+
+        // Uzun dikey işaretçi çubuğu
+        ctx.fillStyle = rp.scooterColor || "#5eead4";
+        ctx.fillRect(rightAreaLeft + 7, clampedY - 12, 4, 24);
+
+        // İsim, mesafe ve hız kutusu
+        ctx.fillStyle = "rgba(15, 23, 42, 0.92)";
+        ctx.beginPath();
+        ctx.roundRect(rightAreaLeft + 13, clampedY - 13, Math.max(24, rightAreaW - 19), 26, 5);
+        ctx.fill();
+
+        ctx.fillStyle = "#f8fafc";
+        ctx.font = "bold 9px sans-serif";
+        ctx.textAlign = "left";
+        ctx.fillText(shortName, rightAreaLeft + 16, clampedY - 2);
+
+        ctx.fillStyle = diffM >= 0 ? "#4ade80" : "#fbbf24";
+        ctx.font = "bold 8px sans-serif";
+        ctx.fillText(`${distLabel} • ${speedLabel}`, rightAreaLeft + 16, clampedY + 9);
+      });
 
       ctx.restore();
     }
@@ -3684,7 +2905,7 @@
       ctx.fillStyle = biome.bgOuter;
       ctx.fillRect(0, 0, w, h);
 
-      const roadW = Math.min(330, w * 0.62);
+      const roadW = Math.min(310, w * 0.56);
       const roadLeft = (w - roadW) / 2;
       const roadRight = roadLeft + roadW;
       const laneW = roadW / 2;
@@ -3694,6 +2915,7 @@
       ctx.fillRect(roadRight, 0, w - roadRight, h);
 
       state.sceneryItems.forEach(item => {
+        if (item.side === "right" && state.mapMode === "online") return;
         const sx = item.side === "left"
           ? roadLeft * item.offsetRatio
           : roadRight + (w - roadRight) * item.offsetRatio;
@@ -3718,63 +2940,20 @@
       ctx.stroke();
       ctx.setLineDash([]);
 
-      const chargeRemM = Math.max(0, state.nextChargeCheckpointM - state.distanceM);
-      const chargeY = playerY - chargeRemM * 1.1;
-      if (chargeY > -35 && chargeY < h + 35) {
-        ctx.fillStyle = "rgba(56, 189, 248, 0.24)";
-        ctx.fillRect(roadLeft + 6, chargeY - 11, roadW - 12, 22);
-        ctx.strokeStyle = "#38bdf8";
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.moveTo(roadLeft + 6, chargeY);
-        ctx.lineTo(roadRight - 6, chargeY);
-        ctx.stroke();
-
-        ctx.fillStyle = "#e0f2fe";
-        ctx.font = "bold 11px sans-serif";
-        ctx.textAlign = "center";
-        ctx.fillText(`⚡ ŞARJ (${Math.round(state.nextChargeCheckpointM / 1000)} km)`, w / 2, chargeY - 14);
-        ctx.textAlign = "left";
-      }
-
-      if (state.mapMode === "mission" && state.mission.type !== "overtake") {
-        const remM = Math.max(0, state.mission.targetM - state.distanceM);
-        const gateY = playerY - remM * 1.1;
-        if (gateY > -30 && gateY < h + 30) {
-          ctx.fillStyle = "rgba(74, 222, 128, 0.25)";
-          ctx.fillRect(roadLeft + 6, gateY - 8, roadW - 12, 16);
-          ctx.strokeStyle = "#4ade80";
-          ctx.lineWidth = 3;
-          ctx.beginPath();
-          ctx.moveTo(roadLeft + 6, gateY);
-          ctx.lineTo(roadRight - 6, gateY);
-          ctx.stroke();
-        }
-      }
-
       state.npcs.forEach(npc => {
         const nx = roadLeft + laneW * (npc.lane + 0.5);
         ctx.save();
         ctx.translate(nx, npc.y);
-        ctx.fillStyle = "rgba(0,0,0,0.35)";
-        ctx.beginPath();
-        ctx.roundRect(-18, -26, 36, 54, 8);
-        ctx.fill();
-
         ctx.fillStyle = npc.color;
         ctx.beginPath();
         ctx.roundRect(-16, -28, 32, 52, 7);
         ctx.fill();
-
         ctx.fillStyle = "#0f172a";
         ctx.fillRect(-12, -20, 24, 12);
-        ctx.fillStyle = "#fef08a";
-        ctx.fillRect(-12, 18, 7, 4);
-        ctx.fillRect(5, 18, 7, 4);
         ctx.restore();
       });
 
-      // Online odadaki diğer gerçek oyuncular
+      // Yolda gerçek online oyuncular (daha akıcı mesafe ölçeği + mesafe/hız etiketi)
       if (state.mapMode === "online" && state.currentRoomId) {
         const now = Date.now();
         Object.values(state.roomPlayers).forEach(rp => {
@@ -3782,19 +2961,14 @@
           if (now - (rp.updatedAt || 0) > ONLINE_PLAYER_STALE_MS) return;
 
           const relDistM = (rp.distanceM || 0) - state.distanceM;
-          const ry = playerY - relDistM * 1.1;
-          if (ry < -55 || ry > h + 55) return;
+          const ry = playerY - relDistM * ONLINE_VISUAL_SCALE;
+          if (ry < -70 || ry > h + 70) return;
 
           const rLaneX = typeof rp.laneVisualX === "number" ? rp.laneVisualX : (rp.lane || 0);
           const rx = roadLeft + laneW * (rLaneX + 0.5);
 
           ctx.save();
           ctx.translate(rx, ry);
-
-          ctx.fillStyle = "rgba(94, 234, 212, 0.25)";
-          ctx.beginPath();
-          ctx.ellipse(0, 18, 18, 7, 0, 0, Math.PI * 2);
-          ctx.fill();
 
           ctx.fillStyle = rp.scooterColor || "#5eead4";
           ctx.beginPath();
@@ -3804,58 +2978,42 @@
           ctx.strokeStyle = "#f8fafc";
           ctx.lineWidth = 3.5;
           ctx.beginPath();
-          ctx.moveTo(-12, -10);
-          ctx.lineTo(12, -10);
+          ctx.moveTo(-12, -10); ctx.lineTo(12, -10);
           ctx.stroke();
 
-          ctx.fillStyle = "#0f172a";
+          ctx.fillStyle = "rgba(15, 23, 42, 0.92)";
           ctx.beginPath();
-          ctx.roundRect(-42, -32, 84, 15, 6);
+          ctx.roundRect(-54, -36, 108, 20, 6);
           ctx.fill();
 
           ctx.fillStyle = "#5eead4";
-          ctx.font = "bold 10px sans-serif";
+          ctx.font = "bold 9px sans-serif";
           ctx.textAlign = "center";
-          ctx.fillText(String(rp.name || "Oyuncu").slice(0, 14), 0, -21);
+          ctx.fillText(`${String(rp.name || "Oyuncu").slice(0, 12)} (${formatRelativeDistance(relDistM)})`, 0, -23);
           ctx.textAlign = "left";
-
           ctx.restore();
         });
       }
 
       const px = roadLeft + laneW * (state.laneVisualX + 0.5);
-
       ctx.save();
       ctx.translate(px, playerY);
-
-      ctx.fillStyle = "rgba(0,0,0,0.4)";
-      ctx.beginPath();
-      ctx.ellipse(0, 18, 16, 6, 0, 0, Math.PI * 2);
-      ctx.fill();
-
       ctx.fillStyle = sc.color;
       ctx.beginPath();
       ctx.roundRect(-8, -14, 16, 28, 5);
       ctx.fill();
-
       ctx.strokeStyle = "#e2e8f0";
       ctx.lineWidth = 4;
       ctx.beginPath();
-      ctx.moveTo(-13, -10);
-      ctx.lineTo(13, -10);
+      ctx.moveTo(-13, -10); ctx.lineTo(13, -10);
       ctx.stroke();
-
       ctx.fillStyle = "#f8fafc";
       ctx.beginPath();
       ctx.arc(0, -2, 7, 0, Math.PI * 2);
       ctx.fill();
-
-      if (state.controls.brake) {
-        ctx.fillStyle = "#ef4444";
-        ctx.fillRect(-7, 12, 14, 4);
-      }
-
       ctx.restore();
+
+      drawOnlineRightSidePanel(ctx, w, h, roadRight, w - roadRight, playerY);
 
       ctx.fillStyle = "rgba(15, 23, 42, 0.86)";
       ctx.beginPath();
