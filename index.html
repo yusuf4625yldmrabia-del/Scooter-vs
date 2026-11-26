@@ -247,7 +247,7 @@
       background: linear-gradient(135deg, #d97706, #f59e0b);
     }
 
-    .leaderboard-section {
+    .leaderboard-section, .chat-section {
       background: #131c31;
       border: 1px solid rgba(52, 211, 153, 0.25);
       border-radius: 14px;
@@ -257,7 +257,11 @@
       gap: 10px;
     }
 
-    .leaderboard-head {
+    .chat-section {
+      border-color: rgba(56, 189, 248, 0.28);
+    }
+
+    .leaderboard-head, .chat-head {
       display: flex;
       flex-wrap: wrap;
       align-items: center;
@@ -271,19 +275,25 @@
       color: #34d399;
     }
 
-    .leaderboard-sub {
+    .chat-title {
+      font-size: 14px;
+      font-weight: 800;
+      color: #38bdf8;
+    }
+
+    .leaderboard-sub, .chat-sub {
       font-size: 11px;
       color: #94a3b8;
     }
 
-    .name-form {
+    .name-form, .chat-form {
       display: flex;
       flex-wrap: wrap;
       align-items: center;
       gap: 8px;
     }
 
-    .name-input {
+    .name-input, .chat-input {
       background: #1e293b;
       color: #f8fafc;
       border: 1px solid rgba(255, 255, 255, 0.16);
@@ -291,25 +301,37 @@
       padding: 7px 11px;
       font-size: 12px;
       font-weight: 700;
-      min-width: 180px;
       user-select: text;
       -webkit-user-select: text;
     }
 
-    .name-input:focus {
+    .name-input {
+      min-width: 180px;
+    }
+
+    .chat-input {
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .name-input:focus, .chat-input:focus {
       outline: none;
       border-color: #38bdf8;
     }
 
-    .name-save-btn {
+    .name-save-btn, .chat-send-btn {
       background: #0284c7;
       color: #ffffff;
       border: none;
       border-radius: 9px;
-      padding: 7px 12px;
+      padding: 7px 14px;
       font-size: 12px;
       font-weight: 800;
       cursor: pointer;
+    }
+
+    .chat-send-btn {
+      background: #16a34a;
     }
 
     .sync-status {
@@ -325,7 +347,7 @@
       display: flex;
       flex-direction: column;
       gap: 6px;
-      max-height: 220px;
+      max-height: 230px;
       overflow-y: auto;
     }
 
@@ -335,6 +357,7 @@
       border-radius: 10px;
       padding: 8px 11px;
       display: flex;
+      flex-wrap: wrap;
       align-items: center;
       justify-content: space-between;
       gap: 8px;
@@ -348,6 +371,7 @@
 
     .leader-left {
       display: flex;
+      flex-wrap: wrap;
       align-items: center;
       gap: 8px;
       font-weight: 800;
@@ -356,6 +380,16 @@
     .leader-rank {
       color: #fbbf24;
       min-width: 34px;
+    }
+
+    .leader-scooter {
+      color: #fb923c;
+      background: rgba(251, 146, 60, 0.14);
+      border: 1px solid rgba(251, 146, 60, 0.3);
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-size: 11px;
+      font-weight: 700;
     }
 
     .leader-me-tag {
@@ -370,6 +404,71 @@
     .leader-time {
       font-weight: 800;
       color: #38bdf8;
+    }
+
+    .chat-messages {
+      background: #0f172a;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 210px;
+      overflow-y: auto;
+    }
+
+    .chat-item {
+      background: #1e293b;
+      border-radius: 8px;
+      padding: 7px 10px;
+      font-size: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .chat-item.is-me {
+      border-left: 3px solid #34d399;
+      background: rgba(16, 185, 129, 0.12);
+    }
+
+    .chat-meta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+    }
+
+    .chat-author {
+      font-weight: 800;
+      color: #38bdf8;
+    }
+
+    .chat-scooter {
+      color: #fbbf24;
+      font-weight: 700;
+    }
+
+    .chat-clock {
+      color: #94a3b8;
+      margin-left: auto;
+      font-size: 10px;
+    }
+
+    .chat-text {
+      color: #f8fafc;
+      word-break: break-word;
+      user-select: text;
+      -webkit-user-select: text;
+    }
+
+    .chat-empty {
+      color: #94a3b8;
+      font-size: 12px;
+      text-align: center;
+      padding: 12px 6px;
     }
 
     .garage-section {
@@ -710,7 +809,7 @@
       <div class="leaderboard-head">
         <div>
           <div class="leaderboard-title">En Çok Oynayanlar Sıralaması (Sadece Gerçek Oyuncular)</div>
-          <div class="leaderboard-sub">NPC'ler listeye girmez • En çok vakit geçiren 1. olur • İsim yazıp herkesle görünür ol</div>
+          <div class="leaderboard-sub">NPC'ler listeye girmez • Her oyuncunun sürdüğü scooter görünür • En çok vakit geçiren 1. olur</div>
         </div>
         <div id="syncStatusPill" class="sync-status">Mod: Yerel Cihaz</div>
       </div>
@@ -721,6 +820,23 @@
       </div>
 
       <div id="leaderboardList" class="leaderboard-list"></div>
+    </div>
+
+    <div class="chat-section">
+      <div class="chat-head">
+        <div>
+          <div class="chat-title">Oyuncu Sohbeti (Canlı Chat)</div>
+          <div class="chat-sub">Diğer oyuncularla mesajlaş • Mesajında kullandığın scooter da görünür</div>
+        </div>
+        <div id="chatStatusPill" class="sync-status">Chat: Yerel</div>
+      </div>
+
+      <form id="chatForm" class="chat-form">
+        <input id="chatMessageInput" class="chat-input" type="text" maxlength="160" placeholder="Bir mesaj yaz..." />
+        <button id="sendChatBtn" class="chat-send-btn" type="submit">Gönder</button>
+      </form>
+
+      <div id="chatMessagesList" class="chat-messages"></div>
     </div>
 
     <div class="garage-section">
@@ -746,12 +862,12 @@
   </div>
 
   <script>
-    // Firebase Realtime Database adresi bağlandı
     const LEADERBOARD_DB_URL = "https://scooter-vs-arena-default-rtdb.firebaseio.com";
 
     const SAVE_KEY = "scooter_ride_save_v3";
     const LEGACY_SAVE_KEY = "scooter_ride_save_v2";
     const LOCAL_PLAYERS_KEY = "scooter_ride_real_players_v1";
+    const LOCAL_CHAT_KEY = "scooter_ride_chat_messages_v1";
     const PLAYER_ID_KEY = "scooter_ride_player_id_v1";
 
     const CHARGE_INTERVAL_M = 5000;
@@ -1139,7 +1255,9 @@
       totalPlaySeconds: saved ? saved.totalPlaySeconds : 0,
       playSaveAccumulator: 0,
       leaderboardSyncAccumulator: 0,
+      chatSyncAccumulator: 0,
       remotePlayers: {},
+      chatMessages: [],
       mapMode: "free",
       soundEnabled: saved ? saved.soundEnabled : true,
       npcDensity: saved ? saved.npcDensity : 50,
@@ -1229,6 +1347,15 @@
       return `${hh}:${mm}:${ss}`;
     }
 
+    function formatClockTime(ts) {
+      try {
+        const d = new Date(ts || Date.now());
+        return d.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
+      } catch (_) {
+        return "";
+      }
+    }
+
     const playtimePill = document.getElementById("playtimePill");
 
     function updatePlaytimeUI() {
@@ -1247,10 +1374,15 @@
           if (!id || typeof id !== "string" || id.startsWith("npc_")) return;
           if (!entry || typeof entry !== "object") return;
           if (typeof entry.totalPlaySeconds !== "number" || !Number.isFinite(entry.totalPlaySeconds)) return;
+          const scObj = SCOOTERS.find(s => s.id === entry.scooterId);
           clean[id] = {
             id,
             name: typeof entry.name === "string" && entry.name.trim() ? entry.name.trim().slice(0, 20) : "Oyuncu",
             totalPlaySeconds: Math.max(0, entry.totalPlaySeconds),
+            scooterId: scObj ? scObj.id : starterScooter.id,
+            scooterName: typeof entry.scooterName === "string" && entry.scooterName.trim()
+              ? entry.scooterName.trim().slice(0, 32)
+              : (scObj ? scObj.name : starterScooter.name),
             updatedAt: typeof entry.updatedAt === "number" ? entry.updatedAt : Date.now()
           };
         });
@@ -1262,11 +1394,14 @@
 
     function saveLocalRealPlayerEntry() {
       try {
+        const sc = getCurrentScooter();
         const map = loadLocalRealPlayers();
         map[state.playerId] = {
           id: state.playerId,
           name: state.playerName,
           totalPlaySeconds: Math.max(0, state.totalPlaySeconds),
+          scooterId: sc.id,
+          scooterName: sc.name,
           updatedAt: Date.now()
         };
         localStorage.setItem(LOCAL_PLAYERS_KEY, JSON.stringify(map));
@@ -1311,10 +1446,15 @@
             Object.entries(data).forEach(([id, entry]) => {
               if (!id || id.startsWith("npc_") || !entry || typeof entry !== "object") return;
               if (typeof entry.totalPlaySeconds !== "number" || !Number.isFinite(entry.totalPlaySeconds)) return;
+              const scObj = SCOOTERS.find(s => s.id === entry.scooterId);
               nextRemote[id] = {
                 id,
                 name: typeof entry.name === "string" && entry.name.trim() ? entry.name.trim().slice(0, 20) : "Oyuncu",
                 totalPlaySeconds: Math.max(0, entry.totalPlaySeconds),
+                scooterId: scObj ? scObj.id : starterScooter.id,
+                scooterName: typeof entry.scooterName === "string" && entry.scooterName.trim()
+                  ? entry.scooterName.trim().slice(0, 32)
+                  : (scObj ? scObj.name : starterScooter.name),
                 updatedAt: typeof entry.updatedAt === "number" ? entry.updatedAt : 0
               };
             });
@@ -1333,6 +1473,7 @@
       const hasSharedDb = Boolean(getCleanLeaderboardDbUrl());
       syncPill.textContent = hasSharedDb ? "Mod: Firebase Ortak Liste" : "Mod: Yerel Cihaz";
 
+      const currentScooter = getCurrentScooter();
       const merged = new Map();
 
       const localMap = loadLocalRealPlayers();
@@ -1347,6 +1488,13 @@
           const existing = merged.get(p.id);
           if (!existing || p.totalPlaySeconds > existing.totalPlaySeconds) {
             merged.set(p.id, { ...p });
+          } else if (existing && p.updatedAt >= existing.updatedAt) {
+            merged.set(p.id, {
+              ...existing,
+              scooterId: p.scooterId || existing.scooterId,
+              scooterName: p.scooterName || existing.scooterName,
+              name: p.name || existing.name
+            });
           }
         }
       });
@@ -1355,6 +1503,8 @@
         id: state.playerId,
         name: state.playerName,
         totalPlaySeconds: Math.max(0, state.totalPlaySeconds),
+        scooterId: currentScooter.id,
+        scooterName: currentScooter.name,
         updatedAt: Date.now()
       });
 
@@ -1364,11 +1514,13 @@
       listEl.innerHTML = sorted.map((player, index) => {
         const isMe = player.id === state.playerId;
         const rankNo = index + 1;
+        const scooterLabel = player.scooterName || starterScooter.name;
         return `
           <div class="leader-row ${isMe ? "is-me" : ""}">
             <div class="leader-left">
               <span class="leader-rank">#${rankNo}</span>
               <span>${escapeHtml(player.name)}</span>
+              <span class="leader-scooter">🛴 ${escapeHtml(scooterLabel)}</span>
               ${isMe ? `<span class="leader-me-tag">SEN</span>` : ""}
             </div>
             <div class="leader-time">${formatPlaytime(player.totalPlaySeconds)}</div>
@@ -1376,6 +1528,157 @@
         `;
       }).join("");
     }
+
+    // Canlı Chat Fonksiyonları
+    const chatForm = document.getElementById("chatForm");
+    const chatMessageInput = document.getElementById("chatMessageInput");
+    const chatMessagesList = document.getElementById("chatMessagesList");
+    const chatStatusPill = document.getElementById("chatStatusPill");
+
+    function loadLocalChatMessages() {
+      try {
+        const raw = localStorage.getItem(LOCAL_CHAT_KEY);
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed)) return [];
+        return parsed
+          .filter(m => m && typeof m === "object" && typeof m.text === "string" && m.text.trim().length > 0)
+          .slice(-40);
+      } catch (_) {
+        return [];
+      }
+    }
+
+    function saveLocalChatMessages(msgs) {
+      try {
+        localStorage.setItem(LOCAL_CHAT_KEY, JSON.stringify(msgs.slice(-40)));
+      } catch (_) {}
+    }
+
+    function renderChatMessages() {
+      const hasSharedDb = Boolean(getCleanLeaderboardDbUrl());
+      chatStatusPill.textContent = hasSharedDb ? "Chat: Firebase Canlı" : "Chat: Yerel";
+
+      const localMsgs = loadLocalChatMessages();
+      const combinedMap = new Map();
+
+      localMsgs.forEach((m, idx) => {
+        const key = m.id || `local_${idx}_${m.createdAt || 0}`;
+        combinedMap.set(key, m);
+      });
+
+      state.chatMessages.forEach((m, idx) => {
+        const key = m.id || `remote_${idx}_${m.createdAt || 0}`;
+        combinedMap.set(key, m);
+      });
+
+      const sortedMsgs = Array.from(combinedMap.values())
+        .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0))
+        .slice(-35);
+
+      if (sortedMsgs.length === 0) {
+        chatMessagesList.innerHTML = `<div class="chat-empty">Henüz mesaj yok. İlk mesajı sen yaz!</div>`;
+        return;
+      }
+
+      chatMessagesList.innerHTML = sortedMsgs.map(msg => {
+        const isMe = msg.senderId === state.playerId;
+        const author = msg.senderName || "Oyuncu";
+        const scooterText = msg.scooterName ? `(${msg.scooterName})` : "";
+        return `
+          <div class="chat-item ${isMe ? "is-me" : ""}">
+            <div class="chat-meta">
+              <span class="chat-author">${escapeHtml(author)}${isMe ? " (Sen)" : ""}</span>
+              <span class="chat-scooter">🛴 ${escapeHtml(scooterText)}</span>
+              <span class="chat-clock">${escapeHtml(formatClockTime(msg.createdAt))}</span>
+            </div>
+            <div class="chat-text">${escapeHtml(msg.text)}</div>
+          </div>
+        `;
+      }).join("");
+
+      chatMessagesList.scrollTop = chatMessagesList.scrollHeight;
+    }
+
+    async function syncChatMessages() {
+      const dbUrl = getCleanLeaderboardDbUrl();
+      if (!dbUrl) {
+        renderChatMessages();
+        return;
+      }
+
+      try {
+        const res = await fetch(`${dbUrl}/chat_messages.json`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && typeof data === "object") {
+            const list = Object.entries(data)
+              .map(([key, val]) => ({
+                id: key,
+                senderId: val && typeof val.senderId === "string" ? val.senderId : "",
+                senderName: val && typeof val.senderName === "string" ? val.senderName.slice(0, 20) : "Oyuncu",
+                scooterName: val && typeof val.scooterName === "string" ? val.scooterName.slice(0, 32) : "",
+                text: val && typeof val.text === "string" ? val.text.slice(0, 160) : "",
+                createdAt: val && typeof val.createdAt === "number" ? val.createdAt : 0
+              }))
+              .filter(m => m.text.trim().length > 0)
+              .sort((a, b) => a.createdAt - b.createdAt)
+              .slice(-35);
+
+            state.chatMessages = list;
+            saveLocalChatMessages(list);
+          }
+        }
+        renderChatMessages();
+      } catch (_) {
+        renderChatMessages();
+      }
+    }
+
+    async function sendChatMessage(rawText) {
+      const cleanedText = String(rawText || "").trim().slice(0, 160);
+      if (!cleanedText) return;
+
+      const sc = getCurrentScooter();
+      const msgObj = {
+        id: "msg_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7),
+        senderId: state.playerId,
+        senderName: state.playerName,
+        scooterName: sc.name,
+        text: cleanedText,
+        createdAt: Date.now()
+      };
+
+      const existingLocal = loadLocalChatMessages();
+      existingLocal.push(msgObj);
+      saveLocalChatMessages(existingLocal);
+      state.chatMessages = existingLocal.slice(-35);
+      renderChatMessages();
+
+      const dbUrl = getCleanLeaderboardDbUrl();
+      if (dbUrl) {
+        try {
+          await fetch(`${dbUrl}/chat_messages.json`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(msgObj)
+          });
+          await syncChatMessages();
+        } catch (_) {}
+      }
+    }
+
+    chatForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const text = chatMessageInput.value;
+      if (!text.trim()) return;
+      chatMessageInput.value = "";
+      await sendChatMessage(text);
+    });
+
+    chatMessageInput.addEventListener("keydown", (e) => {
+      e.stopPropagation();
+    });
 
     function escapeHtml(str) {
       return String(str)
@@ -1449,6 +1752,7 @@
 
     window.addEventListener("focus", () => {
       updatePlaytimeUI();
+      syncChatMessages();
     });
 
     window.addEventListener("pagehide", () => {
@@ -2086,6 +2390,7 @@
       state.speedKmh = Math.min(state.speedKmh, sc.topSpeedKmh);
       syncActiveMissionSpeedIfNeeded(sc);
       saveProgress();
+      renderLeaderboard();
       syncWithSharedLeaderboard();
       showToast(`${sc.name} sıfır olarak alındı! Şarj %100, KM 0,0 km.`);
       renderHUD();
@@ -2101,6 +2406,7 @@
       state.speedKmh = Math.min(state.speedKmh, sc.topSpeedKmh);
       syncActiveMissionSpeedIfNeeded(sc);
       saveProgress();
+      renderLeaderboard();
       syncWithSharedLeaderboard();
       showToast(`${sc.name} seçildi (${formatKm(getScooterKm(id))} • Şarj: %${Math.round(getCurrentBattery())}).`);
       renderHUD();
@@ -2131,6 +2437,7 @@
       }
 
       saveProgress();
+      renderLeaderboard();
       syncWithSharedLeaderboard();
       showToast(`${sc.name} 2. el (4/3) fiyatına ${formatMoney(sellAmount)} karşılığında satıldı!`);
       renderHUD();
@@ -2215,7 +2522,7 @@
     });
 
     window.addEventListener("keydown", (e) => {
-      if (document.activeElement === playerNameInput) return;
+      if (document.activeElement === playerNameInput || document.activeElement === chatMessageInput) return;
 
       if (state.puzzle.isOpen) {
         const keyMap = { "1": 0, "a": 0, "A": 0, "2": 1, "b": 1, "B": 1, "3": 2, "c": 2, "C": 2, "4": 3, "d": 3, "D": 3 };
@@ -2325,6 +2632,7 @@
       state.totalPlaySeconds += dt;
       state.playSaveAccumulator += dt;
       state.leaderboardSyncAccumulator += dt;
+      state.chatSyncAccumulator += dt;
 
       if (state.playSaveAccumulator >= 5) {
         state.playSaveAccumulator = 0;
@@ -2335,6 +2643,11 @@
       if (state.leaderboardSyncAccumulator >= 10) {
         state.leaderboardSyncAccumulator = 0;
         syncWithSharedLeaderboard();
+      }
+
+      if (state.chatSyncAccumulator >= 5) {
+        state.chatSyncAccumulator = 0;
+        syncChatMessages();
       }
 
       updatePlaytimeUI();
@@ -2966,6 +3279,8 @@
     renderHUD();
     renderLeaderboard();
     syncWithSharedLeaderboard();
+    renderChatMessages();
+    syncChatMessages();
     renderGarage();
     requestAnimationFrame(loop);
   </script>
