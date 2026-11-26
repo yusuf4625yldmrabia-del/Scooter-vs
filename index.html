@@ -135,17 +135,30 @@
       display: flex;
       flex-wrap: wrap;
       gap: 6px;
+      width: 100%;
     }
 
     .map-btn {
       background: #1e293b;
       color: #cbd5e1;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 9px;
-      padding: 7px 11px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 10px;
+      padding: 8px 12px;
       font-size: 12px;
-      font-weight: 700;
+      font-weight: 800;
       cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 2px;
+      flex: 1 1 210px;
+      text-align: left;
+    }
+
+    .map-btn-sub {
+      font-size: 10px;
+      font-weight: 600;
+      opacity: 0.85;
     }
 
     .map-btn.active {
@@ -301,10 +314,6 @@
       font-size: 11px;
       font-weight: 800;
       cursor: pointer;
-    }
-
-    .room-join-btn.joined {
-      background: #0d9488;
     }
 
     .room-leave-btn {
@@ -951,17 +960,27 @@
           <span id="npcDensityLabel">Normal (%50)</span>
         </label>
       </div>
+
       <div class="map-switch">
-        <button id="freeMapBtn" class="map-btn active" type="button">İstanbul Haritası</button>
-        <button id="missionMapBtn" class="map-btn" type="button">Kahramanmaraş Haritası</button>
-        <button id="onlineMapBtn" class="map-btn online-btn" type="button">Erzurum Haritası</button>
+        <button id="freeMapBtn" class="map-btn active" type="button">
+          <span>İstanbul Haritası (Serbest Harita)</span>
+          <span class="map-btn-sub">Boğaz kıyısında serbest sürüş, KM kasma ve şarj noktaları</span>
+        </button>
+        <button id="missionMapBtn" class="map-btn" type="button">
+          <span>Kahramanmaraş Haritası (Görev Haritası)</span>
+          <span class="map-btn-sub">Hedef, hız, sollama ve şarjlı sürüş görevleriyle para kazanma</span>
+        </button>
+        <button id="onlineMapBtn" class="map-btn online-btn" type="button">
+          <span>Erzurum Haritası (Online Harita)</span>
+          <span class="map-btn-sub">Odalar (200 kişi), canlı konum/hız radar şeridi ve sohbet</span>
+        </button>
       </div>
     </div>
 
     <div id="roomsSection" class="rooms-section">
       <div class="rooms-head">
         <div>
-          <div class="rooms-title">Erzurum Online Harita — Odalar (En Fazla 200 Kişi)</div>
+          <div class="rooms-title">Erzurum Haritası (Online Harita) — Odalar (En Fazla 200 Kişi)</div>
           <div class="rooms-sub">İsimle oda kur • İstersen şifre koy • Sağ şeritte oyuncuların ismini, hızını ve km/m uzaklığını gör</div>
         </div>
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
@@ -985,7 +1004,7 @@
 
     <div class="mission-banner">
       <div id="missionText" class="mission-text">
-        <strong>İstanbul Haritası (Boğaz &amp; Deniz):</strong> Yeni bölge: <strong>3000m</strong> • Şarj noktası: <strong>5000m</strong> • Şerit: A/D veya ←/→ • Gaz: W/↑ • Fren: S/↓
+        <strong>İstanbul Haritası (Serbest Harita):</strong> Boğaz &amp; Deniz kıyısında serbest sürüş • Yeni bölge: <strong>3000m</strong> • Şarj: <strong>5000m</strong>
       </div>
       <button id="soundToggleBtn" class="sound-btn" type="button">Ses: Açık</button>
     </div>
@@ -998,7 +1017,7 @@
       <div class="pedal-pad">
         <button id="gasBtn" class="ctrl-btn btn-gas" type="button">GAZ</button>
         <button id="brakeBtn" class="ctrl-btn btn-brake" type="button">FREN</button>
-        <button id="hornBtn" class="ctrl-btn btn-horn" type="button">KORNA</button>
+        <button id="hornBtn" class="ctrl-btn btn-horn" type="button">KORNA (BASILI TUT)</button>
       </div>
     </div>
 
@@ -1257,7 +1276,7 @@
       currentRoomName: "",
       currentRoomPassword: "",
       roomPlayers: {},
-      mapMode: "free", // "free" -> İstanbul, "mission" -> Kahramanmaraş, "online" -> Erzurum
+      mapMode: "free",
       soundEnabled: saved ? saved.soundEnabled : true,
       npcDensity: saved ? saved.npcDensity : 50,
       lane: 1,
@@ -1269,7 +1288,7 @@
       nextScenerySpawnM: 12,
       nextChargeCheckpointM: CHARGE_INTERVAL_M,
       roadOffset: 0,
-      controls: { gas: false, brake: false },
+      controls: { gas: false, brake: false, horn: false },
       npcs: [],
       passedNpcsInMission: 0,
       mission: {
@@ -1292,7 +1311,6 @@
       return SCOOTERS.find(s => s.id === state.selectedId) || SCOOTERS[0];
     }
 
-    // Seçili haritaya göre şehir/bölge bilgisini döndürür
     function getActiveCityTheme() {
       if (state.mapMode === "free") {
         const subName = ISTANBUL_SUBREGIONS[Math.floor(state.distanceM / BIOME_INTERVAL_M) % ISTANBUL_SUBREGIONS.length];
@@ -1300,7 +1318,7 @@
           cityKey: "istanbul",
           label: subName,
           bgOuter: "#082f49",
-          leftVerge: "#0284c7", // İstanbul Boğazı / Deniz şeridi
+          leftVerge: "#0284c7",
           rightVerge: "#15803d",
           roadFill: "#1e293b",
           roadEdge: "#e2e8f0",
@@ -2078,6 +2096,7 @@
       if (document.visibilityState !== "visible") {
         state.controls.gas = false;
         state.controls.brake = false;
+        stopSustainedHorn();
         updateMotorSound(0, false, false);
         saveProgress();
         syncWithSharedLeaderboard();
@@ -2088,6 +2107,7 @@
     window.addEventListener("blur", () => {
       state.controls.gas = false;
       state.controls.brake = false;
+      stopSustainedHorn();
       updateMotorSound(0, false, false);
       saveProgress();
       updatePlaytimeUI();
@@ -2103,6 +2123,7 @@
     });
 
     window.addEventListener("pagehide", () => {
+      stopSustainedHorn();
       saveProgress();
       syncWithSharedLeaderboard();
     });
@@ -2184,13 +2205,14 @@
       if (!state.puzzle.isOpen || state.puzzle.answered || !state.puzzle.current) return;
       state.puzzle.answered = true;
       puzzleFeedbackText.style.color = "#fbbf24";
-      puzzleFeedbackText.textContent = `Süre doldu! Doğru cevap: ${state.puzzle.current.options[state.puzzle.current.correctIndex]}.`;
+      puzzleFeedbackText.textContent = `Süre doldu! Doğru cevap: ${q.options[q.correctIndex]}.`;
       saveProgress();
       setTimeout(closePuzzleModal, 1600);
     }
 
     function openBonusPuzzle() {
       if (state.puzzle.isOpen) return;
+      stopSustainedHorn();
       const q = pickNextUniquePuzzle();
       state.askedPuzzleIds.add(q.id);
       saveProgress();
@@ -2227,7 +2249,17 @@
       updatePuzzleHudTimer();
     }
 
-    const audioCtxHolder = { ctx: null, motorOsc: null, motorSubOsc: null, motorGain: null };
+    // Motor ve sürekli kornalı ses sistemi
+    const audioCtxHolder = {
+      ctx: null,
+      motorOsc: null,
+      motorSubOsc: null,
+      motorGain: null,
+      hornOsc1: null,
+      hornOsc2: null,
+      hornGain: null,
+      hornActive: false
+    };
 
     function ensureAudio() {
       if (!state.soundEnabled) return;
@@ -2235,6 +2267,7 @@
         const AudioContextClass = window.AudioContext || window.webkitAudioContext;
         if (!AudioContextClass) return;
         const ctx = new AudioContextClass();
+
         const osc = ctx.createOscillator();
         const subOsc = ctx.createOscillator();
         const gain = ctx.createGain();
@@ -2248,14 +2281,54 @@
         gain.connect(ctx.destination);
         osc.start();
         subOsc.start();
+
+        // Gerçekçi motor kornası (çift tonlu korna osilatörleri, basılı tutulduğunda çalar)
+        const hOsc1 = ctx.createOscillator();
+        const hOsc2 = ctx.createOscillator();
+        const hGain = ctx.createGain();
+        hOsc1.type = "sawtooth";
+        hOsc2.type = "square";
+        hOsc1.frequency.value = 415;
+        hOsc2.frequency.value = 523;
+        hGain.gain.value = 0.0001;
+        hOsc1.connect(hGain);
+        hOsc2.connect(hGain);
+        hGain.connect(ctx.destination);
+        hOsc1.start();
+        hOsc2.start();
+
         audioCtxHolder.ctx = ctx;
         audioCtxHolder.motorOsc = osc;
         audioCtxHolder.motorSubOsc = subOsc;
         audioCtxHolder.motorGain = gain;
+        audioCtxHolder.hornOsc1 = hOsc1;
+        audioCtxHolder.hornOsc2 = hOsc2;
+        audioCtxHolder.hornGain = hGain;
       }
       if (audioCtxHolder.ctx && audioCtxHolder.ctx.state === "suspended") {
         audioCtxHolder.ctx.resume().catch(() => {});
       }
+    }
+
+    function startSustainedHorn() {
+      if (!state.soundEnabled || state.puzzle.isOpen || !isGameActiveForPlaytime()) return;
+      ensureAudio();
+      if (!audioCtxHolder.ctx || !audioCtxHolder.hornGain) return;
+      state.controls.horn = true;
+      audioCtxHolder.hornActive = true;
+      const now = audioCtxHolder.ctx.currentTime;
+      audioCtxHolder.hornOsc1.frequency.setTargetAtTime(415, now, 0.015);
+      audioCtxHolder.hornOsc2.frequency.setTargetAtTime(523.25, now, 0.015);
+      audioCtxHolder.hornGain.gain.setTargetAtTime(0.06, now, 0.015);
+    }
+
+    function stopSustainedHorn() {
+      state.controls.horn = false;
+      audioCtxHolder.hornActive = false;
+      if (hornBtn) hornBtn.classList.remove("pressed");
+      if (!audioCtxHolder.ctx || !audioCtxHolder.hornGain) return;
+      const now = audioCtxHolder.ctx.currentTime;
+      audioCtxHolder.hornGain.gain.setTargetAtTime(0.0001, now, 0.015);
     }
 
     function playChargeSound() {
@@ -2283,6 +2356,7 @@
       const now = audioCtxHolder.ctx.currentTime;
       if (!state.soundEnabled || state.puzzle.isOpen || !isGameActiveForPlaytime()) {
         audioCtxHolder.motorGain.gain.setTargetAtTime(0.0001, now, 0.05);
+        if (audioCtxHolder.hornGain) audioCtxHolder.hornGain.gain.setTargetAtTime(0.0001, now, 0.02);
         return;
       }
       const baseFreq = 70 + speedRatio * 230 + (isGas ? 22 : 0);
@@ -2309,39 +2383,6 @@
       gain.connect(ctx.destination);
       osc.start(now);
       osc.stop(now + 0.18);
-    }
-
-    function playHornSound() {
-      if (!state.soundEnabled || state.puzzle.isOpen) return;
-      ensureAudio();
-      if (!audioCtxHolder.ctx) return;
-      const ctx = audioCtxHolder.ctx;
-      const now = ctx.currentTime;
-      const osc1 = ctx.createOscillator();
-      const osc2 = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc1.type = "square";
-      osc2.type = "sawtooth";
-      osc1.frequency.setValueAtTime(440, now);
-      osc2.frequency.setValueAtTime(554.37, now);
-      gain.gain.setValueAtTime(0.001, now);
-      gain.gain.linearRampToValueAtTime(0.065, now + 0.02);
-      gain.gain.setValueAtTime(0.065, now + 0.22);
-      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.32);
-      osc1.connect(gain);
-      osc2.connect(gain);
-      gain.connect(ctx.destination);
-      osc1.start(now);
-      osc2.start(now);
-      osc1.stop(now + 0.34);
-      osc2.stop(now + 0.34);
-
-      state.npcs.forEach(npc => {
-        if (npc.y > 40 && npc.y < 230 && Math.abs(npc.lane - state.lane) <= 1) {
-          npc.honked = true;
-          npc.speed = Math.min(npc.maxSpeed + 22, npc.speed + 18);
-        }
-      });
     }
 
     function formatMoney(val) {
@@ -2394,54 +2435,30 @@
       if (eventPattern === 0) {
         const dist = Math.round((320 + Math.min(480, mIndex * 25)) * speedScale);
         state.mission = {
-          active: true,
-          type: "checkpoint",
-          targetM: state.distanceM + dist,
-          missionDistM: dist,
-          minSpeedKmh: 0,
-          targetOvertakes: 0,
-          reward: baseReward,
-          completedCount: mIndex,
+          active: true, type: "checkpoint", targetM: state.distanceM + dist, missionDistM: dist,
+          minSpeedKmh: 0, targetOvertakes: 0, reward: baseReward, completedCount: mIndex,
           statusText: `Kahramanmaraş kontrol noktasına ulaş (${dist}m)`
         };
       } else if (eventPattern === 1) {
         const dist = Math.round((300 + Math.min(420, mIndex * 25)) * speedScale);
         const minSpeed = getAchievableMissionSpeed(sc);
         state.mission = {
-          active: true,
-          type: "speed_pass",
-          targetM: state.distanceM + dist,
-          missionDistM: dist,
-          minSpeedKmh: minSpeed,
-          targetOvertakes: 0,
-          reward: Math.round(baseReward * 1.2),
-          completedCount: mIndex,
+          active: true, type: "speed_pass", targetM: state.distanceM + dist, missionDistM: dist,
+          minSpeedKmh: minSpeed, targetOvertakes: 0, reward: Math.round(baseReward * 1.2), completedCount: mIndex,
           statusText: `${dist}m boyunca en az ${minSpeed} km/h hızla git`
         };
       } else if (eventPattern === 2) {
         const overtakes = 3 + Math.min(10, Math.floor(mIndex / 2));
         state.mission = {
-          active: true,
-          type: "overtake",
-          targetM: state.distanceM + 900,
-          missionDistM: 900,
-          minSpeedKmh: 0,
-          targetOvertakes: overtakes,
-          reward: Math.round(baseReward * 1.25),
-          completedCount: mIndex,
+          active: true, type: "overtake", targetM: state.distanceM + 900, missionDistM: 900,
+          minSpeedKmh: 0, targetOvertakes: overtakes, reward: Math.round(baseReward * 1.25), completedCount: mIndex,
           statusText: `Kahramanmaraş trafiğinde ${overtakes} NPC araç geç`
         };
       } else {
         const dist = Math.round((360 + Math.min(520, mIndex * 30)) * speedScale);
         state.mission = {
-          active: true,
-          type: "charge_run",
-          targetM: state.distanceM + dist,
-          missionDistM: dist,
-          minSpeedKmh: 0,
-          targetOvertakes: 0,
-          reward: Math.round(baseReward * 1.3),
-          completedCount: mIndex,
+          active: true, type: "charge_run", targetM: state.distanceM + dist, missionDistM: dist,
+          minSpeedKmh: 0, targetOvertakes: 0, reward: Math.round(baseReward * 1.3), completedCount: mIndex,
           statusText: `Şarjını bitirmeden ${dist}m hedefe ulaş`
         };
       }
@@ -2461,12 +2478,12 @@
       const nextChargeRem = Math.max(0, Math.round(state.nextChargeCheckpointM - state.distanceM));
       const nextBiomeRem = Math.max(0, BIOME_INTERVAL_M - (Math.floor(state.distanceM) % BIOME_INTERVAL_M));
       if (state.mapMode === "free") {
-        el.innerHTML = `<strong>İstanbul Haritası (Boğaz &amp; Deniz):</strong> Yeni bölge: <strong>${nextBiomeRem}m</strong> • Şarj noktası: <strong>${nextChargeRem}m</strong> • Şerit: A/D veya ←/→ • Gaz: W/↑ • Fren: S/↓`;
+        el.innerHTML = `<strong>İstanbul Haritası (Serbest Harita):</strong> Boğaz &amp; deniz kıyısında serbest sürüş, KM kasma • Yeni bölge: <strong>${nextBiomeRem}m</strong> • Şarj: <strong>${nextChargeRem}m</strong>`;
       } else if (state.mapMode === "online") {
         const roomLabel = state.currentRoomId
           ? `Erzurum Oda: <strong>${escapeHtml(state.currentRoomName)}</strong> (${getActiveRoomPlayersCount(state.currentRoomId)}/${MAX_ROOM_PLAYERS} kişi)`
           : `Erzurum'da bir oda seç veya kur`;
-        el.innerHTML = `<strong>Erzurum Online Haritası:</strong> ${roomLabel} • Sağ şeritte oyuncuların mesafesi &amp; hızı görünür`;
+        el.innerHTML = `<strong>Erzurum Haritası (Online Harita):</strong> ${roomLabel} • Sağ şeritte oyuncuların mesafesi &amp; hızı görünür`;
       } else {
         let progressText = "";
         if (state.mission.type === "overtake") {
@@ -2475,7 +2492,7 @@
           const remaining = Math.max(0, Math.round(state.mission.targetM - state.distanceM));
           progressText = `Kalan mesafe: <strong>${remaining}m</strong>`;
         }
-        el.innerHTML = `<strong>Kahramanmaraş Görevi (${state.mission.statusText}):</strong> ${progressText} • Şarj: <strong>${nextChargeRem}m</strong> • Ödül: <strong>${formatMoney(state.mission.reward)}</strong>`;
+        el.innerHTML = `<strong>Kahramanmaraş Haritası (Görev Haritası — ${state.mission.statusText}):</strong> ${progressText} • Şarj: <strong>${nextChargeRem}m</strong> • Ödül: <strong>${formatMoney(state.mission.reward)}</strong>`;
       }
     }
 
@@ -2632,7 +2649,10 @@
     onlineMapBtn.addEventListener("click", () => setMapMode("online"));
 
     const soundBtn = document.getElementById("soundToggleBtn");
-    function syncSoundBtnUI() { soundBtn.textContent = state.soundEnabled ? "Ses: Açık" : "Ses: Kapalı"; }
+    function syncSoundBtnUI() {
+      soundBtn.textContent = state.soundEnabled ? "Ses: Açık" : "Ses: Kapalı";
+      if (!state.soundEnabled) stopSustainedHorn();
+    }
     soundBtn.addEventListener("click", () => {
       state.soundEnabled = !state.soundEnabled;
       syncSoundBtnUI();
@@ -2674,12 +2694,17 @@
 
     bindHold(gasBtn, "gas", null);
     bindHold(brakeBtn, "brake", playBrakeSound);
-    hornBtn.addEventListener("click", () => {
+
+    // Korna butonu basılı tutulduğunda çalar, bırakıldığında durur
+    hornBtn.addEventListener("pointerdown", (e) => {
+      e.preventDefault();
       if (state.puzzle.isOpen) return;
       hornBtn.classList.add("pressed");
-      playHornSound();
-      setTimeout(() => hornBtn.classList.remove("pressed"), 180);
+      startSustainedHorn();
     });
+    hornBtn.addEventListener("pointerup", stopSustainedHorn);
+    hornBtn.addEventListener("pointerleave", stopSustainedHorn);
+    hornBtn.addEventListener("pointercancel", stopSustainedHorn);
 
     window.addEventListener("keydown", (e) => {
       if (
@@ -2700,12 +2725,16 @@
       else if (e.key === "s" || e.key === "S" || e.key === "ArrowDown") { if (!state.controls.brake) playBrakeSound(); state.controls.brake = true; brakeBtn.classList.add("pressed"); }
       else if (e.key === "a" || e.key === "A" || e.key === "ArrowLeft") changeLane(0);
       else if (e.key === "d" || e.key === "D" || e.key === "ArrowRight") changeLane(1);
-      else if (e.key === "h" || e.key === "H") { playHornSound(); hornBtn.classList.add("pressed"); setTimeout(() => hornBtn.classList.remove("pressed"), 180); }
+      else if (e.key === "h" || e.key === "H") {
+        hornBtn.classList.add("pressed");
+        if (!state.controls.horn) startSustainedHorn();
+      }
     });
 
     window.addEventListener("keyup", (e) => {
       if (e.key === "w" || e.key === "W" || e.key === "ArrowUp") { state.controls.gas = false; gasBtn.classList.remove("pressed"); }
       else if (e.key === "s" || e.key === "S" || e.key === "ArrowDown") { state.controls.brake = false; brakeBtn.classList.remove("pressed"); }
+      else if (e.key === "h" || e.key === "H") { stopSustainedHorn(); }
     });
 
     const NPC_COLORS = ["#f97316", "#06b6d4", "#eab308", "#ec4899", "#a855f7", "#10b981"];
@@ -2751,6 +2780,7 @@
 
     function step(dt) {
       if (!isGameActiveForPlaytime()) {
+        stopSustainedHorn();
         updatePlaytimeUI();
         updateMotorSound(0, false, false);
         return;
@@ -2770,6 +2800,7 @@
       updatePlaytimeUI();
 
       if (state.puzzle.isOpen) {
+        stopSustainedHorn();
         updateMotorSound(0, false, false);
         if (!state.puzzle.answered) {
           state.puzzle.remainingAnswerSec = Math.max(0, state.puzzle.remainingAnswerSec - dt);
@@ -2779,6 +2810,16 @@
           if (state.puzzle.remainingAnswerSec <= 0) handlePuzzleTimeout();
         }
         return;
+      }
+
+      // Korna basılıyken öndeki NPC araçlar kornayı duyar ve tepki verir
+      if (state.controls.horn) {
+        state.npcs.forEach(npc => {
+          if (npc.y > 20 && npc.y < 260 && Math.abs(npc.lane - state.lane) <= 1) {
+            npc.honked = true;
+            npc.speed = Math.min(npc.maxSpeed + 22, npc.speed + 16 * dt);
+          }
+        });
       }
 
       state.puzzle.timeUntilNextSec -= dt;
@@ -2889,7 +2930,6 @@
       updateMotorSound(state.speedKmh / Math.max(1, sc.topSpeedKmh), state.controls.gas, state.controls.brake);
     }
 
-    // İstanbul haritasında sol şeritte Boğaz/deniz dalgaları, diğer haritalarda şehir prop'ları
     function drawCityEnvironment(ctx, w, h, roadLeft, roadRight, theme) {
       ctx.fillStyle = theme.leftVerge;
       ctx.fillRect(0, 0, roadLeft, h);
@@ -2898,8 +2938,7 @@
       ctx.fillRect(roadRight, 0, w - roadRight, h);
 
       if (theme.hasSea) {
-        // İstanbul Boğazı / Deniz dalga çizgileri ve sahil şeridi
-        ctx.strokeStyle = "rgba(186, 230, 253, 0.45)";
+        ctx.strokeStyle = "rgba(186, 230, 253, 0.5)";
         ctx.lineWidth = 2;
         for (let y = -20 + (state.roadOffset % 36); y < h + 20; y += 36) {
           ctx.beginPath();
@@ -2940,6 +2979,144 @@
         }
         ctx.restore();
       });
+    }
+
+    // Detaylı elektrikli scooter çizimi (ön/arka lastik, gövde, gidon, far, sürücü kaskı ve korna dalgası)
+    function drawScooterSprite(ctx, x, y, color, isPlayer, isHonking) {
+      ctx.save();
+      ctx.translate(x, y);
+
+      // Yer gölgesi
+      ctx.fillStyle = "rgba(0, 0, 0, 0.38)";
+      ctx.beginPath();
+      ctx.ellipse(0, 2, 13, 21, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Ön & arka lastikler
+      ctx.fillStyle = "#090d16";
+      ctx.beginPath();
+      ctx.roundRect(-5.5, -20, 11, 8, 3);
+      ctx.roundRect(-5.5, 11, 11, 8, 3);
+      ctx.fill();
+
+      // Scooter güvertesi ve gövde
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.roundRect(-7.5, -13, 15, 26, 6);
+      ctx.fill();
+
+      // Orta şerit detayı
+      ctx.fillStyle = "rgba(255, 255, 255, 0.28)";
+      ctx.fillRect(-2.5, -10, 5, 20);
+
+      // Gidon boğazı ve gidon kolları
+      ctx.strokeStyle = "#cbd5e1";
+      ctx.lineWidth = 3.2;
+      ctx.beginPath();
+      ctx.moveTo(0, -14);
+      ctx.lineTo(0, -6);
+      ctx.moveTo(-14, -12);
+      ctx.lineTo(14, -12);
+      ctx.stroke();
+
+      // Elcik uçları
+      ctx.fillStyle = "#0f172a";
+      ctx.fillRect(-16, -14.5, 4, 5);
+      ctx.fillRect(12, -14.5, 4, 5);
+
+      // Ön LED far ışığı
+      ctx.fillStyle = "#fef08a";
+      ctx.beginPath();
+      ctx.arc(0, -15, 3, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Sürücü omuzları ve kaskı
+      ctx.fillStyle = isPlayer ? "#1e293b" : "#334155";
+      ctx.beginPath();
+      ctx.ellipse(0, 1, 9.5, 5.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = isPlayer ? "#f8fafc" : "#e2e8f0";
+      ctx.beginPath();
+      ctx.arc(0, -1, 6.2, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Kask vizörü
+      ctx.fillStyle = "#0284c7";
+      ctx.beginPath();
+      ctx.arc(0, -3.5, 4.2, Math.PI * 1.12, Math.PI * 1.88);
+      ctx.fill();
+
+      // Basılı tutulan kornada ses dalgası halkaları
+      if (isHonking) {
+        const pulse = ((performance.now() / 120) % 1);
+        ctx.strokeStyle = `rgba(251, 191, 36, ${1 - pulse * 0.7})`;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(0, -18, 8 + pulse * 10, Math.PI * 1.15, Math.PI * 1.85);
+        ctx.stroke();
+      }
+
+      ctx.restore();
+    }
+
+    // Detaylı NPC araç çizimi (gölge, tamponlar, cam tavan, ön/arka farlar, yan aynalar)
+    function drawNpcCarSprite(ctx, x, y, color, honked) {
+      ctx.save();
+      ctx.translate(x, y);
+
+      // Gölge
+      ctx.fillStyle = "rgba(0, 0, 0, 0.42)";
+      ctx.beginPath();
+      ctx.roundRect(-18, -28, 36, 56, 9);
+      ctx.fill();
+
+      // Araç gövdesi
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.roundRect(-16.5, -30, 33, 56, 8);
+      ctx.fill();
+
+      // Kaput ve tavan parlaklık şeridi
+      ctx.fillStyle = "rgba(255, 255, 255, 0.16)";
+      ctx.fillRect(-10, -27, 6, 12);
+
+      // Ön ve arka camlar + tavan
+      ctx.fillStyle = "#0f172a";
+      ctx.beginPath();
+      ctx.roundRect(-13, -18, 26, 32, 5);
+      ctx.fill();
+
+      ctx.fillStyle = color;
+      ctx.globalAlpha = 0.75;
+      ctx.beginPath();
+      ctx.roundRect(-11, -11, 22, 18, 4);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+
+      // Yan aynalar
+      ctx.fillStyle = color;
+      ctx.fillRect(-20, -15, 4, 6);
+      ctx.fillRect(16, -15, 4, 6);
+
+      // Ön farlar
+      ctx.fillStyle = "#fef9c3";
+      ctx.fillRect(-13.5, -31, 6, 3);
+      ctx.fillRect(7.5, -31, 6, 3);
+
+      // Arka stop lambaları
+      ctx.fillStyle = "#ef4444";
+      ctx.fillRect(-13.5, 24, 6, 3);
+      ctx.fillRect(7.5, 24, 6, 3);
+
+      if (honked) {
+        ctx.fillStyle = "#fde047";
+        ctx.font = "bold 9px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("!", 0, -35);
+      }
+
+      ctx.restore();
     }
 
     function drawOnlineRightSidePanel(ctx, w, h, rightAreaLeft, rightAreaW, playerY) {
@@ -3055,15 +3232,7 @@
 
       state.npcs.forEach(npc => {
         const nx = roadLeft + laneW * (npc.lane + 0.5);
-        ctx.save();
-        ctx.translate(nx, npc.y);
-        ctx.fillStyle = npc.color;
-        ctx.beginPath();
-        ctx.roundRect(-16, -28, 32, 52, 7);
-        ctx.fill();
-        ctx.fillStyle = "#0f172a";
-        ctx.fillRect(-12, -20, 24, 12);
-        ctx.restore();
+        drawNpcCarSprite(ctx, nx, npc.y, npc.color, npc.honked);
       });
 
       if (state.mapMode === "online" && state.currentRoomId) {
@@ -3079,51 +3248,25 @@
           const rLaneX = typeof rp.laneVisualX === "number" ? rp.laneVisualX : (rp.lane || 0);
           const rx = roadLeft + laneW * (rLaneX + 0.5);
 
+          drawScooterSprite(ctx, rx, ry, rp.scooterColor || "#5eead4", false, false);
+
           ctx.save();
           ctx.translate(rx, ry);
-
-          ctx.fillStyle = rp.scooterColor || "#5eead4";
-          ctx.beginPath();
-          ctx.roundRect(-8, -14, 16, 28, 5);
-          ctx.fill();
-
-          ctx.strokeStyle = "#f8fafc";
-          ctx.lineWidth = 3.5;
-          ctx.beginPath();
-          ctx.moveTo(-12, -10); ctx.lineTo(12, -10);
-          ctx.stroke();
-
           ctx.fillStyle = "rgba(15, 23, 42, 0.92)";
           ctx.beginPath();
-          ctx.roundRect(-54, -36, 108, 20, 6);
+          ctx.roundRect(-54, -40, 108, 19, 6);
           ctx.fill();
 
           ctx.fillStyle = "#5eead4";
           ctx.font = "bold 9px sans-serif";
           ctx.textAlign = "center";
-          ctx.fillText(`${String(rp.name || "Oyuncu").slice(0, 12)} (${formatRelativeDistance(relDistM)})`, 0, -23);
-          ctx.textAlign = "left";
+          ctx.fillText(`${String(rp.name || "Oyuncu").slice(0, 12)} (${formatRelativeDistance(relDistM)})`, 0, -27);
           ctx.restore();
         });
       }
 
       const px = roadLeft + laneW * (state.laneVisualX + 0.5);
-      ctx.save();
-      ctx.translate(px, playerY);
-      ctx.fillStyle = sc.color;
-      ctx.beginPath();
-      ctx.roundRect(-8, -14, 16, 28, 5);
-      ctx.fill();
-      ctx.strokeStyle = "#e2e8f0";
-      ctx.lineWidth = 4;
-      ctx.beginPath();
-      ctx.moveTo(-13, -10); ctx.lineTo(13, -10);
-      ctx.stroke();
-      ctx.fillStyle = "#f8fafc";
-      ctx.beginPath();
-      ctx.arc(0, -2, 7, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
+      drawScooterSprite(ctx, px, playerY, sc.color, true, state.controls.horn);
 
       drawOnlineRightSidePanel(ctx, w, h, roadRight, w - roadRight, playerY);
 
