@@ -968,15 +968,15 @@
       <div class="map-switch">
         <button id="freeMapBtn" class="map-btn active" type="button">
           <span>İstanbul Haritası (Serbest Harita)</span>
-          <span class="map-btn-sub">Boğaz kıyısında serbest sürüş, KM kasma ve şarj noktaları</span>
+          <span class="map-btn-sub">Boğaz kıyısı, tekneler, sahil binaları ve serbest sürüş</span>
         </button>
         <button id="missionMapBtn" class="map-btn" type="button">
           <span>Kahramanmaraş Haritası (Görev Haritası)</span>
-          <span class="map-btn-sub">Hedef, hız, sollama ve şarjlı sürüş görevleriyle para kazanma</span>
+          <span class="map-btn-sub">Çarşı, taş konaklar, sıcak ağaçlar ve ödüllü görevler</span>
         </button>
         <button id="onlineMapBtn" class="map-btn online-btn" type="button">
           <span>Erzurum Haritası (Online Harita)</span>
-          <span class="map-btn-sub">Odalar (200 kişi), canlı konum/hız radar şeridi ve sohbet</span>
+          <span class="map-btn-sub">Karlı dağ/şehir dokusu, odalar (200 kişi) ve canlı sohbet</span>
         </button>
       </div>
     </div>
@@ -1289,7 +1289,7 @@
       distanceM: 0,
       currentBiomeIndex: 0,
       sceneryItems: [],
-      nextScenerySpawnM: 12,
+      nextScenerySpawnM: 10,
       nextChargeCheckpointM: CHARGE_INTERVAL_M,
       roadOffset: 0,
       controls: { gas: false, brake: false, horn: false },
@@ -1323,7 +1323,7 @@
           label: subName,
           bgOuter: "#082f49",
           leftVerge: "#0284c7",
-          rightVerge: "#15803d",
+          rightVerge: "#334155",
           roadFill: "#1e293b",
           roadEdge: "#e2e8f0",
           laneDash: "#facc15",
@@ -1335,7 +1335,7 @@
           cityKey: "kahramanmaras",
           label: "Kahramanmaraş",
           bgOuter: "#291408",
-          leftVerge: "#b45309",
+          leftVerge: "#78350f",
           rightVerge: "#92400e",
           roadFill: "#26211d",
           roadEdge: "#fde68a",
@@ -1347,8 +1347,8 @@
         cityKey: "erzurum",
         label: "Erzurum",
         bgOuter: "#0b192c",
-        leftVerge: "#cbd5e1",
-        rightVerge: "#94a3b8",
+        leftVerge: "#e2e8f0",
+        rightVerge: "#cbd5e1",
         roadFill: "#1e293b",
         roadEdge: "#ffffff",
         laneDash: "#38bdf8",
@@ -2333,7 +2333,6 @@
       audioCtxHolder.hornGain.gain.setTargetAtTime(0.0001, now, 0.015);
     }
 
-    // Çarpışma anında NPC araçtan çalan normal otomobil kornası ("bip-bip")
     function playNpcCarHornSound() {
       if (!state.soundEnabled || state.puzzle.isOpen) return;
       ensureAudio();
@@ -2671,6 +2670,7 @@
       freeMapBtn.classList.toggle("active", mode === "free");
       missionMapBtn.classList.toggle("active", mode === "mission");
       onlineMapBtn.classList.toggle("active", mode === "online");
+      initInitialScenery();
       if (mode === "mission") assignNextMission();
       else if (mode === "online") {
         fetchRoomsFromFirebase();
@@ -2772,13 +2772,13 @@
     });
 
     const NPC_COLORS = ["#f97316", "#06b6d4", "#eab308", "#ec4899", "#a855f7", "#10b981"];
+    const BUILDING_COLORS = ["#334155", "#475569", "#7c2d12", "#9a3412", "#1e3a8a", "#0f766e", "#57534e"];
 
     function spawnNpc() {
       if (state.npcDensity <= 0) return;
       const maxActiveNpcs = Math.max(1, Math.round((state.npcDensity / 100) * 10));
       if (state.npcs.length >= maxActiveNpcs) return;
       const lane = Math.random() < 0.5 ? 0 : 1;
-      // Aynı şeritte yukarıda başka bir araç varsa iç içe doğmasını engelle
       if (state.npcs.some(n => n.lane === lane && n.y < 120)) return;
       const maxSpeed = 35 + Math.random() * 45;
       state.npcs.push({
@@ -2795,19 +2795,29 @@
       });
     }
 
-    function spawnSceneryAtY(yPos) {
+    function spawnSceneryAtY(yPos, forcedSide) {
+      const side = forcedSide || (Math.random() < 0.5 ? "left" : "right");
+      const kindRoll = Math.random();
+      const kind = kindRoll < 0.42 ? "building" : (kindRoll < 0.76 ? "tree" : "lamp");
       state.sceneryItems.push({
-        side: Math.random() < 0.5 ? "left" : "right",
-        offsetRatio: 0.25 + Math.random() * 0.4,
+        side,
+        kind,
+        offsetRatio: kind === "lamp" ? 0.14 : (0.34 + Math.random() * 0.36),
         y: yPos,
+        w: 28 + Math.floor(Math.random() * 14),
+        h: 34 + Math.floor(Math.random() * 18),
         animPhase: Math.random() * Math.PI * 2,
-        accentColor: NPC_COLORS[Math.floor(Math.random() * NPC_COLORS.length)]
+        buildingColor: BUILDING_COLORS[Math.floor(Math.random() * BUILDING_COLORS.length)],
+        foliageColor: NPC_COLORS[Math.floor(Math.random() * NPC_COLORS.length)]
       });
     }
 
     function initInitialScenery() {
       state.sceneryItems = [];
-      for (let y = 15; y <= 380; y += 44) spawnSceneryAtY(y);
+      for (let y = -10; y <= 390; y += 42) {
+        spawnSceneryAtY(y, "left");
+        spawnSceneryAtY(y + 18, "right");
+      }
     }
 
     const canvas = document.getElementById("roadCanvas");
@@ -2897,10 +2907,11 @@
 
       const scrollPx = deltaM * 24;
       state.sceneryItems.forEach(item => { item.y += scrollPx; item.animPhase += dt * 5.2; });
-      state.sceneryItems = state.sceneryItems.filter(item => item.y < canvas.getBoundingClientRect().height + 65);
+      state.sceneryItems = state.sceneryItems.filter(item => item.y < canvas.getBoundingClientRect().height + 70);
       if (state.distanceM >= state.nextScenerySpawnM) {
-        spawnSceneryAtY(-38);
-        state.nextScenerySpawnM = state.distanceM + 2.0 + Math.random() * 2.2;
+        spawnSceneryAtY(-45, "left");
+        spawnSceneryAtY(-55, "right");
+        state.nextScenerySpawnM = state.distanceM + 1.7 + Math.random() * 1.4;
       }
 
       if (deltaM > 0 && sc.rangeKm > 0) {
@@ -2925,7 +2936,6 @@
       const playerY = canvas.getBoundingClientRect().height * 0.74;
       const MIN_CAR_GAP_Y = 74;
 
-      // Önce NPC araçların kendi hızlarını ve aralarındaki takip mesafesini güncelle (birbirinin içinden geçmezler)
       state.npcs.forEach(npc => {
         if (npc.hitCooldown > 0) npc.hitCooldown = Math.max(0, npc.hitCooldown - dt);
         if (npc.honkTimer > 0) {
@@ -2935,7 +2945,6 @@
         npc.speed = Math.min(npc.maxSpeed, npc.speed + 8 * dt);
       });
 
-      // Aynı şeritteki öndeki aracı kontrol et: arkadaki araç öndekinin içinden geçmeden hızını düşürüp bekler
       for (let i = 0; i < state.npcs.length; i++) {
         const follower = state.npcs[i];
         let leaderAhead = null;
@@ -2956,7 +2965,6 @@
         }
       }
 
-      // Konumları ilerlet ve ardışık geçişte fiziksel çakışmayı kesin olarak engelle
       state.npcs.forEach(npc => {
         const relSpeedMps = ((state.speedKmh - npc.speed) * 1000) / 3600;
         npc.y += relSpeedMps * dt * 20 + 35 * dt;
@@ -3035,6 +3043,44 @@
       updateMotorSound(state.speedKmh / Math.max(1, sc.topSpeedKmh), state.controls.gas, state.controls.brake);
     }
 
+    function drawBuildingBlock(ctx, x, y, bw, bh, cityKey, baseColor) {
+      ctx.save();
+      ctx.translate(x, y);
+
+      const fillCol = cityKey === "kahramanmaras"
+        ? "#b45309"
+        : (cityKey === "erzurum" ? "#475569" : baseColor);
+
+      ctx.fillStyle = fillCol;
+      ctx.beginPath();
+      ctx.roundRect(-bw / 2, -bh / 2, bw, bh, 4);
+      ctx.fill();
+
+      ctx.strokeStyle = cityKey === "kahramanmaras" ? "#fde68a" : "rgba(255,255,255,0.22)";
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+
+      // Çatı / kemer detayı
+      if (cityKey === "kahramanmaras") {
+        ctx.fillStyle = "#78350f";
+        ctx.fillRect(-bw / 2 + 2, -bh / 2 + 2, bw - 4, 6);
+      } else if (cityKey === "erzurum") {
+        ctx.fillStyle = "#f8fafc";
+        ctx.fillRect(-bw / 2, -bh / 2, bw, 6);
+      }
+
+      // Pencereler
+      const winColor = cityKey === "erzurum" ? "#fde047" : "#bae6fd";
+      ctx.fillStyle = winColor;
+      for (let wy = -bh / 2 + 10; wy < bh / 2 - 8; wy += 10) {
+        for (let wx = -bw / 2 + 6; wx < bw / 2 - 6; wx += 9) {
+          ctx.fillRect(wx, wy, 4, 5);
+        }
+      }
+
+      ctx.restore();
+    }
+
     function drawCityEnvironment(ctx, w, h, roadLeft, roadRight, theme) {
       ctx.fillStyle = theme.leftVerge;
       ctx.fillRect(0, 0, roadLeft, h);
@@ -3043,46 +3089,121 @@
       ctx.fillRect(roadRight, 0, w - roadRight, h);
 
       if (theme.hasSea) {
-        ctx.strokeStyle = "rgba(186, 230, 253, 0.5)";
+        // İstanbul: Sol taraf Boğaz / deniz, dalgalar ve tekneler; sağ taraf sahil kaldırımı ve şehir
+        ctx.fillStyle = "#0369a1";
+        ctx.fillRect(0, 0, Math.max(0, roadLeft - 14), h);
+
+        ctx.strokeStyle = "rgba(186, 230, 253, 0.55)";
         ctx.lineWidth = 2;
-        for (let y = -20 + (state.roadOffset % 36); y < h + 20; y += 36) {
+        for (let y = -20 + (state.roadOffset % 34); y < h + 20; y += 34) {
           ctx.beginPath();
-          ctx.moveTo(8, y);
-          ctx.quadraticCurveTo(roadLeft * 0.45, y - 6, Math.max(16, roadLeft - 14), y);
+          ctx.moveTo(6, y);
+          ctx.quadraticCurveTo(roadLeft * 0.35, y - 5, Math.max(12, roadLeft - 22), y);
           ctx.stroke();
         }
-        ctx.fillStyle = "#e2e8f0";
-        ctx.fillRect(Math.max(0, roadLeft - 8), 0, 8, h);
+
+        // Kıyı bordürü
+        ctx.fillStyle = "#cbd5e1";
+        ctx.fillRect(Math.max(0, roadLeft - 14), 0, 14, h);
+
+        // Sağ kaldırım şeridi
+        ctx.fillStyle = "#64748b";
+        ctx.fillRect(roadRight, 0, Math.min(18, w - roadRight), h);
+      } else if (theme.cityKey === "kahramanmaras") {
+        // Kahramanmaraş: İki yanda kaldırım ve sıcak taş/çarşı dokusu
+        ctx.fillStyle = "#d97706";
+        ctx.fillRect(Math.max(0, roadLeft - 14), 0, 14, h);
+        ctx.fillRect(roadRight, 0, Math.min(14, w - roadRight), h);
+      } else {
+        // Erzurum: Karlı kenarlar ve kaldırım
+        ctx.fillStyle = "#f1f5f9";
+        ctx.fillRect(Math.max(0, roadLeft - 14), 0, 14, h);
+        ctx.fillRect(roadRight, 0, Math.min(14, w - roadRight), h);
       }
 
       state.sceneryItems.forEach(item => {
         if (item.side === "right" && state.mapMode === "online") return;
-        if (theme.hasSea && item.side === "left") return;
-        const sx = item.side === "left"
-          ? roadLeft * item.offsetRatio
-          : roadRight + (w - roadRight) * item.offsetRatio;
+        const areaW = item.side === "left" ? roadLeft - 16 : (w - roadRight - 16);
+        if (areaW < 18) return;
 
-        ctx.save();
-        ctx.translate(sx, item.y);
-        if (theme.cityKey === "erzurum") {
-          ctx.fillStyle = "#5c3a21";
-          ctx.fillRect(-3, 4, 6, 10);
-          ctx.fillStyle = "#0f766e";
-          ctx.beginPath();
-          ctx.moveTo(0, -18); ctx.lineTo(-13, 4); ctx.lineTo(13, 4); ctx.closePath();
-          ctx.fill();
-        } else if (theme.cityKey === "kahramanmaras") {
-          ctx.fillStyle = "#fbbf24";
-          ctx.beginPath();
-          ctx.arc(0, 0, 7, 0, Math.PI * 2);
-          ctx.fill();
-        } else {
-          ctx.fillStyle = "#14532d";
-          ctx.beginPath();
-          ctx.arc(0, 0, 8, 0, Math.PI * 2);
-          ctx.fill();
+        // İstanbul sol tarafta deniz üzerinde tekne çizimi
+        if (theme.hasSea && item.side === "left") {
+          if (item.kind === "building" || item.kind === "tree") {
+            const bx = Math.max(14, roadLeft * 0.42);
+            ctx.save();
+            ctx.translate(bx, item.y);
+            ctx.fillStyle = "#f8fafc";
+            ctx.beginPath();
+            ctx.moveTo(-10, -8);
+            ctx.lineTo(10, -8);
+            ctx.lineTo(7, 6);
+            ctx.lineTo(-7, 6);
+            ctx.closePath();
+            ctx.fill();
+            ctx.fillStyle = "#0284c7";
+            ctx.fillRect(-5, -13, 10, 5);
+            ctx.restore();
+          }
+          return;
         }
-        ctx.restore();
+
+        const sx = item.side === "left"
+          ? 10 + (roadLeft - 24) * item.offsetRatio
+          : roadRight + 14 + (w - roadRight - 24) * item.offsetRatio;
+
+        if (item.kind === "building") {
+          drawBuildingBlock(ctx, sx, item.y, item.w, item.h, theme.cityKey, item.buildingColor);
+        } else if (item.kind === "lamp") {
+          ctx.save();
+          ctx.translate(sx, item.y);
+          ctx.strokeStyle = "#94a3b8";
+          ctx.lineWidth = 2.5;
+          ctx.beginPath();
+          ctx.moveTo(0, 8);
+          ctx.lineTo(0, -10);
+          ctx.stroke();
+          ctx.fillStyle = theme.cityKey === "erzurum" ? "#fde047" : "#fef08a";
+          ctx.beginPath();
+          ctx.arc(0, -12, 4, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        } else {
+          ctx.save();
+          ctx.translate(sx, item.y);
+          if (theme.cityKey === "erzurum") {
+            ctx.fillStyle = "#5c3a21";
+            ctx.fillRect(-3, 4, 6, 10);
+            ctx.fillStyle = "#0f766e";
+            ctx.beginPath();
+            ctx.moveTo(0, -18); ctx.lineTo(-13, 4); ctx.lineTo(13, 4); ctx.closePath();
+            ctx.fill();
+            ctx.fillStyle = "#ffffff";
+            ctx.beginPath();
+            ctx.moveTo(0, -18); ctx.lineTo(-8, -6); ctx.lineTo(8, -6); ctx.closePath();
+            ctx.fill();
+          } else if (theme.cityKey === "kahramanmaras") {
+            ctx.fillStyle = "#5c3a21";
+            ctx.fillRect(-2.5, 4, 5, 9);
+            ctx.fillStyle = "#ea580c";
+            ctx.beginPath();
+            ctx.arc(0, -2, 10, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = "#f59e0b";
+            ctx.beginPath();
+            ctx.arc(-4, -5, 6, 0, Math.PI * 2);
+            ctx.fill();
+          } else {
+            ctx.fillStyle = "#166534";
+            ctx.beginPath();
+            ctx.arc(0, 0, 9, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = "#22c55e";
+            ctx.beginPath();
+            ctx.arc(-3, -3, 5, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          ctx.restore();
+        }
       });
     }
 
@@ -3295,7 +3416,7 @@
       ctx.fillStyle = theme.bgOuter;
       ctx.fillRect(0, 0, w, h);
 
-      const roadW = Math.min(310, w * 0.56);
+      const roadW = Math.min(310, w * 0.54);
       const roadLeft = (w - roadW) / 2;
       const roadRight = roadLeft + roadW;
       const laneW = roadW / 2;
