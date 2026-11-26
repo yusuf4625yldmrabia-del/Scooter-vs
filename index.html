@@ -107,6 +107,11 @@
       border-color: rgba(251, 146, 60, 0.4);
     }
 
+    .pill.online-pill {
+      color: #67e8f9;
+      border-color: rgba(103, 232, 249, 0.45);
+    }
+
     .npc-control {
       background: #1e293b;
       border: 1px solid rgba(255, 255, 255, 0.1);
@@ -128,6 +133,7 @@
 
     .map-switch {
       display: flex;
+      flex-wrap: wrap;
       gap: 6px;
     }
 
@@ -146,6 +152,170 @@
       background: #0284c7;
       color: #ffffff;
       border-color: #38bdf8;
+    }
+
+    .map-btn.online-btn.active {
+      background: #0d9488;
+      border-color: #5eead4;
+    }
+
+    .rooms-section {
+      background: #131c31;
+      border: 1px solid rgba(94, 234, 212, 0.32);
+      border-radius: 14px;
+      padding: 12px;
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .rooms-section.open {
+      display: flex;
+    }
+
+    .rooms-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .rooms-title {
+      font-size: 14px;
+      font-weight: 800;
+      color: #5eead4;
+    }
+
+    .rooms-sub {
+      font-size: 11px;
+      color: #94a3b8;
+    }
+
+    .room-create-form {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      background: #0f172a;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 11px;
+      padding: 10px;
+    }
+
+    .room-input {
+      background: #1e293b;
+      color: #f8fafc;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 9px;
+      padding: 7px 11px;
+      font-size: 12px;
+      font-weight: 700;
+      min-width: 150px;
+      user-select: text;
+      -webkit-user-select: text;
+    }
+
+    .room-input:focus {
+      outline: none;
+      border-color: #5eead4;
+    }
+
+    .room-create-btn, .room-refresh-btn {
+      background: #0d9488;
+      color: #ffffff;
+      border: none;
+      border-radius: 9px;
+      padding: 7px 13px;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .room-refresh-btn {
+      background: #1e293b;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+    }
+
+    .room-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 8px;
+      max-height: 240px;
+      overflow-y: auto;
+    }
+
+    .room-card {
+      background: #1e293b;
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      border-radius: 11px;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .room-card.joined {
+      border-color: #5eead4;
+      background: rgba(13, 148, 136, 0.14);
+    }
+
+    .room-name {
+      font-size: 13px;
+      font-weight: 800;
+      color: #f8fafc;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .room-lock {
+      font-size: 10px;
+      font-weight: 800;
+      padding: 2px 7px;
+      border-radius: 999px;
+      background: rgba(251, 191, 36, 0.18);
+      color: #fde68a;
+      border: 1px solid rgba(251, 191, 36, 0.35);
+    }
+
+    .room-lock.open-lock {
+      background: rgba(74, 222, 128, 0.16);
+      color: #bbf7d0;
+      border-color: rgba(74, 222, 128, 0.35);
+    }
+
+    .room-meta {
+      font-size: 11px;
+      color: #cbd5e1;
+      margin-top: 3px;
+    }
+
+    .room-join-btn {
+      background: #0284c7;
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 11px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .room-join-btn.joined {
+      background: #0d9488;
+    }
+
+    .room-leave-btn {
+      background: #b91c1c;
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 11px;
+      font-weight: 800;
+      cursor: pointer;
     }
 
     .road-wrap {
@@ -429,8 +599,8 @@
     }
 
     .chat-item.is-me {
-      border-left: 3px solid #34d399;
-      background: rgba(16, 185, 129, 0.12);
+      border-left: 3px solid #f87171;
+      background: rgba(248, 113, 113, 0.1);
     }
 
     .chat-meta {
@@ -444,6 +614,11 @@
     .chat-author {
       font-weight: 800;
       color: #38bdf8;
+    }
+
+    /* Sadece kendi mesajlarındaki ismin kırmızı görünmesi */
+    .chat-item.is-me .chat-author {
+      color: #f87171;
     }
 
     .chat-scooter {
@@ -767,6 +942,7 @@
         <div id="batteryPill" class="pill battery-ok">Şarj: %100</div>
         <div id="scooterKmPill" class="pill odo" title="Bu scooter ile yaptığın toplam kilometre">Araç KM: 0,0 km</div>
         <div id="biomePill" class="pill biome" title="Her 3.000 metrede bir harita bölgesi ve yol kenarı hayvanları değişir">Bölge: Yeşil Vadi</div>
+        <div id="onlineRoomPill" class="pill online-pill" style="display:none;">Oda: Seçilmedi</div>
         <div id="activeScooterPill" class="pill">Araç: -</div>
         <div id="playtimePill" class="pill playtime" title="Oyuna başladığından beri toplam oynama süren (çıkınca durur)">Oynama: 00:00:00</div>
         <div id="puzzleTimerPill" class="pill puzzle-timer" title="Her 5 dakikada bir Kolay 2.000₺ / Orta 3.500₺ / Zor 5.000₺ soru çıkar">Bonus Soru: 05:00</div>
@@ -779,7 +955,29 @@
       <div class="map-switch">
         <button id="freeMapBtn" class="map-btn active" type="button">Serbest Harita</button>
         <button id="missionMapBtn" class="map-btn" type="button">Görev Haritası</button>
+        <button id="onlineMapBtn" class="map-btn online-btn" type="button">Online Harita</button>
       </div>
+    </div>
+
+    <div id="roomsSection" class="rooms-section">
+      <div class="rooms-head">
+        <div>
+          <div class="rooms-title">Online Harita — Odalar (En Fazla 200 Kişi)</div>
+          <div class="rooms-sub">İsimle oda kur • İstersen şifre koy • Arkadaşlarınla aynı odada yan yana sür</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <div id="roomCountBadge" class="sync-status">Odadaki Kişi: 0/200</div>
+          <button id="refreshRoomsBtn" class="room-refresh-btn" type="button">Odaları Yenile</button>
+        </div>
+      </div>
+
+      <form id="createRoomForm" class="room-create-form">
+        <input id="roomNameInput" class="room-input" type="text" maxlength="28" placeholder="Oda adı (örn: Sahil Turu)" required />
+        <input id="roomPasswordInput" class="room-input" type="password" maxlength="20" placeholder="Şifre (isteğe bağlı)" />
+        <button id="createRoomBtn" class="room-create-btn" type="submit">Oda Kur ve Gir</button>
+      </form>
+
+      <div id="roomList" class="room-list"></div>
     </div>
 
     <div class="road-wrap">
@@ -826,7 +1024,7 @@
       <div class="chat-head">
         <div>
           <div class="chat-title">Oyuncu Sohbeti (Canlı Chat)</div>
-          <div class="chat-sub">Diğer oyuncularla mesajlaş • Mesajında kullandığın scooter da görünür</div>
+          <div class="chat-sub">Diğer oyuncularla mesajlaş • Kendi mesajlarında ismin kırmızı görünür</div>
         </div>
         <div id="chatStatusPill" class="sync-status">Chat: Yerel</div>
       </div>
@@ -864,10 +1062,14 @@
   <script>
     const LEADERBOARD_DB_URL = "https://scooter-vs-arena-default-rtdb.firebaseio.com";
 
+    const MAX_ROOM_PLAYERS = 200;
+    const ONLINE_PLAYER_STALE_MS = 35000;
+
     const SAVE_KEY = "scooter_ride_save_v3";
     const LEGACY_SAVE_KEY = "scooter_ride_save_v2";
     const LOCAL_PLAYERS_KEY = "scooter_ride_real_players_v1";
     const LOCAL_CHAT_KEY = "scooter_ride_chat_messages_v1";
+    const LOCAL_ROOMS_KEY = "scooter_ride_local_rooms_v1";
     const PLAYER_ID_KEY = "scooter_ride_player_id_v1";
 
     const CHARGE_INTERVAL_M = 5000;
@@ -1256,8 +1458,14 @@
       playSaveAccumulator: 0,
       leaderboardSyncAccumulator: 0,
       chatSyncAccumulator: 0,
+      onlineSyncAccumulator: 0,
       remotePlayers: {},
       chatMessages: [],
+      rooms: {},
+      currentRoomId: null,
+      currentRoomName: "",
+      currentRoomPassword: "",
+      roomPlayers: {},
       mapMode: "free",
       soundEnabled: saved ? saved.soundEnabled : true,
       npcDensity: saved ? saved.npcDensity : 50,
@@ -1529,6 +1737,344 @@
       }).join("");
     }
 
+    // Online Oda & Çok Oyunculu Sistem (En Fazla 200 Kişi)
+    const roomsSection = document.getElementById("roomsSection");
+    const roomListEl = document.getElementById("roomList");
+    const roomCountBadge = document.getElementById("roomCountBadge");
+    const onlineRoomPill = document.getElementById("onlineRoomPill");
+    const createRoomForm = document.getElementById("createRoomForm");
+    const roomNameInput = document.getElementById("roomNameInput");
+    const roomPasswordInput = document.getElementById("roomPasswordInput");
+    const refreshRoomsBtn = document.getElementById("refreshRoomsBtn");
+
+    function loadLocalRooms() {
+      try {
+        const raw = localStorage.getItem(LOCAL_ROOMS_KEY);
+        if (!raw) return {};
+        const parsed = JSON.parse(raw);
+        return parsed && typeof parsed === "object" ? parsed : {};
+      } catch (_) {
+        return {};
+      }
+    }
+
+    function saveLocalRooms(roomsObj) {
+      try {
+        localStorage.setItem(LOCAL_ROOMS_KEY, JSON.stringify(roomsObj));
+      } catch (_) {}
+    }
+
+    function getActiveRoomPlayersCount(roomId) {
+      if (!roomId) return 0;
+      const now = Date.now();
+      const source = roomId === state.currentRoomId ? state.roomPlayers : {};
+      let count = 0;
+      Object.values(source).forEach(p => {
+        if (!p || typeof p !== "object") return;
+        if (now - (p.updatedAt || 0) <= ONLINE_PLAYER_STALE_MS) {
+          count += 1;
+        }
+      });
+      return Math.max(roomId === state.currentRoomId ? 1 : 0, count);
+    }
+
+    function updateOnlineRoomUI() {
+      const isOnline = state.mapMode === "online";
+      roomsSection.classList.toggle("open", isOnline);
+      onlineRoomPill.style.display = isOnline ? "inline-flex" : "none";
+
+      if (!isOnline) return;
+
+      if (state.currentRoomId) {
+        const count = getActiveRoomPlayersCount(state.currentRoomId);
+        onlineRoomPill.textContent = `Oda: ${state.currentRoomName} (${count}/${MAX_ROOM_PLAYERS})`;
+        roomCountBadge.textContent = `Odadaki Kişi: ${count}/${MAX_ROOM_PLAYERS}`;
+      } else {
+        onlineRoomPill.textContent = "Oda: Seçilmedi";
+        roomCountBadge.textContent = `Odadaki Kişi: 0/${MAX_ROOM_PLAYERS}`;
+      }
+    }
+
+    function renderRoomsList() {
+      const localRooms = loadLocalRooms();
+      const mergedRooms = { ...localRooms, ...state.rooms };
+      const roomEntries = Object.values(mergedRooms)
+        .filter(r => r && typeof r === "object" && r.id && r.name)
+        .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+      if (roomEntries.length === 0) {
+        roomListEl.innerHTML = `<div class="chat-empty" style="grid-column:1/-1;">Henüz oda yok. Yukarıdan isim yazıp ilk odayı sen kur!</div>`;
+        return;
+      }
+
+      roomListEl.innerHTML = roomEntries.map(room => {
+        const isJoined = state.currentRoomId === room.id;
+        const hasPass = Boolean(room.password && String(room.password).length > 0);
+        const memberCount = isJoined
+          ? getActiveRoomPlayersCount(room.id)
+          : (room.playerCount || 0);
+
+        return `
+          <div class="room-card ${isJoined ? "joined" : ""}">
+            <div>
+              <div class="room-name">
+                <span>${escapeHtml(room.name)}</span>
+                <span class="room-lock ${hasPass ? "" : "open-lock"}">${hasPass ? "🔒 Şifreli" : "🔓 Şifresiz"}</span>
+              </div>
+              <div class="room-meta">Kurucu: ${escapeHtml(room.hostName || "Oyuncu")} • Kapasite: ${memberCount}/${MAX_ROOM_PLAYERS}</div>
+            </div>
+            <div style="display:flex;gap:6px;align-items:center;">
+              ${isJoined
+                ? `<button class="room-leave-btn" type="button" onclick="leaveCurrentRoom()">Odadan Ayrıl</button>`
+                : `<button class="room-join-btn" type="button" onclick="joinRoomById('${escapeHtml(room.id)}')">Odaya Gir</button>`
+              }
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    async function fetchRoomsFromFirebase() {
+      const dbUrl = getCleanLeaderboardDbUrl();
+      if (!dbUrl) {
+        renderRoomsList();
+        return;
+      }
+      try {
+        const res = await fetch(`${dbUrl}/online_rooms.json`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && typeof data === "object") {
+            const cleanRooms = {};
+            const now = Date.now();
+            Object.entries(data).forEach(([id, r]) => {
+              if (!r || typeof r !== "object" || !r.name) return;
+              let activeCount = 0;
+              if (r.players && typeof r.players === "object") {
+                Object.values(r.players).forEach(p => {
+                  if (p && now - (p.updatedAt || 0) <= ONLINE_PLAYER_STALE_MS) {
+                    activeCount += 1;
+                  }
+                });
+              }
+              cleanRooms[id] = {
+                id,
+                name: String(r.name).slice(0, 28),
+                password: typeof r.password === "string" ? r.password : "",
+                hostName: typeof r.hostName === "string" ? r.hostName.slice(0, 20) : "Oyuncu",
+                createdAt: typeof r.createdAt === "number" ? r.createdAt : 0,
+                playerCount: activeCount
+              };
+            });
+            state.rooms = cleanRooms;
+            saveLocalRooms(cleanRooms);
+          }
+        }
+      } catch (_) {}
+      renderRoomsList();
+      updateOnlineRoomUI();
+    }
+
+    async function pushMyRoomPresence() {
+      if (!state.currentRoomId || state.mapMode !== "online") return;
+      const sc = getCurrentScooter();
+      const presenceData = {
+        id: state.playerId,
+        name: state.playerName,
+        scooterId: sc.id,
+        scooterName: sc.name,
+        scooterColor: sc.color,
+        lane: state.lane,
+        laneVisualX: state.laneVisualX,
+        speedKmh: Math.round(state.speedKmh),
+        distanceM: Math.round(state.distanceM),
+        updatedAt: Date.now()
+      };
+
+      state.roomPlayers[state.playerId] = presenceData;
+
+      const dbUrl = getCleanLeaderboardDbUrl();
+      if (!dbUrl) {
+        updateOnlineRoomUI();
+        return;
+      }
+
+      try {
+        const playersRes = await fetch(`${dbUrl}/online_rooms/${encodeURIComponent(state.currentRoomId)}/players.json`);
+        if (playersRes.ok) {
+          const playersData = await playersRes.json();
+          const now = Date.now();
+          const activePlayers = {};
+          let activeCount = 0;
+
+          if (playersData && typeof playersData === "object") {
+            Object.entries(playersData).forEach(([pid, p]) => {
+              if (!p || typeof p !== "object") return;
+              if (pid !== state.playerId && now - (p.updatedAt || 0) <= ONLINE_PLAYER_STALE_MS) {
+                activePlayers[pid] = p;
+                activeCount += 1;
+              }
+            });
+          }
+
+          if (activeCount >= MAX_ROOM_PLAYERS) {
+            state.currentRoomId = null;
+            state.currentRoomName = "";
+            showToast(`Bu oda dolu (${MAX_ROOM_PLAYERS}/${MAX_ROOM_PLAYERS} kişi)!`);
+            updateOnlineRoomUI();
+            renderRoomsList();
+            return;
+          }
+
+          await fetch(`${dbUrl}/online_rooms/${encodeURIComponent(state.currentRoomId)}/players/${encodeURIComponent(state.playerId)}.json`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(presenceData)
+          });
+
+          activePlayers[state.playerId] = presenceData;
+          state.roomPlayers = activePlayers;
+        }
+      } catch (_) {}
+
+      updateOnlineRoomUI();
+    }
+
+    window.joinRoomById = async function(roomId) {
+      const localRooms = loadLocalRooms();
+      const room = state.rooms[roomId] || localRooms[roomId];
+      if (!room) {
+        showToast("Oda bulunamadı.");
+        return;
+      }
+
+      if (room.password && String(room.password).length > 0) {
+        const enteredPass = window.prompt(`"${room.name}" odası şifreli. Şifreyi gir:`);
+        if (enteredPass === null) return;
+        if (String(enteredPass) !== String(room.password)) {
+          showToast("Oda şifresi hatalı!");
+          return;
+        }
+      }
+
+      const dbUrl = getCleanLeaderboardDbUrl();
+      if (dbUrl) {
+        try {
+          const res = await fetch(`${dbUrl}/online_rooms/${encodeURIComponent(roomId)}/players.json`);
+          if (res.ok) {
+            const playersData = await res.json();
+            const now = Date.now();
+            let count = 0;
+            if (playersData && typeof playersData === "object") {
+              Object.entries(playersData).forEach(([pid, p]) => {
+                if (pid !== state.playerId && p && now - (p.updatedAt || 0) <= ONLINE_PLAYER_STALE_MS) {
+                  count += 1;
+                }
+              });
+            }
+            if (count >= MAX_ROOM_PLAYERS) {
+              showToast(`Oda dolu! En fazla ${MAX_ROOM_PLAYERS} kişi girebilir.`);
+              return;
+            }
+          }
+        } catch (_) {}
+      }
+
+      state.currentRoomId = room.id;
+      state.currentRoomName = room.name;
+      state.currentRoomPassword = room.password || "";
+      state.roomPlayers = {};
+      await pushMyRoomPresence();
+      renderRoomsList();
+      updateOnlineRoomUI();
+      showToast(`"${room.name}" odasına katıldın!`);
+    };
+
+    window.leaveCurrentRoom = async function() {
+      const prevRoomId = state.currentRoomId;
+      const prevName = state.currentRoomName;
+      state.currentRoomId = null;
+      state.currentRoomName = "";
+      state.currentRoomPassword = "";
+      state.roomPlayers = {};
+
+      const dbUrl = getCleanLeaderboardDbUrl();
+      if (dbUrl && prevRoomId) {
+        try {
+          await fetch(`${dbUrl}/online_rooms/${encodeURIComponent(prevRoomId)}/players/${encodeURIComponent(state.playerId)}.json`, {
+            method: "DELETE"
+          });
+        } catch (_) {}
+      }
+
+      updateOnlineRoomUI();
+      renderRoomsList();
+      if (prevName) {
+        showToast(`"${prevName}" odasından ayrıldın.`);
+      }
+    };
+
+    createRoomForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const rName = roomNameInput.value.trim().slice(0, 28);
+      const rPass = roomPasswordInput.value.trim().slice(0, 20);
+      if (!rName) return;
+
+      const roomId = "room_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 6);
+      const newRoom = {
+        id: roomId,
+        name: rName,
+        password: rPass,
+        hostId: state.playerId,
+        hostName: state.playerName,
+        createdAt: Date.now(),
+        playerCount: 1
+      };
+
+      const localRooms = loadLocalRooms();
+      localRooms[roomId] = newRoom;
+      saveLocalRooms(localRooms);
+      state.rooms[roomId] = newRoom;
+
+      state.currentRoomId = roomId;
+      state.currentRoomName = rName;
+      state.currentRoomPassword = rPass;
+      state.roomPlayers = {};
+
+      const dbUrl = getCleanLeaderboardDbUrl();
+      if (dbUrl) {
+        try {
+          await fetch(`${dbUrl}/online_rooms/${encodeURIComponent(roomId)}.json`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              id: roomId,
+              name: rName,
+              password: rPass,
+              hostId: state.playerId,
+              hostName: state.playerName,
+              createdAt: Date.now()
+            })
+          });
+        } catch (_) {}
+      }
+
+      roomNameInput.value = "";
+      roomPasswordInput.value = "";
+      await pushMyRoomPresence();
+      renderRoomsList();
+      updateOnlineRoomUI();
+      showToast(`"${rName}" odası kuruldu${rPass ? " (şifreli)" : ""} ve giriş yapıldı!`);
+    });
+
+    refreshRoomsBtn.addEventListener("click", () => {
+      fetchRoomsFromFirebase();
+      pushMyRoomPresence();
+    });
+
+    roomNameInput.addEventListener("keydown", (e) => e.stopPropagation());
+    roomPasswordInput.addEventListener("keydown", (e) => e.stopPropagation());
+
     // Canlı Chat Fonksiyonları
     const chatForm = document.getElementById("chatForm");
     const chatMessageInput = document.getElementById("chatMessageInput");
@@ -1699,6 +2245,7 @@
       saveLocalRealPlayerEntry();
       renderLeaderboard();
       syncWithSharedLeaderboard();
+      pushMyRoomPresence();
       showToast(`Adın kaydedildi: ${state.playerName}`);
     }
 
@@ -1753,6 +2300,10 @@
     window.addEventListener("focus", () => {
       updatePlaytimeUI();
       syncChatMessages();
+      if (state.mapMode === "online") {
+        fetchRoomsFromFirebase();
+        pushMyRoomPresence();
+      }
     });
 
     window.addEventListener("pagehide", () => {
@@ -2274,6 +2825,11 @@
       const nextBiomeRem = Math.max(0, BIOME_INTERVAL_M - (Math.floor(state.distanceM) % BIOME_INTERVAL_M));
       if (state.mapMode === "free") {
         el.innerHTML = `<strong>Serbest Harita:</strong> Yeni bölge: <strong>${nextBiomeRem}m</strong> • Şarj noktası: <strong>${nextChargeRem}m</strong> • Şerit: A/D veya ←/→ • Gaz: W/↑ • Fren: S/↓`;
+      } else if (state.mapMode === "online") {
+        const roomLabel = state.currentRoomId
+          ? `Oda: <strong>${escapeHtml(state.currentRoomName)}</strong> (${getActiveRoomPlayersCount(state.currentRoomId)}/${MAX_ROOM_PLAYERS} kişi)`
+          : `Bir oda seç veya kur`;
+        el.innerHTML = `<strong>Online Harita:</strong> ${roomLabel} • Yeni bölge: <strong>${nextBiomeRem}m</strong> • Şarj: <strong>${nextChargeRem}m</strong>`;
       } else {
         let progressText = "";
         if (state.mission.type === "overtake") {
@@ -2317,6 +2873,7 @@
       updateBatteryUI();
       updateScooterKmUI();
       updateBiomeUI();
+      updateOnlineRoomUI();
       updatePlaytimeUI();
       updatePuzzleHudTimer();
       updateMissionUI();
@@ -2392,6 +2949,7 @@
       saveProgress();
       renderLeaderboard();
       syncWithSharedLeaderboard();
+      pushMyRoomPresence();
       showToast(`${sc.name} sıfır olarak alındı! Şarj %100, KM 0,0 km.`);
       renderHUD();
       renderGarage();
@@ -2408,6 +2966,7 @@
       saveProgress();
       renderLeaderboard();
       syncWithSharedLeaderboard();
+      pushMyRoomPresence();
       showToast(`${sc.name} seçildi (${formatKm(getScooterKm(id))} • Şarj: %${Math.round(getCurrentBattery())}).`);
       renderHUD();
       renderGarage();
@@ -2439,6 +2998,7 @@
       saveProgress();
       renderLeaderboard();
       syncWithSharedLeaderboard();
+      pushMyRoomPresence();
       showToast(`${sc.name} 2. el (4/3) fiyatına ${formatMoney(sellAmount)} karşılığında satıldı!`);
       renderHUD();
       renderGarage();
@@ -2446,25 +3006,28 @@
 
     const freeMapBtn = document.getElementById("freeMapBtn");
     const missionMapBtn = document.getElementById("missionMapBtn");
+    const onlineMapBtn = document.getElementById("onlineMapBtn");
 
-    freeMapBtn.addEventListener("click", () => {
+    function setMapMode(mode) {
       if (state.puzzle.isOpen) return;
       ensureAudio();
-      state.mapMode = "free";
-      freeMapBtn.classList.add("active");
-      missionMapBtn.classList.remove("active");
-      renderHUD();
-    });
+      state.mapMode = mode;
+      freeMapBtn.classList.toggle("active", mode === "free");
+      missionMapBtn.classList.toggle("active", mode === "mission");
+      onlineMapBtn.classList.toggle("active", mode === "online");
 
-    missionMapBtn.addEventListener("click", () => {
-      if (state.puzzle.isOpen) return;
-      ensureAudio();
-      state.mapMode = "mission";
-      missionMapBtn.classList.add("active");
-      freeMapBtn.classList.remove("active");
-      assignNextMission();
+      if (mode === "mission") {
+        assignNextMission();
+      } else if (mode === "online") {
+        fetchRoomsFromFirebase();
+        pushMyRoomPresence();
+      }
       renderHUD();
-    });
+    }
+
+    freeMapBtn.addEventListener("click", () => setMapMode("free"));
+    missionMapBtn.addEventListener("click", () => setMapMode("mission"));
+    onlineMapBtn.addEventListener("click", () => setMapMode("online"));
 
     const soundBtn = document.getElementById("soundToggleBtn");
     function syncSoundBtnUI() {
@@ -2522,7 +3085,12 @@
     });
 
     window.addEventListener("keydown", (e) => {
-      if (document.activeElement === playerNameInput || document.activeElement === chatMessageInput) return;
+      if (
+        document.activeElement === playerNameInput ||
+        document.activeElement === chatMessageInput ||
+        document.activeElement === roomNameInput ||
+        document.activeElement === roomPasswordInput
+      ) return;
 
       if (state.puzzle.isOpen) {
         const keyMap = { "1": 0, "a": 0, "A": 0, "2": 1, "b": 1, "B": 1, "3": 2, "c": 2, "C": 2, "4": 3, "d": 3, "D": 3 };
@@ -2633,6 +3201,7 @@
       state.playSaveAccumulator += dt;
       state.leaderboardSyncAccumulator += dt;
       state.chatSyncAccumulator += dt;
+      state.onlineSyncAccumulator += dt;
 
       if (state.playSaveAccumulator >= 5) {
         state.playSaveAccumulator = 0;
@@ -2648,6 +3217,11 @@
       if (state.chatSyncAccumulator >= 5) {
         state.chatSyncAccumulator = 0;
         syncChatMessages();
+      }
+
+      if (state.mapMode === "online" && state.onlineSyncAccumulator >= 3) {
+        state.onlineSyncAccumulator = 0;
+        pushMyRoomPresence();
       }
 
       updatePlaytimeUI();
@@ -3200,6 +3774,55 @@
         ctx.restore();
       });
 
+      // Online odadaki diğer gerçek oyuncular
+      if (state.mapMode === "online" && state.currentRoomId) {
+        const now = Date.now();
+        Object.values(state.roomPlayers).forEach(rp => {
+          if (!rp || rp.id === state.playerId) return;
+          if (now - (rp.updatedAt || 0) > ONLINE_PLAYER_STALE_MS) return;
+
+          const relDistM = (rp.distanceM || 0) - state.distanceM;
+          const ry = playerY - relDistM * 1.1;
+          if (ry < -55 || ry > h + 55) return;
+
+          const rLaneX = typeof rp.laneVisualX === "number" ? rp.laneVisualX : (rp.lane || 0);
+          const rx = roadLeft + laneW * (rLaneX + 0.5);
+
+          ctx.save();
+          ctx.translate(rx, ry);
+
+          ctx.fillStyle = "rgba(94, 234, 212, 0.25)";
+          ctx.beginPath();
+          ctx.ellipse(0, 18, 18, 7, 0, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = rp.scooterColor || "#5eead4";
+          ctx.beginPath();
+          ctx.roundRect(-8, -14, 16, 28, 5);
+          ctx.fill();
+
+          ctx.strokeStyle = "#f8fafc";
+          ctx.lineWidth = 3.5;
+          ctx.beginPath();
+          ctx.moveTo(-12, -10);
+          ctx.lineTo(12, -10);
+          ctx.stroke();
+
+          ctx.fillStyle = "#0f172a";
+          ctx.beginPath();
+          ctx.roundRect(-42, -32, 84, 15, 6);
+          ctx.fill();
+
+          ctx.fillStyle = "#5eead4";
+          ctx.font = "bold 10px sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText(String(rp.name || "Oyuncu").slice(0, 14), 0, -21);
+          ctx.textAlign = "left";
+
+          ctx.restore();
+        });
+      }
+
       const px = roadLeft + laneW * (state.laneVisualX + 0.5);
 
       ctx.save();
@@ -3236,7 +3859,7 @@
 
       ctx.fillStyle = "rgba(15, 23, 42, 0.86)";
       ctx.beginPath();
-      ctx.roundRect(10, 10, 305, 52, 10);
+      ctx.roundRect(10, 10, 315, 52, 10);
       ctx.fill();
 
       ctx.fillStyle = "#38bdf8";
@@ -3281,6 +3904,8 @@
     syncWithSharedLeaderboard();
     renderChatMessages();
     syncChatMessages();
+    renderRoomsList();
+    fetchRoomsFromFirebase();
     renderGarage();
     requestAnimationFrame(loop);
   </script>
