@@ -303,10 +303,6 @@
       cursor: pointer;
     }
 
-    .room-join-btn.joined {
-      background: #0d9488;
-    }
-
     .room-leave-btn {
       background: #b91c1c;
       color: #ffffff;
@@ -1192,10 +1188,12 @@
       return Math.round((scooter.price * 3) / 4);
     }
 
+    // Düşük hızlı scooterların (ör. ONVO KX-01K: 15 km/h) ulaşamayacağı hız görevlerini engeller
     function getAchievableMissionSpeed(scooter) {
-      const top = Math.max(10, scooter.topSpeedKmh);
-      const target = Math.round(top * 0.75);
-      return Math.min(85, Math.max(8, Math.min(top - 2, target)));
+      const top = Math.max(8, Number(scooter.topSpeedKmh) || 15);
+      const safeCeiling = Math.max(6, top - 2);
+      const target = Math.round(top * 0.7);
+      return Math.max(6, Math.min(safeCeiling, target));
     }
 
     const STATIC_PUZZLES = [
@@ -2337,6 +2335,13 @@
       osc2.start(now);
       osc1.stop(now + 0.34);
       osc2.stop(now + 0.34);
+
+      state.npcs.forEach(npc => {
+        if (npc.y > 40 && npc.y < 230 && Math.abs(npc.lane - state.lane) <= 1) {
+          npc.honked = true;
+          npc.speed = Math.min(npc.maxSpeed + 22, npc.speed + 18);
+        }
+      });
     }
 
     function formatMoney(val) {
@@ -2366,24 +2371,90 @@
     npcDensitySlider.addEventListener("input", () => {
       state.npcDensity = Number(npcDensitySlider.value);
       syncNpcControlUI();
-      if (state.npcDensity === 0) state.npcs = [];
+      if (state.npcDensity === 0) {
+        state.npcs = [];
+      } else {
+        const maxAllowed = Math.max(1, Math.round((state.npcDensity / 100) * 10));
+        if (state.npcs.length > maxAllowed) {
+          state.npcs = state.npcs.slice(0, maxAllowed);
+        }
+      }
       saveProgress();
     });
 
+    // Eski çoklu görev sistemi geri getirildi; hız görevi seçilen scooterın gerçek hızına göre ayarlandı
     function assignNextMission() {
       const mIndex = state.mission.completedCount;
       const sc = getCurrentScooter();
       state.passedNpcsInMission = 0;
+
       const baseReward = 650 + Math.min(1800, mIndex * 110);
+      const eventPattern = mIndex % 4;
       const speedScale = Math.max(0.55, Math.min(1, sc.topSpeedKmh / 35));
-      const dist = Math.round((320 + Math.min(480, mIndex * 25)) * speedScale);
-      state.mission = {
-        active: true, type: "checkpoint", targetM: state.distanceM + dist,
-        missionDistM: dist, minSpeedKmh: 0, targetOvertakes: 0,
-        reward: baseReward, completedCount: mIndex,
-        statusText: `Kontrol noktasına ulaş (${dist}m)`
-      };
+
+      if (eventPattern === 0) {
+        const dist = Math.round((320 + Math.min(480, mIndex * 25)) * speedScale);
+        state.mission = {
+          active: true,
+          type: "checkpoint",
+          targetM: state.distanceM + dist,
+          missionDistM: dist,
+          minSpeedKmh: 0,
+          targetOvertakes: 0,
+          reward: baseReward,
+          completedCount: mIndex,
+          statusText: `Kontrol noktasına ulaş (${dist}m)`
+        };
+      } else if (eventPattern === 1) {
+        const dist = Math.round((300 + Math.min(420, mIndex * 25)) * speedScale);
+        const minSpeed = getAchievableMissionSpeed(sc);
+        state.mission = {
+          active: true,
+          type: "speed_pass",
+          targetM: state.distanceM + dist,
+          missionDistM: dist,
+          minSpeedKmh: minSpeed,
+          targetOvertakes: 0,
+          reward: Math.round(baseReward * 1.2),
+          completedCount: mIndex,
+          statusText: `${dist}m boyunca en az ${minSpeed} km/h hızla git`
+        };
+      } else if (eventPattern === 2) {
+        const overtakes = 3 + Math.min(10, Math.floor(mIndex / 2));
+        state.mission = {
+          active: true,
+          type: "overtake",
+          targetM: state.distanceM + 900,
+          missionDistM: 900,
+          minSpeedKmh: 0,
+          targetOvertakes: overtakes,
+          reward: Math.round(baseReward * 1.25),
+          completedCount: mIndex,
+          statusText: `Trafikte ${overtakes} NPC araç geç`
+        };
+      } else {
+        const dist = Math.round((360 + Math.min(520, mIndex * 30)) * speedScale);
+        state.mission = {
+          active: true,
+          type: "charge_run",
+          targetM: state.distanceM + dist,
+          missionDistM: dist,
+          minSpeedKmh: 0,
+          targetOvertakes: 0,
+          reward: Math.round(baseReward * 1.3),
+          completedCount: mIndex,
+          statusText: `Şarjını bitirmeden ${dist}m hedefe ulaş`
+        };
+      }
       updateMissionUI();
+    }
+
+    function syncActiveMissionSpeedIfNeeded(sc) {
+      if (state.mapMode === "mission" && state.mission.active && state.mission.type === "speed_pass") {
+        const achievable = getAchievableMissionSpeed(sc);
+        state.mission.minSpeedKmh = achievable;
+        state.mission.statusText = `${state.mission.missionDistM}m boyunca en az ${achievable} km/h hızla git`;
+      }
     }
 
     function updateMissionUI() {
@@ -2398,8 +2469,14 @@
           : `Bir oda seç veya kur`;
         el.innerHTML = `<strong>Online Harita:</strong> ${roomLabel} • Sağ şeritte oyuncuların mesafesi &amp; hızı görünür`;
       } else {
-        const remaining = Math.max(0, Math.round(state.mission.targetM - state.distanceM));
-        el.innerHTML = `<strong>Görev (${state.mission.statusText}):</strong> Kalan mesafe: <strong>${remaining}m</strong> • Ödül: <strong>${formatMoney(state.mission.reward)}</strong>`;
+        let progressText = "";
+        if (state.mission.type === "overtake") {
+          progressText = `Geçilen NPC: <strong>${state.passedNpcsInMission}/${state.mission.targetOvertakes}</strong>`;
+        } else {
+          const remaining = Math.max(0, Math.round(state.mission.targetM - state.distanceM));
+          progressText = `Kalan mesafe: <strong>${remaining}m</strong>`;
+        }
+        el.innerHTML = `<strong>Görev (${state.mission.statusText}):</strong> ${progressText} • Yeni bölge: <strong>${nextBiomeRem}m</strong> • Şarj: <strong>${nextChargeRem}m</strong> • Ödül: <strong>${formatMoney(state.mission.reward)}</strong>`;
       }
     }
 
@@ -2482,6 +2559,7 @@
       state.batteryByScooter[id] = 100;
       state.kmByScooter[id] = 0;
       state.speedKmh = Math.min(state.speedKmh, sc.topSpeedKmh);
+      syncActiveMissionSpeedIfNeeded(sc);
       saveProgress();
       renderLeaderboard();
       syncWithSharedLeaderboard();
@@ -2497,6 +2575,7 @@
       const sc = SCOOTERS.find(s => s.id === id);
       state.selectedId = id;
       state.speedKmh = Math.min(state.speedKmh, sc.topSpeedKmh);
+      syncActiveMissionSpeedIfNeeded(sc);
       saveProgress();
       renderLeaderboard();
       syncWithSharedLeaderboard();
@@ -2517,7 +2596,9 @@
       state.batteryByScooter[id] = 100;
       state.kmByScooter[id] = 0;
       if (state.selectedId === id) {
-        state.selectedId = (SCOOTERS.find(s => state.ownedIds.has(s.id)) || starterScooter).id;
+        const nextOwned = SCOOTERS.find(s => state.ownedIds.has(s.id)) || starterScooter;
+        state.selectedId = nextOwned.id;
+        syncActiveMissionSpeedIfNeeded(nextOwned);
       }
       saveProgress();
       renderLeaderboard();
@@ -2639,7 +2720,7 @@
       const maxSpeed = 35 + Math.random() * 45;
       state.npcs.push({
         isNpc: true, lane, y: -45, speed: maxSpeed * 0.75, maxSpeed,
-        color: NPC_COLORS[Math.floor(Math.random() * NPC_COLORS.length)], passed: false
+        color: NPC_COLORS[Math.floor(Math.random() * NPC_COLORS.length)], honked: false, passed: false
       });
     }
 
@@ -2774,14 +2855,28 @@
       });
       state.npcs = state.npcs.filter(n => n.y > -120 && n.y < canvas.getBoundingClientRect().height + 120);
 
-      if (state.mapMode === "mission" && state.mission.active && state.distanceM >= state.mission.targetM) {
-        const earned = state.mission.reward;
-        state.money += earned;
-        state.mission.completedCount += 1;
-        saveProgress();
-        showToast(`Görev tamamlandı! +${formatMoney(earned)} kazandın.`);
-        assignNextMission();
-        renderGarage();
+      if (state.mapMode === "mission" && state.mission.active) {
+        let completed = false;
+        if (state.mission.type === "overtake") {
+          completed = state.passedNpcsInMission >= state.mission.targetOvertakes;
+        } else if (state.distanceM >= state.mission.targetM) {
+          if (state.mission.type === "speed_pass" && state.speedKmh < state.mission.minSpeedKmh) {
+            showToast(`Hedefe ulaştın ama hızın ${state.mission.minSpeedKmh} km/h altında! Mesafe uzatıldı.`);
+            state.mission.targetM += 100;
+          } else {
+            completed = true;
+          }
+        }
+
+        if (completed) {
+          const earned = state.mission.reward;
+          state.money += earned;
+          state.mission.completedCount += 1;
+          saveProgress();
+          showToast(`Görev tamamlandı! +${formatMoney(earned)} kazandın.`);
+          assignNextMission();
+          renderGarage();
+        }
       }
 
       updateMissionUI();
@@ -2818,7 +2913,6 @@
     function drawOnlineRightSidePanel(ctx, w, h, rightAreaLeft, rightAreaW, playerY) {
       if (state.mapMode !== "online" || rightAreaW < 42) return;
 
-      // Sağ çizgili alana dikey uzun radar/liste şeridi
       ctx.save();
       ctx.fillStyle = "rgba(7, 14, 28, 0.72)";
       ctx.fillRect(rightAreaLeft + 4, 8, rightAreaW - 8, h - 16);
@@ -2827,7 +2921,6 @@
       ctx.lineWidth = 1.5;
       ctx.strokeRect(rightAreaLeft + 4, 8, rightAreaW - 8, h - 16);
 
-      // Merkez (Senin konumun) yatay çizgisi
       ctx.strokeStyle = "rgba(56, 189, 248, 0.45)";
       ctx.setLineDash([4, 4]);
       ctx.beginPath();
@@ -2871,11 +2964,9 @@
         const fullName = String(rp.name || "Oyuncu");
         const shortName = rightAreaW < 85 ? fullName.slice(0, 7) : fullName.slice(0, 14);
 
-        // Uzun dikey işaretçi çubuğu
         ctx.fillStyle = rp.scooterColor || "#5eead4";
         ctx.fillRect(rightAreaLeft + 7, clampedY - 12, 4, 24);
 
-        // İsim, mesafe ve hız kutusu
         ctx.fillStyle = "rgba(15, 23, 42, 0.92)";
         ctx.beginPath();
         ctx.roundRect(rightAreaLeft + 13, clampedY - 13, Math.max(24, rightAreaW - 19), 26, 5);
@@ -2953,7 +3044,6 @@
         ctx.restore();
       });
 
-      // Yolda gerçek online oyuncular (daha akıcı mesafe ölçeği + mesafe/hız etiketi)
       if (state.mapMode === "online" && state.currentRoomId) {
         const now = Date.now();
         Object.values(state.roomPlayers).forEach(rp => {
