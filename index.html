@@ -102,6 +102,11 @@
       border-color: rgba(250, 204, 21, 0.35);
     }
 
+    .pill.biome {
+      color: #fb923c;
+      border-color: rgba(251, 146, 60, 0.4);
+    }
+
     .npc-control {
       background: #1e293b;
       border: 1px solid rgba(255, 255, 255, 0.1);
@@ -544,6 +549,7 @@
         <div id="moneyPill" class="pill money">₺15.000,00</div>
         <div id="batteryPill" class="pill battery-ok">Şarj: %100</div>
         <div id="scooterKmPill" class="pill odo" title="Bu scooter ile yaptığın toplam kilometre">Araç KM: 0,0 km</div>
+        <div id="biomePill" class="pill biome" title="Her 3.000 metrede bir harita bölgesi ve yol kenarı hayvanları değişir">Bölge: Yeşil Vadi</div>
         <div id="activeScooterPill" class="pill">Araç: -</div>
         <div id="playtimePill" class="pill playtime" title="Oyuna başladığından beri toplam oynama süren (çıkınca durur)">Oynama: 00:00:00</div>
         <div id="puzzleTimerPill" class="pill puzzle-timer" title="Her 5 dakikada bir Kolay 2.000₺ / Orta 3.500₺ / Zor 5.000₺ soru çıkar">Bonus Soru: 05:00</div>
@@ -565,7 +571,7 @@
 
     <div class="mission-banner">
       <div id="missionText" class="mission-text">
-        <strong>Serbest Harita:</strong> Her 5 km'de şarj checkpoint'i var! Şerit: A/D veya ←/→ • Gaz: W/↑ • Fren: S/↓ • Korna: H
+        <strong>Serbest Harita:</strong> Her 3 km'de harita değişir, her 5 km'de şarj noktası var! Şerit: A/D veya ←/→ • Gaz: W/↑ • Fren: S/↓ • Korna: H
       </div>
       <div class="banner-actions">
         <button id="soundToggleBtn" class="sound-btn" type="button">Ses: Açık</button>
@@ -611,8 +617,57 @@
     const SAVE_KEY = "scooter_ride_save_v3";
     const LEGACY_SAVE_KEY = "scooter_ride_save_v2";
     const CHARGE_INTERVAL_M = 5000; // Her 5 km'de (5000m) bir şarj checkpoint'i
+    const BIOME_INTERVAL_M = 3000; // Her 3 km'de (3000m) bir harita/biyom değişimi
     const PUZZLE_INTERVAL_SEC = 300; // 5 dakika (300 saniye) aralık
     const PUZZLE_DURATION_SEC = 15; // 15 saniye cevap süresi
+
+    // Her 3000m'de bir değişen harita bölgeleri ve yol kenarı hayvanları/doğası
+    const BIOMES = [
+      {
+        id: "valley",
+        name: "Yeşil Vadi",
+        bgOuter: "#0b1724",
+        vergeFree: "#166534",
+        vergeMission: "#115e59",
+        roadFill: "#1e293b",
+        roadEdge: "#e2e8f0",
+        laneDash: "#facc15",
+        props: ["pine", "sheep", "rabbit", "bush"]
+      },
+      {
+        id: "desert",
+        name: "Kızgın Çöl",
+        bgOuter: "#271608",
+        vergeFree: "#d97706",
+        vergeMission: "#b45309",
+        roadFill: "#292524",
+        roadEdge: "#fde68a",
+        laneDash: "#fb923c",
+        props: ["camel", "cactus", "dune", "fennec"]
+      },
+      {
+        id: "autumn",
+        name: "Sonbahar Ormanı",
+        bgOuter: "#23120b",
+        vergeFree: "#9a3412",
+        vergeMission: "#7c2d12",
+        roadFill: "#1c1917",
+        roadEdge: "#fed7aa",
+        laneDash: "#fbbf24",
+        props: ["autumn_tree", "deer", "squirrel", "leaf_pile"]
+      },
+      {
+        id: "winter",
+        name: "Karlı Dağlar",
+        bgOuter: "#0c192c",
+        vergeFree: "#cbd5e1",
+        vergeMission: "#94a3b8",
+        roadFill: "#1e293b",
+        roadEdge: "#ffffff",
+        laneDash: "#38bdf8",
+        props: ["snow_pine", "polar_bear", "penguin", "snow_mound"]
+      }
+    ];
 
     // Zorluk seviyeleri: Kolay 2000₺ (4/3), Orta 3500₺ (4/2), Zor 5000₺ (4/1)
     const DIFFICULTY_CONFIG = {
@@ -691,7 +746,14 @@
       return Math.round((scooter.price * 3) / 4);
     }
 
-    // Kolay (2.000₺), Orta Zorluk (3.500₺) ve Zor (5.000₺) sorular — her biri yalnızca 1 kez çıkar
+    // Her scooter (ONVO KX-01K 15 km/h dahil) için ulaşılabilir görev hızı hesaplama
+    function getAchievableMissionSpeed(scooter) {
+      const top = Math.max(10, scooter.topSpeedKmh);
+      // Örneğin 15 km/h için 11 km/h, 16 km/h için 12 km/h, 55 km/h için 41 km/h, 130 km/h için 85 km/h
+      const target = Math.round(top * 0.75);
+      return Math.min(85, Math.max(8, Math.min(top - 2, target)));
+    }
+
     const STATIC_PUZZLES = [
       // KOLAY (2.000₺)
       {
@@ -932,6 +994,9 @@
       laneVisualX: 1,
       speedKmh: 0,
       distanceM: 0,
+      currentBiomeIndex: 0,
+      sceneryItems: [],
+      nextScenerySpawnM: 18,
       nextChargeCheckpointM: CHARGE_INTERVAL_M,
       roadOffset: 0,
       controls: {
@@ -944,6 +1009,7 @@
         active: true,
         type: "checkpoint",
         targetM: 320,
+        missionDistM: 320,
         minSpeedKmh: 0,
         targetOvertakes: 0,
         reward: 650,
@@ -963,6 +1029,11 @@
 
     function getCurrentScooter() {
       return SCOOTERS.find(s => s.id === state.selectedId) || SCOOTERS[0];
+    }
+
+    function getCurrentBiome() {
+      const idx = Math.floor(state.distanceM / BIOME_INTERVAL_M) % BIOMES.length;
+      return BIOMES[idx];
     }
 
     function getCurrentBattery() {
@@ -1058,7 +1129,7 @@
     });
 
     function chooseDifficultyByRatio() {
-      const entries = Object.entries(DIFFICULTY_CONFIG); // [key, cfg]
+      const entries = Object.entries(DIFFICULTY_CONFIG);
       const totalWeight = entries.reduce((sum, [, cfg]) => sum + cfg.weight, 0);
       let roll = Math.random() * totalWeight;
       for (const [key, cfg] of entries) {
@@ -1466,7 +1537,7 @@
 
     function showToast(msg) {
       state.flashMessage = msg;
-      state.flashTimer = 2.4;
+      state.flashTimer = 2.6;
     }
 
     function getNpcDensityText(val) {
@@ -1507,12 +1578,16 @@
       const baseReward = 650 + Math.min(1800, mIndex * 110);
       const eventPattern = mIndex % 4;
 
+      // Düşük hızlı başlangıç scooterı (15 km/h) için mesafe görevlerini de makul tut
+      const speedScale = Math.max(0.55, Math.min(1, sc.topSpeedKmh / 35));
+
       if (eventPattern === 0) {
-        const dist = 320 + Math.min(480, mIndex * 25);
+        const dist = Math.round((320 + Math.min(480, mIndex * 25)) * speedScale);
         state.mission = {
           active: true,
           type: "checkpoint",
           targetM: state.distanceM + dist,
+          missionDistM: dist,
           minSpeedKmh: 0,
           targetOvertakes: 0,
           reward: baseReward,
@@ -1520,12 +1595,13 @@
           statusText: `Kontrol noktasına ulaş (${dist}m)`
         };
       } else if (eventPattern === 1) {
-        const dist = 340 + Math.min(460, mIndex * 25);
-        const minSpeed = Math.min(85, Math.max(18, Math.round(sc.topSpeedKmh * 0.6)));
+        const dist = Math.round((300 + Math.min(420, mIndex * 25)) * speedScale);
+        const minSpeed = getAchievableMissionSpeed(sc);
         state.mission = {
           active: true,
           type: "speed_pass",
           targetM: state.distanceM + dist,
+          missionDistM: dist,
           minSpeedKmh: minSpeed,
           targetOvertakes: 0,
           reward: Math.round(baseReward * 1.2),
@@ -1533,11 +1609,12 @@
           statusText: `${dist}m boyunca en az ${minSpeed} km/h hızla git`
         };
       } else if (eventPattern === 2) {
-        const overtakes = 4 + Math.min(10, Math.floor(mIndex / 2));
+        const overtakes = 3 + Math.min(10, Math.floor(mIndex / 2));
         state.mission = {
           active: true,
           type: "overtake",
           targetM: state.distanceM + 900,
+          missionDistM: 900,
           minSpeedKmh: 0,
           targetOvertakes: overtakes,
           reward: Math.round(baseReward * 1.25),
@@ -1545,11 +1622,12 @@
           statusText: `Trafikte ${overtakes} NPC araç geç`
         };
       } else {
-        const dist = 420 + Math.min(580, mIndex * 30);
+        const dist = Math.round((360 + Math.min(520, mIndex * 30)) * speedScale);
         state.mission = {
           active: true,
           type: "charge_run",
           targetM: state.distanceM + dist,
+          missionDistM: dist,
           minSpeedKmh: 0,
           targetOvertakes: 0,
           reward: Math.round(baseReward * 1.3),
@@ -1563,8 +1641,9 @@
     function updateMissionUI() {
       const el = document.getElementById("missionText");
       const nextChargeRem = Math.max(0, Math.round(state.nextChargeCheckpointM - state.distanceM));
+      const nextBiomeRem = BIOME_INTERVAL_M - (Math.floor(state.distanceM) % BIOME_INTERVAL_M);
       if (state.mapMode === "free") {
-        el.innerHTML = `<strong>Serbest Harita:</strong> Sonraki şarj noktası <strong>${nextChargeRem}m</strong> sonra • Şerit: A/D veya ←/→ • Gaz: W/↑ • Fren: S/↓ • Korna: H`;
+        el.innerHTML = `<strong>Serbest Harita:</strong> Yeni bölge: <strong>${nextBiomeRem}m</strong> • Şarj noktası: <strong>${nextChargeRem}m</strong> • Şerit: A/D veya ←/→ • Gaz: W/↑ • Fren: S/↓`;
       } else {
         let progressText = "";
         if (state.mission.type === "overtake") {
@@ -1573,7 +1652,7 @@
           const remaining = Math.max(0, Math.round(state.mission.targetM - state.distanceM));
           progressText = `Kalan mesafe: <strong>${remaining}m</strong>`;
         }
-        el.innerHTML = `<strong>Görev (${state.mission.statusText}):</strong> ${progressText} • Şarj noktası: <strong>${nextChargeRem}m</strong> • Ödül: <strong>${formatMoney(state.mission.reward)}</strong> • Tamamlanan: <strong>${state.mission.completedCount}</strong>`;
+        el.innerHTML = `<strong>Görev (${state.mission.statusText}):</strong> ${progressText} • Yeni bölge: <strong>${nextBiomeRem}m</strong> • Şarj: <strong>${nextChargeRem}m</strong> • Ödül: <strong>${formatMoney(state.mission.reward)}</strong>`;
       }
     }
 
@@ -1596,12 +1675,18 @@
       document.getElementById("scooterKmPill").textContent = `Araç KM: ${formatKm(getScooterKm(sc.id))}`;
     }
 
+    function updateBiomeUI() {
+      const biome = getCurrentBiome();
+      document.getElementById("biomePill").textContent = `Bölge: ${biome.name}`;
+    }
+
     function renderHUD() {
       const sc = getCurrentScooter();
       document.getElementById("moneyPill").textContent = formatMoney(state.money);
       document.getElementById("activeScooterPill").textContent = `Araç: #${sc.rank} ${sc.name} (${sc.powerW}W)`;
       updateBatteryUI();
       updateScooterKmUI();
+      updateBiomeUI();
       updatePlaytimeUI();
       updatePuzzleHudTimer();
       updateMissionUI();
@@ -1648,6 +1733,16 @@
       }).join("");
     }
 
+    function syncActiveMissionSpeedIfNeeded(sc) {
+      if (state.mapMode === "mission" && state.mission.active && state.mission.type === "speed_pass") {
+        const achievable = getAchievableMissionSpeed(sc);
+        if (state.mission.minSpeedKmh > achievable) {
+          state.mission.minSpeedKmh = achievable;
+          state.mission.statusText = `${state.mission.missionDistM}m boyunca en az ${achievable} km/h hızla git`;
+        }
+      }
+    }
+
     window.buyScooter = function(id) {
       if (state.puzzle.isOpen) return;
       ensureAudio();
@@ -1660,10 +1755,10 @@
       state.money -= sc.price;
       state.ownedIds.add(id);
       state.selectedId = id;
-      // Sıfır alınan scooterın şarjı %100 ve kilometre sayacı 0 km olur
       state.batteryByScooter[id] = 100;
       state.kmByScooter[id] = 0;
       state.speedKmh = Math.min(state.speedKmh, sc.topSpeedKmh);
+      syncActiveMissionSpeedIfNeeded(sc);
       saveProgress();
       showToast(`${sc.name} sıfır olarak alındı! Şarj %100, KM 0,0 km.`);
       renderHUD();
@@ -1677,6 +1772,7 @@
       const sc = SCOOTERS.find(s => s.id === id);
       state.selectedId = id;
       state.speedKmh = Math.min(state.speedKmh, sc.topSpeedKmh);
+      syncActiveMissionSpeedIfNeeded(sc);
       saveProgress();
       showToast(`${sc.name} seçildi (${formatKm(getScooterKm(id))} • Şarj: %${Math.round(getCurrentBattery())}).`);
       renderHUD();
@@ -1696,7 +1792,6 @@
       const sellAmount = getSecondHandSellPrice(sc);
       state.ownedIds.delete(id);
       state.money += sellAmount;
-      // Satıldığında şarjı ve km sayacını sıfırla ki tekrar alınırsa tertemiz başlasın
       state.batteryByScooter[id] = 100;
       state.kmByScooter[id] = 0;
 
@@ -1704,6 +1799,7 @@
         const nextOwned = SCOOTERS.find(s => state.ownedIds.has(s.id)) || starterScooter;
         state.selectedId = nextOwned.id;
         state.speedKmh = Math.min(state.speedKmh, nextOwned.topSpeedKmh);
+        syncActiveMissionSpeedIfNeeded(nextOwned);
       }
 
       saveProgress();
@@ -1852,6 +1948,29 @@
       });
     }
 
+    // Yol kenarı biyom hayvanları & doğa objeleri üretimi
+    function spawnSceneryAtY(yPos, biome) {
+      const side = Math.random() < 0.5 ? "left" : "right";
+      const kind = biome.props[Math.floor(Math.random() * biome.props.length)];
+      const offsetRatio = 0.22 + Math.random() * 0.56; // yol kenarı içindeki yatay konum
+      const animPhase = Math.random() * Math.PI * 2;
+      state.sceneryItems.push({
+        side,
+        kind,
+        offsetRatio,
+        y: yPos,
+        animPhase
+      });
+    }
+
+    function initInitialScenery() {
+      state.sceneryItems = [];
+      const biome = getCurrentBiome();
+      for (let y = 15; y <= 370; y += 36) {
+        spawnSceneryAtY(y, biome);
+      }
+    }
+
     const canvas = document.getElementById("roadCanvas");
     const ctx = canvas.getContext("2d");
 
@@ -1928,6 +2047,29 @@
       addScooterMeters(sc.id, deltaM);
       state.roadOffset = (state.roadOffset + deltaM * 18) % 80;
 
+      // Her 3000m'de bir harita bölgesi değişimi kontrolü
+      const newBiomeIdx = Math.floor(state.distanceM / BIOME_INTERVAL_M) % BIOMES.length;
+      if (newBiomeIdx !== state.currentBiomeIndex) {
+        state.currentBiomeIndex = newBiomeIdx;
+        const b = BIOMES[newBiomeIdx];
+        updateBiomeUI();
+        showToast(`Yeni Bölgeye Girdin: ${b.name}!`);
+      }
+
+      // Yol kenarı hayvan ve doğa objelerini hareket ettir ve yenilerini üret
+      const scrollPx = deltaM * 18;
+      const currentBiome = getCurrentBiome();
+      state.sceneryItems.forEach(item => {
+        item.y += scrollPx;
+        item.animPhase += dt * 4.5;
+      });
+      state.sceneryItems = state.sceneryItems.filter(item => item.y < canvas.getBoundingClientRect().height + 65);
+
+      if (state.distanceM >= state.nextScenerySpawnM) {
+        spawnSceneryAtY(-38, currentBiome);
+        state.nextScenerySpawnM = state.distanceM + 2.2 + Math.random() * 2.5;
+      }
+
       if (deltaM > 0 && sc.rangeKm > 0) {
         const rangeMeters = sc.rangeKm * 1000;
         const drainPct = (deltaM / rangeMeters) * 100;
@@ -1985,7 +2127,7 @@
         } else if (state.distanceM >= state.mission.targetM) {
           if (state.mission.type === "speed_pass" && state.speedKmh < state.mission.minSpeedKmh) {
             showToast(`Hedefe ulaştın ama hızın ${state.mission.minSpeedKmh} km/h altında! Mesafe uzatıldı.`);
-            state.mission.targetM += 140;
+            state.mission.targetM += 100;
           } else {
             completed = true;
           }
@@ -2014,34 +2156,224 @@
       updateMotorSound(state.speedKmh / Math.max(1, sc.topSpeedKmh), state.controls.gas, state.controls.brake);
     }
 
+    function drawSceneryProp(ctx, x, y, kind, phase) {
+      const bob = Math.sin(phase) * 1.5;
+      ctx.save();
+      ctx.translate(x, y);
+
+      if (kind === "pine" || kind === "snow_pine") {
+        // Gövde
+        ctx.fillStyle = "#5c3a21";
+        ctx.fillRect(-3, 4, 6, 10);
+        // Yaprak katmanları
+        ctx.fillStyle = kind === "snow_pine" ? "#0f766e" : "#14532d";
+        ctx.beginPath();
+        ctx.moveTo(0, -18);
+        ctx.lineTo(-14, 4);
+        ctx.lineTo(14, 4);
+        ctx.closePath();
+        ctx.fill();
+        if (kind === "snow_pine") {
+          ctx.fillStyle = "#f8fafc";
+          ctx.beginPath();
+          ctx.moveTo(0, -18);
+          ctx.lineTo(-7, -7);
+          ctx.lineTo(7, -7);
+          ctx.closePath();
+          ctx.fill();
+        }
+      } else if (kind === "autumn_tree") {
+        ctx.fillStyle = "#451a03";
+        ctx.fillRect(-3, 4, 6, 11);
+        ctx.fillStyle = "#ea580c";
+        ctx.beginPath();
+        ctx.arc(0, -4, 13, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#facc15";
+        ctx.beginPath();
+        ctx.arc(-5, -7, 7, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (kind === "bush" || kind === "leaf_pile" || kind === "snow_mound" || kind === "dune") {
+        ctx.fillStyle =
+          kind === "bush" ? "#22c55e" :
+          kind === "leaf_pile" ? "#f97316" :
+          kind === "snow_mound" ? "#f1f5f9" : "#f59e0b";
+        ctx.beginPath();
+        ctx.ellipse(0, 2, 13, 7, 0, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (kind === "cactus") {
+        ctx.fillStyle = "#15803d";
+        ctx.beginPath();
+        ctx.roundRect(-3, -15, 6, 24, 3);
+        ctx.roundRect(-10, -8, 7, 4, 2);
+        ctx.roundRect(-10, -13, 4, 8, 2);
+        ctx.roundRect(3, -5, 7, 4, 2);
+        ctx.roundRect(6, -11, 4, 9, 2);
+        ctx.fill();
+      } else if (kind === "camel") {
+        // Çöl Devesi
+        ctx.translate(0, bob);
+        ctx.fillStyle = "#92400e";
+        // Bacaklar
+        ctx.fillRect(-10, 4, 3, 10);
+        ctx.fillRect(-3, 4, 3, 10);
+        ctx.fillRect(4, 4, 3, 10);
+        ctx.fillRect(10, 4, 3, 10);
+        // Gövde ve hörgüç
+        ctx.fillStyle = "#b45309";
+        ctx.beginPath();
+        ctx.ellipse(0, 1, 14, 7, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(-2, -6, 6, 0, Math.PI * 2);
+        ctx.fill();
+        // Boyun ve baş
+        ctx.beginPath();
+        ctx.roundRect(10, -12, 4, 13, 2);
+        ctx.roundRect(10, -15, 8, 5, 2);
+        ctx.fill();
+      } else if (kind === "fennec") {
+        // Çöl Tilkisi
+        ctx.translate(0, bob);
+        ctx.fillStyle = "#fde68a";
+        ctx.beginPath();
+        ctx.ellipse(0, 2, 9, 5, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(8, -2, 4.5, 0, Math.PI * 2);
+        ctx.fill();
+        // Büyük kulaklar
+        ctx.beginPath();
+        ctx.moveTo(6, -5); ctx.lineTo(4, -12); ctx.lineTo(9, -6);
+        ctx.moveTo(9, -5); ctx.lineTo(11, -12); ctx.lineTo(12, -5);
+        ctx.fill();
+      } else if (kind === "sheep") {
+        // Yeşil Vadi Koyunu
+        ctx.translate(0, bob);
+        ctx.fillStyle = "#1e293b";
+        ctx.fillRect(-7, 4, 2.5, 7);
+        ctx.fillRect(4, 4, 2.5, 7);
+        ctx.fillStyle = "#f8fafc";
+        ctx.beginPath();
+        ctx.arc(-4, 0, 6, 0, Math.PI * 2);
+        ctx.arc(3, 0, 6, 0, Math.PI * 2);
+        ctx.arc(0, -3, 6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#1e293b";
+        ctx.beginPath();
+        ctx.arc(9, -1, 4, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (kind === "rabbit") {
+        // Tavşan
+        ctx.translate(0, Math.abs(bob) * -1.4);
+        ctx.fillStyle = "#e2e8f0";
+        ctx.beginPath();
+        ctx.ellipse(0, 3, 6, 4.5, 0, 0, Math.PI * 2);
+        ctx.arc(5, -1, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillRect(3, -9, 2, 6);
+        ctx.fillRect(6, -9, 2, 6);
+      } else if (kind === "deer") {
+        // Sonbahar Geyiği
+        ctx.translate(0, bob);
+        ctx.fillStyle = "#78350f";
+        ctx.fillRect(-8, 4, 2.5, 10);
+        ctx.fillRect(5, 4, 2.5, 10);
+        ctx.fillStyle = "#92400e";
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 12, 6, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillRect(8, -10, 4, 11);
+        ctx.beginPath();
+        ctx.arc(11, -11, 4, 0, Math.PI * 2);
+        ctx.fill();
+        // Boynuzlar
+        ctx.strokeStyle = "#fde68a";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(10, -14); ctx.lineTo(8, -20);
+        ctx.moveTo(12, -14); ctx.lineTo(15, -20);
+        ctx.stroke();
+      } else if (kind === "squirrel") {
+        // Sincap
+        ctx.translate(0, bob);
+        ctx.fillStyle = "#c2410c";
+        ctx.beginPath();
+        ctx.arc(-5, -2, 6, 0, Math.PI * 2);
+        ctx.ellipse(2, 2, 5, 4, 0, 0, Math.PI * 2);
+        ctx.arc(6, -2, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (kind === "polar_bear") {
+        // Kutup Ayısı
+        ctx.translate(0, bob);
+        ctx.fillStyle = "#f8fafc";
+        ctx.beginPath();
+        ctx.roundRect(-13, -6, 26, 14, 7);
+        ctx.arc(13, -3, 6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#0f172a";
+        ctx.beginPath();
+        ctx.arc(16, -4, 1.5, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (kind === "penguin") {
+        // Penguen
+        ctx.translate(0, bob);
+        ctx.fillStyle = "#0f172a";
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 6, 9, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#ffffff";
+        ctx.beginPath();
+        ctx.ellipse(0, 1, 3.8, 6.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#f97316";
+        ctx.beginPath();
+        ctx.moveTo(3, -4); ctx.lineTo(8, -3); ctx.lineTo(3, -2);
+        ctx.fill();
+      }
+
+      ctx.restore();
+    }
+
     function drawRoad() {
       const rect = canvas.getBoundingClientRect();
       const w = rect.width;
       const h = rect.height;
       const sc = getCurrentScooter();
+      const biome = getCurrentBiome();
       const playerY = h * 0.74;
 
-      ctx.fillStyle = state.mapMode === "mission" ? "#101c2e" : "#0f172a";
+      ctx.fillStyle = biome.bgOuter;
       ctx.fillRect(0, 0, w, h);
 
-      const roadW = Math.min(340, w * 0.72);
+      const roadW = Math.min(340, w * 0.66);
       const roadLeft = (w - roadW) / 2;
       const roadRight = roadLeft + roadW;
       const laneW = roadW / 2;
 
-      ctx.fillStyle = state.mapMode === "mission" ? "#134e4a" : "#14532d";
+      // Yol kenarı arazisi (biyoma göre renk alır)
+      ctx.fillStyle = state.mapMode === "mission" ? biome.vergeMission : biome.vergeFree;
       ctx.fillRect(0, 0, roadLeft, h);
       ctx.fillRect(roadRight, 0, w - roadRight, h);
 
-      ctx.fillStyle = "#1e293b";
+      // Yol kenarındaki hayvanları ve doğa objelerini çiz
+      state.sceneryItems.forEach(item => {
+        const sx = item.side === "left"
+          ? roadLeft * item.offsetRatio
+          : roadRight + (w - roadRight) * item.offsetRatio;
+        drawSceneryProp(ctx, sx, item.y, item.kind, item.animPhase);
+      });
+
+      // Asfalt yol
+      ctx.fillStyle = biome.roadFill;
       ctx.fillRect(roadLeft, 0, roadW, h);
 
-      ctx.fillStyle = "#e2e8f0";
+      ctx.fillStyle = biome.roadEdge;
       ctx.fillRect(roadLeft, 0, 5, h);
       ctx.fillRect(roadRight - 5, 0, 5, h);
 
       const midX = roadLeft + laneW;
-      ctx.strokeStyle = "#facc15";
+      ctx.strokeStyle = biome.laneDash;
       ctx.lineWidth = 4;
       ctx.setLineDash([26, 24]);
       ctx.lineDashOffset = -state.roadOffset;
@@ -2050,6 +2382,28 @@
       ctx.lineTo(midX, h);
       ctx.stroke();
       ctx.setLineDash([]);
+
+      // 3.000m Bölge Geçiş Çizgisi (yaklaştığında görünür)
+      const nextBiomeBoundaryM = (Math.floor(state.distanceM / BIOME_INTERVAL_M) + 1) * BIOME_INTERVAL_M;
+      const biomeRemM = Math.max(0, nextBiomeBoundaryM - state.distanceM);
+      const biomeGateY = playerY - biomeRemM * 1.1;
+      if (biomeGateY > -35 && biomeGateY < h + 35) {
+        const nextBiome = BIOMES[(Math.floor(state.distanceM / BIOME_INTERVAL_M) + 1) % BIOMES.length];
+        ctx.fillStyle = "rgba(251, 146, 60, 0.22)";
+        ctx.fillRect(roadLeft + 6, biomeGateY - 10, roadW - 12, 20);
+        ctx.strokeStyle = "#fb923c";
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(roadLeft + 6, biomeGateY);
+        ctx.lineTo(roadRight - 6, biomeGateY);
+        ctx.stroke();
+
+        ctx.fillStyle = "#ffedd5";
+        ctx.font = "bold 11px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(`🗺️ YENİ BÖLGE: ${nextBiome.name.toUpperCase()}`, w / 2, biomeGateY - 13);
+        ctx.textAlign = "left";
+      }
 
       const chargeRemM = Math.max(0, state.nextChargeCheckpointM - state.distanceM);
       const chargeY = playerY - chargeRemM * 1.1;
@@ -2143,7 +2497,7 @@
 
       ctx.fillStyle = "rgba(15, 23, 42, 0.84)";
       ctx.beginPath();
-      ctx.roundRect(10, 10, 275, 56, 10);
+      ctx.roundRect(10, 10, 285, 56, 10);
       ctx.fill();
 
       ctx.fillStyle = "#38bdf8";
@@ -2152,7 +2506,7 @@
 
       ctx.fillStyle = "#cbd5e1";
       ctx.font = "bold 11px sans-serif";
-      ctx.fillText(`Araç KM: ${formatKm(getScooterKm(sc.id))} • Şarj: %${Math.round(getCurrentBattery())} • NPC: ${state.npcs.length}`, 20, 50);
+      ctx.fillText(`Araç KM: ${formatKm(getScooterKm(sc.id))} • Şarj: %${Math.round(getCurrentBattery())} • ${biome.name}`, 20, 50);
 
       if (state.flashMessage) {
         ctx.fillStyle = "rgba(15, 23, 42, 0.9)";
@@ -2178,6 +2532,7 @@
 
     window.addEventListener("resize", resizeCanvas);
     resizeCanvas();
+    initInitialScenery();
     syncNpcControlUI();
     syncSoundBtnUI();
     renderHUD();
