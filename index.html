@@ -247,7 +247,6 @@
       background: linear-gradient(135deg, #d97706, #f59e0b);
     }
 
-    /* En Çok Oynayanlar Sıralaması */
     .leaderboard-section {
       background: #131c31;
       border: 1px solid rgba(52, 211, 153, 0.25);
@@ -507,7 +506,6 @@
       background: #d97706;
     }
 
-    /* Bonus Puzzle Modal */
     .puzzle-overlay {
       position: fixed;
       inset: 0;
@@ -708,7 +706,6 @@
       </div>
     </div>
 
-    <!-- Gerçek Oyuncular için Oynama Süresi Sıralaması (NPC'ler Asla Dahil Edilmez) -->
     <div class="leaderboard-section">
       <div class="leaderboard-head">
         <div>
@@ -735,7 +732,6 @@
     </div>
   </div>
 
-  <!-- 5 Dakikada Bir Gelen 15 Saniyelik Bonus Puzzle Modal -->
   <div id="puzzleOverlay" class="puzzle-overlay" role="dialog" aria-modal="true" aria-labelledby="puzzleQuestionText">
     <div class="puzzle-modal">
       <div class="puzzle-top">
@@ -750,9 +746,8 @@
   </div>
 
   <script>
-    // İsteğe bağlı ortak Firebase Realtime Database kökü (örnek: "https://senin-proje-default-rtdb.firebaseio.com")
-    // Doldurulduğunda farklı cihazlardaki gerçek oyuncular da sıralamada görünür.
-    const LEADERBOARD_DB_URL = "";
+    // Firebase Realtime Database adresi bağlandı
+    const LEADERBOARD_DB_URL = "https://scooter-vs-arena-default-rtdb.firebaseio.com";
 
     const SAVE_KEY = "scooter_ride_save_v3";
     const LEGACY_SAVE_KEY = "scooter_ride_save_v2";
@@ -1241,7 +1236,6 @@
       playtimePill.textContent = `Oynama: ${formatPlaytime(state.totalPlaySeconds)}${active ? "" : " (Durdu)"}`;
     }
 
-    // Sadece gerçek oyuncuların süresini sakla ve sırala (NPC'ler asla eklenmez)
     function loadLocalRealPlayers() {
       try {
         const raw = localStorage.getItem(LOCAL_PLAYERS_KEY);
@@ -1291,10 +1285,14 @@
         return;
       }
 
+      const sc = getCurrentScooter();
       const payload = {
         id: state.playerId,
         name: state.playerName,
         totalPlaySeconds: Math.floor(state.totalPlaySeconds),
+        scooterId: sc.id,
+        scooterName: sc.name,
+        money: Math.floor(state.money),
         updatedAt: Date.now()
       };
 
@@ -1333,7 +1331,7 @@
       const listEl = document.getElementById("leaderboardList");
       const syncPill = document.getElementById("syncStatusPill");
       const hasSharedDb = Boolean(getCleanLeaderboardDbUrl());
-      syncPill.textContent = hasSharedDb ? "Mod: Ortak Oyuncu Listesi" : "Mod: Yerel Cihaz";
+      syncPill.textContent = hasSharedDb ? "Mod: Firebase Ortak Liste" : "Mod: Yerel Cihaz";
 
       const merged = new Map();
 
@@ -1353,7 +1351,6 @@
         }
       });
 
-      // Kendi aktif süreni her zaman en güncel haliyle yaz
       merged.set(state.playerId, {
         id: state.playerId,
         name: state.playerName,
@@ -2089,6 +2086,7 @@
       state.speedKmh = Math.min(state.speedKmh, sc.topSpeedKmh);
       syncActiveMissionSpeedIfNeeded(sc);
       saveProgress();
+      syncWithSharedLeaderboard();
       showToast(`${sc.name} sıfır olarak alındı! Şarj %100, KM 0,0 km.`);
       renderHUD();
       renderGarage();
@@ -2103,6 +2101,7 @@
       state.speedKmh = Math.min(state.speedKmh, sc.topSpeedKmh);
       syncActiveMissionSpeedIfNeeded(sc);
       saveProgress();
+      syncWithSharedLeaderboard();
       showToast(`${sc.name} seçildi (${formatKm(getScooterKm(id))} • Şarj: %${Math.round(getCurrentBattery())}).`);
       renderHUD();
       renderGarage();
@@ -2132,6 +2131,7 @@
       }
 
       saveProgress();
+      syncWithSharedLeaderboard();
       showToast(`${sc.name} 2. el (4/3) fiyatına ${formatMoney(sellAmount)} karşılığında satıldı!`);
       renderHUD();
       renderGarage();
