@@ -316,6 +316,10 @@
       cursor: pointer;
     }
 
+    .room-join-btn.joined {
+      background: #0d9488;
+    }
+
     .room-leave-btn {
       background: #b91c1c;
       color: #ffffff;
@@ -1004,7 +1008,7 @@
 
     <div class="mission-banner">
       <div id="missionText" class="mission-text">
-        <strong>İstanbul Haritası (Serbest Harita):</strong> Boğaz &amp; Deniz kıyısında serbest sürüş • Yeni bölge: <strong>3000m</strong> • Şarj: <strong>5000m</strong>
+        <strong>İstanbul Haritası (Serbest Harita):</strong> Boğaz &amp; deniz kıyısında serbest sürüş, KM kasma • Yeni bölge: <strong>3000m</strong> • Şarj: <strong>5000m</strong>
       </div>
       <button id="soundToggleBtn" class="sound-btn" type="button">Ses: Açık</button>
     </div>
@@ -2205,7 +2209,7 @@
       if (!state.puzzle.isOpen || state.puzzle.answered || !state.puzzle.current) return;
       state.puzzle.answered = true;
       puzzleFeedbackText.style.color = "#fbbf24";
-      puzzleFeedbackText.textContent = `Süre doldu! Doğru cevap: ${q.options[q.correctIndex]}.`;
+      puzzleFeedbackText.textContent = `Süre doldu! Doğru cevap: ${state.puzzle.current.options[state.puzzle.current.correctIndex]}.`;
       saveProgress();
       setTimeout(closePuzzleModal, 1600);
     }
@@ -2249,7 +2253,6 @@
       updatePuzzleHudTimer();
     }
 
-    // Motor ve sürekli kornalı ses sistemi
     const audioCtxHolder = {
       ctx: null,
       motorOsc: null,
@@ -2282,7 +2285,6 @@
         osc.start();
         subOsc.start();
 
-        // Gerçekçi motor kornası (çift tonlu korna osilatörleri, basılı tutulduğunda çalar)
         const hOsc1 = ctx.createOscillator();
         const hOsc2 = ctx.createOscillator();
         const hGain = ctx.createGain();
@@ -2329,6 +2331,39 @@
       if (!audioCtxHolder.ctx || !audioCtxHolder.hornGain) return;
       const now = audioCtxHolder.ctx.currentTime;
       audioCtxHolder.hornGain.gain.setTargetAtTime(0.0001, now, 0.015);
+    }
+
+    // Çarpışma anında NPC araçtan çalan normal otomobil kornası ("bip-bip")
+    function playNpcCarHornSound() {
+      if (!state.soundEnabled || state.puzzle.isOpen) return;
+      ensureAudio();
+      if (!audioCtxHolder.ctx) return;
+      const ctx = audioCtxHolder.ctx;
+      const now = ctx.currentTime;
+
+      const triggerBeep = (startOffset, duration) => {
+        const oscA = ctx.createOscillator();
+        const oscB = ctx.createOscillator();
+        const gain = ctx.createGain();
+        oscA.type = "triangle";
+        oscB.type = "sawtooth";
+        oscA.frequency.setValueAtTime(390, now + startOffset);
+        oscB.frequency.setValueAtTime(490, now + startOffset);
+        gain.gain.setValueAtTime(0.0001, now + startOffset);
+        gain.gain.linearRampToValueAtTime(0.085, now + startOffset + 0.015);
+        gain.gain.setValueAtTime(0.085, now + startOffset + duration - 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + startOffset + duration);
+        oscA.connect(gain);
+        oscB.connect(gain);
+        gain.connect(ctx.destination);
+        oscA.start(now + startOffset);
+        oscB.start(now + startOffset);
+        oscA.stop(now + startOffset + duration + 0.01);
+        oscB.stop(now + startOffset + duration + 0.01);
+      };
+
+      triggerBeep(0, 0.13);
+      triggerBeep(0.17, 0.16);
     }
 
     function playChargeSound() {
@@ -2695,7 +2730,6 @@
     bindHold(gasBtn, "gas", null);
     bindHold(brakeBtn, "brake", playBrakeSound);
 
-    // Korna butonu basılı tutulduğunda çalar, bırakıldığında durur
     hornBtn.addEventListener("pointerdown", (e) => {
       e.preventDefault();
       if (state.puzzle.isOpen) return;
@@ -2744,11 +2778,20 @@
       const maxActiveNpcs = Math.max(1, Math.round((state.npcDensity / 100) * 10));
       if (state.npcs.length >= maxActiveNpcs) return;
       const lane = Math.random() < 0.5 ? 0 : 1;
-      if (state.npcs.some(n => n.lane === lane && n.y < 110)) return;
+      // Aynı şeritte yukarıda başka bir araç varsa iç içe doğmasını engelle
+      if (state.npcs.some(n => n.lane === lane && n.y < 120)) return;
       const maxSpeed = 35 + Math.random() * 45;
       state.npcs.push({
-        isNpc: true, lane, y: -45, speed: maxSpeed * 0.75, maxSpeed,
-        color: NPC_COLORS[Math.floor(Math.random() * NPC_COLORS.length)], honked: false, passed: false
+        isNpc: true,
+        lane,
+        y: -50,
+        speed: maxSpeed * 0.75,
+        maxSpeed,
+        color: NPC_COLORS[Math.floor(Math.random() * NPC_COLORS.length)],
+        honked: false,
+        honkTimer: 0,
+        hitCooldown: 0,
+        passed: false
       });
     }
 
@@ -2812,11 +2855,9 @@
         return;
       }
 
-      // Korna basılıyken öndeki NPC araçlar kornayı duyar ve tepki verir
       if (state.controls.horn) {
         state.npcs.forEach(npc => {
           if (npc.y > 20 && npc.y < 260 && Math.abs(npc.lane - state.lane) <= 1) {
-            npc.honked = true;
             npc.speed = Math.min(npc.maxSpeed + 22, npc.speed + 16 * dt);
           }
         });
@@ -2882,17 +2923,81 @@
       if (state.npcDensity > 0 && Math.random() < dt * ((state.npcDensity / 100) * 3.2)) spawnNpc();
 
       const playerY = canvas.getBoundingClientRect().height * 0.74;
+      const MIN_CAR_GAP_Y = 74;
+
+      // Önce NPC araçların kendi hızlarını ve aralarındaki takip mesafesini güncelle (birbirinin içinden geçmezler)
       state.npcs.forEach(npc => {
+        if (npc.hitCooldown > 0) npc.hitCooldown = Math.max(0, npc.hitCooldown - dt);
+        if (npc.honkTimer > 0) {
+          npc.honkTimer = Math.max(0, npc.honkTimer - dt);
+          if (npc.honkTimer === 0) npc.honked = false;
+        }
         npc.speed = Math.min(npc.maxSpeed, npc.speed + 8 * dt);
+      });
+
+      // Aynı şeritteki öndeki aracı kontrol et: arkadaki araç öndekinin içinden geçmeden hızını düşürüp bekler
+      for (let i = 0; i < state.npcs.length; i++) {
+        const follower = state.npcs[i];
+        let leaderAhead = null;
+        for (let j = 0; j < state.npcs.length; j++) {
+          if (i === j) continue;
+          const candidate = state.npcs[j];
+          if (candidate.lane === follower.lane && candidate.y < follower.y) {
+            if (!leaderAhead || candidate.y > leaderAhead.y) {
+              leaderAhead = candidate;
+            }
+          }
+        }
+        if (leaderAhead) {
+          const gapY = follower.y - leaderAhead.y;
+          if (gapY < MIN_CAR_GAP_Y * 1.35) {
+            follower.speed = Math.min(follower.speed, leaderAhead.speed);
+          }
+        }
+      }
+
+      // Konumları ilerlet ve ardışık geçişte fiziksel çakışmayı kesin olarak engelle
+      state.npcs.forEach(npc => {
         const relSpeedMps = ((state.speedKmh - npc.speed) * 1000) / 3600;
         npc.y += relSpeedMps * dt * 20 + 35 * dt;
-        if (!npc.passed && npc.y > playerY + 26) { npc.passed = true; state.passedNpcsInMission += 1; }
-        if (Math.abs(npc.lane - state.laneVisualX) < 0.35 && Math.abs(npc.y - playerY) < 34 && state.speedKmh > npc.speed + 8) {
-          state.speedKmh = Math.max(0, npc.speed * 0.75);
-          showToast("NPC araca çarptın! Hız düştü.");
+      });
+
+      [0, 1].forEach(laneIdx => {
+        const inLane = state.npcs.filter(n => n.lane === laneIdx).sort((a, b) => a.y - b.y);
+        for (let i = 0; i < inLane.length - 1; i++) {
+          const frontCar = inLane[i];
+          const rearCar = inLane[i + 1];
+          if (rearCar.y - frontCar.y < MIN_CAR_GAP_Y) {
+            rearCar.y = frontCar.y + MIN_CAR_GAP_Y;
+            rearCar.speed = Math.min(rearCar.speed, frontCar.speed);
+          }
         }
       });
-      state.npcs = state.npcs.filter(n => n.y > -120 && n.y < canvas.getBoundingClientRect().height + 120);
+
+      state.npcs.forEach(npc => {
+        if (!npc.passed && npc.y > playerY + 26) {
+          npc.passed = true;
+          state.passedNpcsInMission += 1;
+        }
+        if (
+          Math.abs(npc.lane - state.laneVisualX) < 0.35 &&
+          Math.abs(npc.y - playerY) < 34 &&
+          npc.hitCooldown <= 0
+        ) {
+          npc.hitCooldown = 1.2;
+          npc.honked = true;
+          npc.honkTimer = 1.1;
+          playNpcCarHornSound();
+          if (state.speedKmh > npc.speed + 4) {
+            state.speedKmh = Math.max(0, npc.speed * 0.72);
+            showToast("Araca çarptın! Araç sana korna çaldı.");
+          } else {
+            showToast("Araç sana korna çaldı!");
+          }
+        }
+      });
+
+      state.npcs = state.npcs.filter(n => n.y > -140 && n.y < canvas.getBoundingClientRect().height + 140);
 
       if (state.mapMode === "mission" && state.mission.active) {
         let completed = false;
@@ -2981,35 +3086,29 @@
       });
     }
 
-    // Detaylı elektrikli scooter çizimi (ön/arka lastik, gövde, gidon, far, sürücü kaskı ve korna dalgası)
     function drawScooterSprite(ctx, x, y, color, isPlayer, isHonking) {
       ctx.save();
       ctx.translate(x, y);
 
-      // Yer gölgesi
       ctx.fillStyle = "rgba(0, 0, 0, 0.38)";
       ctx.beginPath();
       ctx.ellipse(0, 2, 13, 21, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      // Ön & arka lastikler
       ctx.fillStyle = "#090d16";
       ctx.beginPath();
       ctx.roundRect(-5.5, -20, 11, 8, 3);
       ctx.roundRect(-5.5, 11, 11, 8, 3);
       ctx.fill();
 
-      // Scooter güvertesi ve gövde
       ctx.fillStyle = color;
       ctx.beginPath();
       ctx.roundRect(-7.5, -13, 15, 26, 6);
       ctx.fill();
 
-      // Orta şerit detayı
       ctx.fillStyle = "rgba(255, 255, 255, 0.28)";
       ctx.fillRect(-2.5, -10, 5, 20);
 
-      // Gidon boğazı ve gidon kolları
       ctx.strokeStyle = "#cbd5e1";
       ctx.lineWidth = 3.2;
       ctx.beginPath();
@@ -3019,18 +3118,15 @@
       ctx.lineTo(14, -12);
       ctx.stroke();
 
-      // Elcik uçları
       ctx.fillStyle = "#0f172a";
       ctx.fillRect(-16, -14.5, 4, 5);
       ctx.fillRect(12, -14.5, 4, 5);
 
-      // Ön LED far ışığı
       ctx.fillStyle = "#fef08a";
       ctx.beginPath();
       ctx.arc(0, -15, 3, 0, Math.PI * 2);
       ctx.fill();
 
-      // Sürücü omuzları ve kaskı
       ctx.fillStyle = isPlayer ? "#1e293b" : "#334155";
       ctx.beginPath();
       ctx.ellipse(0, 1, 9.5, 5.5, 0, 0, Math.PI * 2);
@@ -3041,13 +3137,11 @@
       ctx.arc(0, -1, 6.2, 0, Math.PI * 2);
       ctx.fill();
 
-      // Kask vizörü
       ctx.fillStyle = "#0284c7";
       ctx.beginPath();
       ctx.arc(0, -3.5, 4.2, Math.PI * 1.12, Math.PI * 1.88);
       ctx.fill();
 
-      // Basılı tutulan kornada ses dalgası halkaları
       if (isHonking) {
         const pulse = ((performance.now() / 120) % 1);
         ctx.strokeStyle = `rgba(251, 191, 36, ${1 - pulse * 0.7})`;
@@ -3060,28 +3154,23 @@
       ctx.restore();
     }
 
-    // Detaylı NPC araç çizimi (gölge, tamponlar, cam tavan, ön/arka farlar, yan aynalar)
     function drawNpcCarSprite(ctx, x, y, color, honked) {
       ctx.save();
       ctx.translate(x, y);
 
-      // Gölge
       ctx.fillStyle = "rgba(0, 0, 0, 0.42)";
       ctx.beginPath();
       ctx.roundRect(-18, -28, 36, 56, 9);
       ctx.fill();
 
-      // Araç gövdesi
       ctx.fillStyle = color;
       ctx.beginPath();
       ctx.roundRect(-16.5, -30, 33, 56, 8);
       ctx.fill();
 
-      // Kaput ve tavan parlaklık şeridi
       ctx.fillStyle = "rgba(255, 255, 255, 0.16)";
       ctx.fillRect(-10, -27, 6, 12);
 
-      // Ön ve arka camlar + tavan
       ctx.fillStyle = "#0f172a";
       ctx.beginPath();
       ctx.roundRect(-13, -18, 26, 32, 5);
@@ -3094,26 +3183,27 @@
       ctx.fill();
       ctx.globalAlpha = 1;
 
-      // Yan aynalar
       ctx.fillStyle = color;
       ctx.fillRect(-20, -15, 4, 6);
       ctx.fillRect(16, -15, 4, 6);
 
-      // Ön farlar
       ctx.fillStyle = "#fef9c3";
       ctx.fillRect(-13.5, -31, 6, 3);
       ctx.fillRect(7.5, -31, 6, 3);
 
-      // Arka stop lambaları
       ctx.fillStyle = "#ef4444";
       ctx.fillRect(-13.5, 24, 6, 3);
       ctx.fillRect(7.5, 24, 6, 3);
 
       if (honked) {
+        ctx.fillStyle = "rgba(15, 23, 42, 0.9)";
+        ctx.beginPath();
+        ctx.roundRect(-18, -46, 36, 14, 5);
+        ctx.fill();
         ctx.fillStyle = "#fde047";
         ctx.font = "bold 9px sans-serif";
         ctx.textAlign = "center";
-        ctx.fillText("!", 0, -35);
+        ctx.fillText("KORNA!", 0, -36);
       }
 
       ctx.restore();
