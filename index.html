@@ -1971,11 +1971,12 @@
       }
     }
 
+    // Ortak düğümdeki (real_players + yerel) TÜM oyuncuları filtrelemeden sırala ve renderla
     function renderLeaderboard() {
       const listEl = document.getElementById("leaderboardList");
       const syncPill = document.getElementById("syncStatusPill");
       const hasSharedDb = Boolean(getCleanLeaderboardDbUrl());
-      syncPill.textContent = hasSharedDb ? "Mod: Firebase Ortak Liste" : "Mod: Yerel Cihaz";
+      syncPill.textContent = hasSharedDb ? "Mod: Firebase Ortak Liste (real_players)" : "Mod: Yerel Cihaz";
 
       const currentScooter = getCurrentScooter();
       const isAdmin = isAdminAccount(state.playerName);
@@ -2018,24 +2019,31 @@
         });
       }
 
-      const sorted = Array.from(merged.values()).sort((a, b) => b.totalPlaySeconds - a.totalPlaySeconds);
+      const playersList = Array.from(merged.values()).sort((a, b) => b.totalPlaySeconds - a.totalPlaySeconds);
 
-      listEl.innerHTML = sorted.map((player, index) => {
+      listEl.innerHTML = "";
+      if (playersList.length === 0) {
+        listEl.innerHTML = `<div class="chat-empty">Henüz oyuncu yok.</div>`;
+        return;
+      }
+
+      playersList.forEach((player, index) => {
         const isMe = state.isAuthenticated && player.id === state.playerId;
         const badgeId = sanitizeUniquePlayerId(player.uniqueId, player.id);
-        return `
-          <div class="leader-row ${isMe ? "is-me" : ""}">
-            <div class="leader-left">
-              <span class="leader-rank">#${index + 1}</span>
-              <span>${escapeHtml(player.name)}</span>
-              <span class="player-id-tag">#${escapeHtml(badgeId)}</span>
-              <span class="leader-scooter">🛴 ${escapeHtml(player.scooterName || starterScooter.name)}</span>
-              ${isMe ? `<span class="leader-me-tag">SEN</span>` : ""}
-            </div>
-            <div class="leader-time">${formatPlaytime(player.totalPlaySeconds)}</div>
+        const row = document.createElement("div");
+        row.className = isMe ? "leader-row is-me" : "leader-row";
+        row.innerHTML = `
+          <div class="leader-left">
+            <span class="leader-rank">#${index + 1}</span>
+            <strong>${escapeHtml(player.name)}</strong>
+            <span class="player-id-tag">#${escapeHtml(badgeId)}</span>
+            <span class="leader-scooter">🛴 ${escapeHtml(player.scooterName || starterScooter.name)}</span>
+            ${isMe ? `<span class="leader-me-tag">SEN</span>` : ""}
           </div>
+          <div class="leader-time">${formatPlaytime(player.totalPlaySeconds)}</div>
         `;
-      }).join("");
+        listEl.appendChild(row);
+      });
     }
 
     const roomsSection = document.getElementById("roomsSection");
@@ -2529,11 +2537,13 @@
     chatMessageInput.addEventListener("keydown", (e) => e.stopPropagation());
 
     function escapeHtml(str) {
-      return String(str)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;");
+      return String(str).replace(/[&<>"']/g, (m) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+      }[m]));
     }
 
     function applyPlayerName() {
