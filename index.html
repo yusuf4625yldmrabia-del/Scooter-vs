@@ -769,8 +769,21 @@
     }
 
     .chat-item.is-me {
-      border-left: 3px solid #f87171;
-      background: rgba(248, 113, 113, 0.1);
+      border-left: 3px solid #38bdf8;
+      background: rgba(56, 189, 248, 0.09);
+    }
+
+    /* #ID-61QTLPY hesabının mesajları hem kendisinde hem başkalarında kırmızı */
+    .chat-item.vip-red-msg {
+      border-left: 3px solid #ef4444;
+      border: 1px solid rgba(239, 68, 68, 0.45);
+      background: rgba(220, 38, 38, 0.16);
+    }
+
+    .chat-item.vip-red-msg .chat-author,
+    .chat-item.vip-red-msg .chat-text {
+      color: #ff4d4d;
+      font-weight: 800;
     }
 
     .chat-meta {
@@ -784,10 +797,6 @@
     .chat-author {
       font-weight: 800;
       color: #38bdf8;
-    }
-
-    .chat-item.is-me .chat-author {
-      color: #f87171;
     }
 
     .chat-scooter {
@@ -1249,7 +1258,7 @@
       <div class="chat-head">
         <div>
           <div class="chat-title">Oyuncu Sohbeti (Canlı Chat)</div>
-          <div class="chat-sub">Diğer oyuncularla mesajlaş • Kendi mesajlarında ismin kırmızı görünür</div>
+          <div class="chat-sub">Diğer oyuncularla mesajlaş • #ID-61QTLPY mesajları herkeste kırmızı görünür</div>
         </div>
         <div id="chatStatusPill" class="sync-status">Chat: Yerel</div>
       </div>
@@ -1289,6 +1298,8 @@
 
     // Yalnızca bu ID silme butonunu görebilir ve listeden oyuncu silebilir
     const AUTHORIZED_DELETE_ADMIN_ID = "ID-61QTLPY";
+    // Mesajları herkeste kırmızı görünen hesap ID'si
+    const RED_CHAT_VIP_ID = "ID-61QTLPY";
     // İşaretlenen iki oyuncu ID'si
     const MARKED_FOR_REMOVAL_IDS = new Set(["ID-D9WMHVL", "ID-AN9B2QV"]);
 
@@ -1302,6 +1313,12 @@
 
     function isMarkedForRemovalId(rawId) {
       return MARKED_FOR_REMOVAL_IDS.has(normalizePlayerIdTag(rawId));
+    }
+
+    function isVipRedChatMessage(msg) {
+      if (!msg || typeof msg !== "object") return false;
+      const normSender = normalizePlayerIdTag(msg.senderUniqueId || msg.senderId || "");
+      return normSender === normalizePlayerIdTag(RED_CHAT_VIP_ID);
     }
 
     const MAX_ROOM_PLAYERS = 200;
@@ -2580,12 +2597,15 @@
 
       chatMessagesList.innerHTML = sortedMsgs.map(msg => {
         const isMe = state.isAuthenticated && msg.senderId === state.playerId;
+        const isVipRed = isVipRedChatMessage(msg);
         const author = msg.senderName || "Oyuncu";
         const senderUniqueId = sanitizeUniquePlayerId(msg.senderUniqueId, msg.senderId);
         const safeScooter = sanitizePublicScooterLabel({ name: msg.scooterName });
         const scooterText = safeScooter ? `(${safeScooter})` : "";
+        const itemClass = isVipRed ? "chat-item vip-red-msg" : (isMe ? "chat-item is-me" : "chat-item");
+
         return `
-          <div class="chat-item ${isMe ? "is-me" : ""}">
+          <div class="${itemClass}">
             <div class="chat-meta">
               <span class="chat-author">${escapeHtml(author)} #${escapeHtml(senderUniqueId)}${isMe ? " (Sen)" : ""}</span>
               <span class="chat-scooter">🛴 ${escapeHtml(scooterText)}</span>
