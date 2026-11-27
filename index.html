@@ -960,7 +960,7 @@
     <div class="hud-top">
       <div class="title-group">
         <div class="brand">SCOOTER RIDE</div>
-        <div id="moneyPill" class="pill money">₺2.000.000,00</div>
+        <div id="moneyPill" class="pill money">₺1.000.000.000,00</div>
         <div id="batteryPill" class="pill battery-ok">Şarj: %100</div>
         <div id="scooterKmPill" class="pill odo" title="Bu scooter ile yaptığın toplam kilometre">Araç KM: 0,0 km</div>
         <div id="biomePill" class="pill biome" title="Harita bölgesi ve rota bilgisi">Harita: İstanbul</div>
@@ -1098,8 +1098,11 @@
     const ONLINE_PLAYER_STALE_MS = 35000;
     const ONLINE_VISUAL_SCALE = 4.2;
 
+    const ADMIN_NAME = "ADMIN";
+    const ADMIN_GRANT_MONEY = 1000000000;
     const INITIAL_PLAYER_MONEY = 2000000;
-    const SAVE_KEY = "scooter_ride_save_v6";
+
+    const SAVE_KEY = "scooter_ride_save_v7";
     const LOCAL_PLAYERS_KEY = "scooter_ride_real_players_v1";
     const LOCAL_CHAT_KEY = "scooter_ride_chat_messages_v1";
     const LOCAL_ROOMS_KEY = "scooter_ride_local_rooms_v1";
@@ -1174,6 +1177,10 @@
       is3000Light: true
     };
 
+    function isAdminAccount(name) {
+      return typeof name === "string" && name.trim().toUpperCase() === ADMIN_NAME;
+    }
+
     function getOrCreatePlayerId() {
       try {
         let id = localStorage.getItem(PLAYER_ID_KEY);
@@ -1189,19 +1196,16 @@
 
     const playerId = getOrCreatePlayerId();
 
-    // Mağaza listesi: sadece parayla satılabilen normal scooterlar yer alır
     const SHOP_SCOOTERS = RAW_SCOOTERS
       .map(s => ({ ...s, score: s.powerW * 1.4 + s.topSpeedKmh * 180 }))
       .sort((a, b) => b.score - a.score)
       .map((s, idx) => ({ ...s, rank: idx + 1 }));
 
-    // Kişisel gizli araç: mağazada yok, kimse alamaz ve başkasında görünmez
     const PERSONAL_SCOOTER = {
       ...SECRET_PERSONAL_SCOOTER,
       rank: 0
     };
 
-    // Tüm araç referansları (sürüş ve garajda kendi aracını seçebilmek için)
     const ALL_KNOWN_SCOOTERS = [PERSONAL_SCOOTER, ...SHOP_SCOOTERS];
     const starterScooter = SHOP_SCOOTERS[SHOP_SCOOTERS.length - 1];
     const validShopIds = new Set(SHOP_SCOOTERS.map(s => s.id));
@@ -1255,13 +1259,19 @@
         const parsed = JSON.parse(raw);
         if (!parsed || typeof parsed !== "object") return null;
 
+        const playerName = typeof parsed.playerName === "string" && parsed.playerName.trim().length > 0
+          ? parsed.playerName.trim().slice(0, 20) : ADMIN_NAME;
+        const adminActive = isAdminAccount(playerName);
+
         const savedOwned = Array.isArray(parsed.ownedIds) ? parsed.ownedIds.filter(id => validShopIds.has(id)) : [];
         if (!savedOwned.includes(starterScooter.id)) savedOwned.push(starterScooter.id);
-        // Sadece sana özel gizli scooter otomatik garajında tanımlı
-        savedOwned.push(PERSONAL_SCOOTER.id);
+        if (adminActive) savedOwned.push(PERSONAL_SCOOTER.id);
 
-        const savedSelected = validAllIds.has(parsed.selectedId) && savedOwned.includes(parsed.selectedId)
-          ? parsed.selectedId : PERSONAL_SCOOTER.id;
+        let savedSelected = validAllIds.has(parsed.selectedId) && savedOwned.includes(parsed.selectedId)
+          ? parsed.selectedId : (adminActive ? PERSONAL_SCOOTER.id : starterScooter.id);
+        if (!adminActive && savedSelected === PERSONAL_SCOOTER.id) {
+          savedSelected = starterScooter.id;
+        }
 
         const rawBatteries = parsed.batteryByScooter && typeof parsed.batteryByScooter === "object" ? parsed.batteryByScooter : {};
         const rawKms = parsed.kmByScooter && typeof parsed.kmByScooter === "object" ? parsed.kmByScooter : {};
@@ -1275,10 +1285,12 @@
             ? Math.max(0, rawKms[s.id]) : 0;
         });
 
+        const baseMoney = typeof parsed.money === "number" && Number.isFinite(parsed.money)
+          ? Math.max(0, parsed.money) : INITIAL_PLAYER_MONEY;
+
         return {
-          playerName: typeof parsed.playerName === "string" && parsed.playerName.trim().length > 0
-            ? parsed.playerName.trim().slice(0, 20) : "Oyuncu",
-          money: typeof parsed.money === "number" && Number.isFinite(parsed.money) ? Math.max(0, parsed.money) : INITIAL_PLAYER_MONEY,
+          playerName,
+          money: adminActive ? Math.max(baseMoney, ADMIN_GRANT_MONEY) : baseMoney,
           ownedIds: new Set(savedOwned),
           selectedId: savedSelected,
           batteryByScooter,
@@ -1301,15 +1313,18 @@
     const defaultKms = {};
     ALL_KNOWN_SCOOTERS.forEach(s => { defaultBatteries[s.id] = 100; defaultKms[s.id] = 0; });
 
-    const initialOwnedSet = saved ? saved.ownedIds : new Set([PERSONAL_SCOOTER.id, starterScooter.id]);
-    initialOwnedSet.add(PERSONAL_SCOOTER.id);
+    const initialName = saved ? saved.playerName : ADMIN_NAME;
+    const initialIsAdmin = isAdminAccount(initialName);
+    const initialOwnedSet = saved ? saved.ownedIds : new Set(initialIsAdmin ? [PERSONAL_SCOOTER.id, starterScooter.id] : [starterScooter.id]);
+    if (initialIsAdmin) initialOwnedSet.add(PERSONAL_SCOOTER.id);
+    else initialOwnedSet.delete(PERSONAL_SCOOTER.id);
 
     const state = {
       playerId,
-      playerName: saved ? saved.playerName : "Oyuncu",
-      money: saved ? saved.money : INITIAL_PLAYER_MONEY,
+      playerName: initialName,
+      money: saved ? saved.money : (initialIsAdmin ? ADMIN_GRANT_MONEY : INITIAL_PLAYER_MONEY),
       ownedIds: initialOwnedSet,
-      selectedId: saved ? saved.selectedId : PERSONAL_SCOOTER.id,
+      selectedId: saved ? saved.selectedId : (initialIsAdmin ? PERSONAL_SCOOTER.id : starterScooter.id),
       batteryByScooter: saved ? saved.batteryByScooter : defaultBatteries,
       kmByScooter: saved ? saved.kmByScooter : defaultKms,
       askedPuzzleIds: saved ? saved.askedPuzzleIds : new Set(),
@@ -1357,8 +1372,28 @@
       flashTimer: 0
     };
 
+    function applyAdminPrivilegesIfMatched(announce = false) {
+      if (isAdminAccount(state.playerName)) {
+        state.ownedIds.add(PERSONAL_SCOOTER.id);
+        if (state.money < ADMIN_GRANT_MONEY) {
+          state.money = ADMIN_GRANT_MONEY;
+        }
+        if (announce) {
+          showToast("ADMIN yetkisi aktif: ₺1.000.000.000,00 ve CHRONO-3000 X sana özel tanımlandı!");
+        }
+      } else {
+        state.ownedIds.delete(PERSONAL_SCOOTER.id);
+        if (state.selectedId === PERSONAL_SCOOTER.id) {
+          state.selectedId = starterScooter.id;
+          state.speedKmh = Math.min(state.speedKmh, starterScooter.topSpeedKmh);
+        }
+      }
+    }
+
+    applyAdminPrivilegesIfMatched(false);
+
     function getCurrentScooter() {
-      return ALL_KNOWN_SCOOTERS.find(s => s.id === state.selectedId) || PERSONAL_SCOOTER;
+      return ALL_KNOWN_SCOOTERS.find(s => s.id === state.selectedId) || starterScooter;
     }
 
     function getActiveCityTheme() {
@@ -2109,10 +2144,15 @@
 
     function applyPlayerName() {
       const cleaned = playerNameInput.value.trim().slice(0, 20);
+      const wasAdmin = isAdminAccount(state.playerName);
       state.playerName = cleaned || "Oyuncu";
       playerNameInput.value = state.playerName;
+      const nowAdmin = isAdminAccount(state.playerName);
+      applyAdminPrivilegesIfMatched(!wasAdmin && nowAdmin);
       saveProgress();
       saveLocalRealPlayerEntry();
+      renderHUD();
+      renderGarage();
       renderLeaderboard();
       syncWithSharedLeaderboard();
       pushMyRoomPresence();
@@ -2602,7 +2642,7 @@
     function renderHUD() {
       const sc = getCurrentScooter();
       document.getElementById("moneyPill").textContent = formatMoney(state.money);
-      const rankLabel = sc.ownerOnly ? "ÖZEL" : `#${sc.rank}`;
+      const rankLabel = sc.ownerOnly ? "ADMIN ÖZEL" : `#${sc.rank}`;
       document.getElementById("activeScooterPill").textContent = `Araç: ${rankLabel} ${sc.name} (${sc.powerW}W)`;
       updateBatteryUI();
       updateScooterKmUI();
@@ -2616,19 +2656,20 @@
     function renderGarage() {
       const listEl = document.getElementById("scooterList");
       const currentSc = getCurrentScooter();
-      const isPersonalSelected = currentSc.id === PERSONAL_SCOOTER.id;
+      const canSeePersonal = isAdminAccount(state.playerName);
+      const isPersonalSelected = canSeePersonal && currentSc.id === PERSONAL_SCOOTER.id;
       const personalBat = Math.round(typeof state.batteryByScooter[PERSONAL_SCOOTER.id] === "number" ? state.batteryByScooter[PERSONAL_SCOOTER.id] : 100);
       const personalKm = getScooterKm(PERSONAL_SCOOTER.id);
 
-      const personalCardHtml = `
+      const personalCardHtml = canSeePersonal ? `
         <div class="scooter-card chrono-vip ${isPersonalSelected ? "active" : ""}">
           <div>
-            <div class="scooter-rank">✦ SADECE SANA ÖZEL • SATILMAZ • GİZLİ • ${PERSONAL_SCOOTER.powerW}W • ${PERSONAL_SCOOTER.topSpeedKmh} km/h</div>
+            <div class="scooter-rank">✦ SADECE ADMIN'E ÖZEL • SATILMAZ • GİZLİ • ${PERSONAL_SCOOTER.powerW}W • ${PERSONAL_SCOOTER.topSpeedKmh} km/h</div>
             <div class="scooter-name">${PERSONAL_SCOOTER.name}</div>
             <div class="scooter-meta">Pil: ${PERSONAL_SCOOTER.battery} • Menzil: ${PERSONAL_SCOOTER.rangeKm} km • Şarj: %${personalBat} • KM: ${formatKm(personalKm)}</div>
           </div>
           <div class="card-footer">
-            <div class="price-tag">Özel Garaj Aracı</div>
+            <div class="price-tag">ADMIN Garaj Aracı</div>
             <div class="card-actions">
               ${isPersonalSelected
                 ? `<span class="owned-tag">Sürülüyor</span>`
@@ -2637,7 +2678,7 @@
             </div>
           </div>
         </div>
-      `;
+      ` : "";
 
       const shopCardsHtml = SHOP_SCOOTERS.map(sc => {
         const owned = state.ownedIds.has(sc.id);
@@ -2698,9 +2739,10 @@
 
     window.selectScooter = function(id) {
       if (state.puzzle.isOpen || !validAllIds.has(id)) return;
+      if (id === PERSONAL_SCOOTER.id && !isAdminAccount(state.playerName)) return;
       if (id !== PERSONAL_SCOOTER.id && !state.ownedIds.has(id)) return;
       ensureAudio();
-      const sc = ALL_KNOWN_SCOOTERS.find(s => s.id === id) || PERSONAL_SCOOTER;
+      const sc = ALL_KNOWN_SCOOTERS.find(s => s.id === id) || starterScooter;
       state.selectedId = sc.id;
       state.speedKmh = Math.min(state.speedKmh, sc.topSpeedKmh);
       syncActiveMissionSpeedIfNeeded(sc);
@@ -2724,7 +2766,7 @@
       state.batteryByScooter[id] = 100;
       state.kmByScooter[id] = 0;
       if (state.selectedId === id) {
-        const nextOwned = SHOP_SCOOTERS.find(s => state.ownedIds.has(s.id)) || PERSONAL_SCOOTER;
+        const nextOwned = SHOP_SCOOTERS.find(s => state.ownedIds.has(s.id)) || starterScooter;
         state.selectedId = nextOwned.id;
         syncActiveMissionSpeedIfNeeded(nextOwned);
       }
