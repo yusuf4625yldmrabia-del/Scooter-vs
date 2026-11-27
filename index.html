@@ -22,6 +22,105 @@
       overflow-x: hidden;
     }
 
+    .auth-overlay {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle at top, #172554 0%, #0b1120 70%);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 1200;
+    }
+
+    .auth-overlay.open {
+      display: flex;
+    }
+
+    .auth-card {
+      width: 100%;
+      max-width: 440px;
+      background: #131c31;
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      border-radius: 18px;
+      padding: 22px;
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.7);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .auth-brand {
+      font-size: 20px;
+      font-weight: 900;
+      color: #38bdf8;
+      letter-spacing: 0.5px;
+    }
+
+    .auth-sub {
+      font-size: 12px;
+      color: #cbd5e1;
+      line-height: 1.5;
+    }
+
+    .auth-form {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .auth-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: #e2e8f0;
+    }
+
+    .auth-input {
+      width: 100%;
+      background: #1e293b;
+      color: #f8fafc;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 13px;
+      font-weight: 700;
+      user-select: text;
+      -webkit-user-select: text;
+    }
+
+    .auth-input:focus {
+      outline: none;
+      border-color: #38bdf8;
+    }
+
+    .auth-btn {
+      background: linear-gradient(135deg, #0284c7, #2563eb);
+      color: #ffffff;
+      border: none;
+      border-radius: 11px;
+      padding: 11px 14px;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .auth-error {
+      min-height: 18px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #f87171;
+    }
+
+    .auth-note {
+      font-size: 11px;
+      color: #94a3b8;
+      background: rgba(15, 23, 42, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      padding: 9px 11px;
+      line-height: 1.45;
+    }
+
     .app {
       max-width: 980px;
       margin: 0 auto;
@@ -78,6 +177,11 @@
       background: rgba(133, 77, 14, 0.25);
     }
 
+    .pill.email-badge {
+      color: #93c5fd;
+      border-color: rgba(147, 197, 253, 0.35);
+    }
+
     .pill.battery-ok {
       color: #38bdf8;
       border-color: rgba(56, 189, 248, 0.35);
@@ -116,6 +220,21 @@
     .pill.online-pill {
       color: #67e8f9;
       border-color: rgba(103, 232, 249, 0.45);
+    }
+
+    .logout-btn {
+      background: #334155;
+      color: #f8fafc;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 999px;
+      padding: 5px 11px;
+      font-size: 11px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .logout-btn:hover {
+      background: #b91c1c;
     }
 
     .npc-control {
@@ -973,11 +1092,46 @@
   </style>
 </head>
 <body>
+  <div id="gmailAuthOverlay" class="auth-overlay open" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+    <div class="auth-card">
+      <div id="authTitle" class="auth-brand">SCOOTER RIDE — GMAIL GİRİŞİ</div>
+      <div class="auth-sub">
+        Oyuna girmek için <strong>@gmail.com</strong> veya <strong>@googlemail.com</strong> adresini yaz. Her Gmail hesabının parası, scooterları ve oynama süresi kendi hesabına ayrı kaydedilir.
+      </div>
+      <form id="gmailLoginForm" class="auth-form">
+        <label class="auth-label" for="gmailInput">Gmail Adresin</label>
+        <input
+          id="gmailInput"
+          class="auth-input"
+          type="email"
+          autocomplete="email"
+          placeholder="ornek@gmail.com"
+          required
+        />
+        <label class="auth-label" for="loginNickInput">Takma Ad (İsteğe Bağlı)</label>
+        <input
+          id="loginNickInput"
+          class="auth-input"
+          type="text"
+          maxlength="20"
+          placeholder="Örn: Ege veya ADMIN"
+        />
+        <button class="auth-btn" type="submit">Gmail ile Oyuna Gir</button>
+        <div id="gmailAuthError" class="auth-error"></div>
+      </form>
+      <div class="auth-note">
+        Not: Bu sürüm e-posta biçimini ve hesap anahtarını doğrudan doğrulayarak anında oyuna alır. Gerçek Google şifre doğrulaması istenirse Firebase Auth veya Google Identity Services istemci kimliği bağlanabilir.
+      </div>
+    </div>
+  </div>
+
   <div class="app">
     <div class="hud-top">
       <div class="title-group">
         <div class="brand">SCOOTER RIDE</div>
         <div id="playerIdPill" class="pill id-badge" title="Sistem tarafından atanan kilitli eşsiz ID">ID: #ID-000000</div>
+        <div id="playerEmailPill" class="pill email-badge" title="Giriş yapılan Gmail hesabı">Gmail: -</div>
+        <button id="logoutBtn" class="logout-btn" type="button" title="Farklı bir Gmail hesabına geç">Çıkış / Gmail Değiştir</button>
         <div id="moneyPill" class="pill money">₺15.000,00</div>
         <div id="batteryPill" class="pill battery-ok">Şarj: %100</div>
         <div id="scooterKmPill" class="pill odo" title="Bu scooter ile yaptığın toplam kilometre">Araç KM: 0,0 km</div>
@@ -1057,7 +1211,7 @@
       <div class="leaderboard-head">
         <div>
           <div class="leaderboard-title">En Çok Oynayanlar Sıralaması (Sadece Gerçek Oyuncular)</div>
-          <div class="leaderboard-sub">Her oyuncuya sistem tarafından kilitli eşsiz ID verilir • NPC'ler listeye girmez</div>
+          <div class="leaderboard-sub">Her Gmail hesabına sistem tarafından kilitli eşsiz ID verilir • NPC'ler listeye girmez</div>
         </div>
         <div id="syncStatusPill" class="sync-status">Mod: Yerel Cihaz</div>
       </div>
@@ -1120,11 +1274,12 @@
     const ADMIN_GRANT_MONEY = 1000000000;
     const INITIAL_PLAYER_MONEY = 15000;
 
-    const SAVE_KEY = "scooter_ride_save_v9";
+    const ACTIVE_GMAIL_KEY = "scooter_ride_active_gmail_v1";
+    const SAVE_PREFIX = "scooter_ride_save_v9_";
+    const ID_PREFIX = "scooter_ride_id_v1_";
     const LOCAL_PLAYERS_KEY = "scooter_ride_real_players_v2";
     const LOCAL_CHAT_KEY = "scooter_ride_chat_messages_v2";
     const LOCAL_ROOMS_KEY = "scooter_ride_local_rooms_v2";
-    const PLAYER_ID_KEY = "scooter_ride_locked_unique_id_v1";
 
     const CHARGE_INTERVAL_M = 5000;
     const BIOME_INTERVAL_M = 3000;
@@ -1199,6 +1354,16 @@
       return typeof name === "string" && name.trim().toUpperCase() === ADMIN_NAME;
     }
 
+    function normalizeGmail(rawEmail) {
+      if (typeof rawEmail !== "string") return "";
+      const email = rawEmail.trim().toLowerCase();
+      const match = email.match(/^([a-z0-9.+_-]+)@(gmail\.com|googlemail\.com)$/i);
+      if (!match) return "";
+      const localPart = match[1].replace(/\./g, "").split("+")[0];
+      if (!localPart) return "";
+      return `${localPart}@gmail.com`;
+    }
+
     function generateUniqueSystemPlayerId() {
       const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
       const timePart = Date.now().toString(36).toUpperCase().slice(-3);
@@ -1230,23 +1395,22 @@
       return `ID-${hash.toString(36).toUpperCase().padStart(6, "0").slice(-6)}`;
     }
 
-    function getOrCreateLockedPlayerId() {
+    function getOrCreatePlayerIdForGmail(gmail) {
+      const storageKey = ID_PREFIX + gmail;
       let lockedId = "";
       try {
-        lockedId = localStorage.getItem(PLAYER_ID_KEY) || "";
+        lockedId = localStorage.getItem(storageKey) || "";
       } catch (_) {}
 
-      const validId = sanitizeUniquePlayerId(lockedId, "");
-      if (!lockedId || lockedId.trim().toUpperCase() !== validId) {
-        lockedId = generateUniqueSystemPlayerId();
-        try {
-          localStorage.setItem(PLAYER_ID_KEY, lockedId);
-        } catch (_) {}
+      if (/^ID-[A-Z0-9]{5,12}$/.test(lockedId.trim().toUpperCase())) {
+        return lockedId.trim().toUpperCase();
       }
-      return lockedId;
+      const generated = generateUniqueSystemPlayerId();
+      try {
+        localStorage.setItem(storageKey, generated);
+      } catch (_) {}
+      return generated;
     }
-
-    const playerId = getOrCreateLockedPlayerId();
 
     const SHOP_SCOOTERS = RAW_SCOOTERS
       .map(s => ({ ...s, score: s.powerW * 1.4 + s.topSpeedKmh * 180 }))
@@ -1304,15 +1468,20 @@
       }
     ];
 
-    function loadSavedState() {
+    function getDefaultNickFromGmail(gmail) {
+      const local = (gmail.split("@")[0] || "Oyuncu").replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 20);
+      return local || "Oyuncu";
+    }
+
+    function loadSavedStateForGmail(gmail) {
       try {
-        const raw = localStorage.getItem(SAVE_KEY);
+        const raw = localStorage.getItem(SAVE_PREFIX + gmail);
         if (!raw) return null;
         const parsed = JSON.parse(raw);
         if (!parsed || typeof parsed !== "object") return null;
 
         const playerName = typeof parsed.playerName === "string" && parsed.playerName.trim().length > 0
-          ? parsed.playerName.trim().slice(0, 20) : "Oyuncu";
+          ? parsed.playerName.trim().slice(0, 20) : getDefaultNickFromGmail(gmail);
         const adminActive = isAdminAccount(playerName);
 
         const savedOwned = Array.isArray(parsed.ownedIds) ? parsed.ownedIds.filter(id => validShopIds.has(id)) : [];
@@ -1339,7 +1508,7 @@
 
         const baseMoney = adminActive
           ? (typeof parsed.money === "number" && Number.isFinite(parsed.money) ? Math.max(parsed.money, ADMIN_GRANT_MONEY) : ADMIN_GRANT_MONEY)
-          : INITIAL_PLAYER_MONEY;
+          : (typeof parsed.money === "number" && Number.isFinite(parsed.money) ? Math.max(0, parsed.money) : INITIAL_PLAYER_MONEY);
 
         return {
           playerName,
@@ -1361,28 +1530,23 @@
       }
     }
 
-    const saved = loadSavedState();
     const defaultBatteries = {};
     const defaultKms = {};
     ALL_KNOWN_SCOOTERS.forEach(s => { defaultBatteries[s.id] = 100; defaultKms[s.id] = 0; });
 
-    const initialName = saved ? saved.playerName : "Oyuncu";
-    const initialIsAdmin = isAdminAccount(initialName);
-    const initialOwnedSet = saved ? saved.ownedIds : new Set(initialIsAdmin ? [PERSONAL_SCOOTER.id, starterScooter.id] : [starterScooter.id]);
-    if (initialIsAdmin) initialOwnedSet.add(PERSONAL_SCOOTER.id);
-    else initialOwnedSet.delete(PERSONAL_SCOOTER.id);
-
     const state = {
-      playerId,
-      playerName: initialName,
-      money: saved ? saved.money : (initialIsAdmin ? ADMIN_GRANT_MONEY : INITIAL_PLAYER_MONEY),
-      ownedIds: initialOwnedSet,
-      selectedId: saved ? saved.selectedId : (initialIsAdmin ? PERSONAL_SCOOTER.id : starterScooter.id),
-      batteryByScooter: saved ? saved.batteryByScooter : defaultBatteries,
-      kmByScooter: saved ? saved.kmByScooter : defaultKms,
-      askedPuzzleIds: saved ? saved.askedPuzzleIds : new Set(),
-      puzzleDynamicCounter: saved ? saved.puzzleDynamicCounter : 0,
-      totalPlaySeconds: saved ? saved.totalPlaySeconds : 0,
+      gmail: "",
+      isAuthenticated: false,
+      playerId: "ID-000000",
+      playerName: "Oyuncu",
+      money: INITIAL_PLAYER_MONEY,
+      ownedIds: new Set([starterScooter.id]),
+      selectedId: starterScooter.id,
+      batteryByScooter: { ...defaultBatteries },
+      kmByScooter: { ...defaultKms },
+      askedPuzzleIds: new Set(),
+      puzzleDynamicCounter: 0,
+      totalPlaySeconds: 0,
       playSaveAccumulator: 0,
       leaderboardSyncAccumulator: 0,
       chatSyncAccumulator: 0,
@@ -1395,8 +1559,8 @@
       currentRoomPassword: "",
       roomPlayers: {},
       mapMode: "free",
-      soundEnabled: saved ? saved.soundEnabled : true,
-      npcDensity: saved ? saved.npcDensity : 50,
+      soundEnabled: true,
+      npcDensity: 50,
       lane: 1,
       laneVisualX: 1,
       speedKmh: 0,
@@ -1412,7 +1576,7 @@
       mission: {
         active: true, type: "checkpoint", targetM: 320, missionDistM: 320,
         minSpeedKmh: 0, targetOvertakes: 0, reward: 650,
-        completedCount: saved ? saved.completedCount : 0,
+        completedCount: 0,
         statusText: "Kontrol noktasına ulaş (320m)"
       },
       puzzle: {
@@ -1425,20 +1589,14 @@
       flashTimer: 0
     };
 
-    function resetNonAdminToFreshStart() {
-      state.money = INITIAL_PLAYER_MONEY;
-      state.ownedIds = new Set([starterScooter.id]);
-      state.selectedId = starterScooter.id;
-      state.speedKmh = 0;
-      state.distanceM = 0;
-      state.totalPlaySeconds = 0;
-      state.passedNpcsInMission = 0;
-      state.mission.completedCount = 0;
-      ALL_KNOWN_SCOOTERS.forEach(s => {
-        state.batteryByScooter[s.id] = 100;
-        state.kmByScooter[s.id] = 0;
-      });
-    }
+    const gmailAuthOverlay = document.getElementById("gmailAuthOverlay");
+    const gmailLoginForm = document.getElementById("gmailLoginForm");
+    const gmailInput = document.getElementById("gmailInput");
+    const loginNickInput = document.getElementById("loginNickInput");
+    const gmailAuthError = document.getElementById("gmailAuthError");
+    const logoutBtn = document.getElementById("logoutBtn");
+    const playerNameInput = document.getElementById("playerNameInput");
+    const savePlayerNameBtn = document.getElementById("savePlayerNameBtn");
 
     function applyAdminPrivilegesIfMatched(announce = false) {
       if (isAdminAccount(state.playerName)) {
@@ -1455,14 +1613,102 @@
           state.selectedId = starterScooter.id;
           state.speedKmh = Math.min(state.speedKmh, starterScooter.topSpeedKmh);
         }
-        if (announce) {
-          resetNonAdminToFreshStart();
-          showToast(`${state.playerName} (${state.playerId}) 15.000 TL bakiye ile baştan başlatıldı!`);
-        }
       }
     }
 
-    applyAdminPrivilegesIfMatched(false);
+    function activateGmailSession(rawGmail, customNick = "") {
+      const normalized = normalizeGmail(rawGmail);
+      if (!normalized) {
+        gmailAuthError.textContent = "Lütfen geçerli bir @gmail.com adresi gir.";
+        return false;
+      }
+
+      gmailAuthError.textContent = "";
+      state.gmail = normalized;
+      state.playerId = getOrCreatePlayerIdForGmail(normalized);
+      state.isAuthenticated = true;
+
+      try {
+        localStorage.setItem(ACTIVE_GMAIL_KEY, normalized);
+      } catch (_) {}
+
+      const loaded = loadSavedStateForGmail(normalized);
+      const trimmedNick = typeof customNick === "string" ? customNick.trim().slice(0, 20) : "";
+
+      if (loaded) {
+        state.playerName = trimmedNick || loaded.playerName;
+        state.money = loaded.money;
+        state.ownedIds = loaded.ownedIds;
+        state.selectedId = loaded.selectedId;
+        state.batteryByScooter = loaded.batteryByScooter;
+        state.kmByScooter = loaded.kmByScooter;
+        state.askedPuzzleIds = loaded.askedPuzzleIds;
+        state.puzzleDynamicCounter = loaded.puzzleDynamicCounter;
+        state.totalPlaySeconds = loaded.totalPlaySeconds;
+        state.npcDensity = loaded.npcDensity;
+        state.soundEnabled = loaded.soundEnabled;
+        state.mission.completedCount = loaded.completedCount;
+      } else {
+        state.playerName = trimmedNick || getDefaultNickFromGmail(normalized);
+        state.money = INITIAL_PLAYER_MONEY;
+        state.ownedIds = new Set([starterScooter.id]);
+        state.selectedId = starterScooter.id;
+        state.batteryByScooter = { ...defaultBatteries };
+        state.kmByScooter = { ...defaultKms };
+        state.askedPuzzleIds = new Set();
+        state.puzzleDynamicCounter = 0;
+        state.totalPlaySeconds = 0;
+        state.mission.completedCount = 0;
+      }
+
+      state.speedKmh = 0;
+      state.distanceM = 0;
+      state.nextChargeCheckpointM = CHARGE_INTERVAL_M;
+      state.passedNpcsInMission = 0;
+      applyAdminPrivilegesIfMatched(false);
+
+      playerNameInput.value = state.playerName;
+      gmailAuthOverlay.classList.remove("open");
+
+      saveProgress();
+      syncNpcControlUI();
+      syncSoundBtnUI();
+      renderHUD();
+      renderGarage();
+      renderLeaderboard();
+      syncWithSharedLeaderboard();
+      renderChatMessages();
+      syncChatMessages();
+      renderRoomsList();
+      fetchRoomsFromFirebase();
+      showToast(`${state.gmail} ile giriş yapıldı (${state.playerId})`);
+      return true;
+    }
+
+    gmailLoginForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      activateGmailSession(gmailInput.value, loginNickInput.value);
+    });
+
+    logoutBtn.addEventListener("click", async () => {
+      if (state.currentRoomId) {
+        await window.leaveCurrentRoom();
+      }
+      saveProgress();
+      await syncWithSharedLeaderboard();
+      state.isAuthenticated = false;
+      state.controls.gas = false;
+      state.controls.brake = false;
+      stopSustainedHorn();
+      updateMotorSound(0, false, false);
+      try {
+        localStorage.removeItem(ACTIVE_GMAIL_KEY);
+      } catch (_) {}
+      gmailInput.value = state.gmail || "";
+      loginNickInput.value = "";
+      gmailAuthError.textContent = "";
+      gmailAuthOverlay.classList.add("open");
+    });
 
     function getCurrentScooter() {
       const sc = ALL_KNOWN_SCOOTERS.find(s => s.id === state.selectedId) || starterScooter;
@@ -1552,7 +1798,7 @@
     }
 
     function isGameActiveForPlaytime() {
-      return document.visibilityState === "visible" && document.hasFocus();
+      return state.isAuthenticated && document.visibilityState === "visible" && document.hasFocus();
     }
 
     function formatPlaytime(totalSec) {
@@ -1597,11 +1843,12 @@
             ? starterScooter
             : (SHOP_SCOOTERS.find(s => s.id === entry.scooterId) || starterScooter);
           const safeMoney = typeof entry.money === "number" && Number.isFinite(entry.money)
-            ? (isEntryAdmin ? Math.max(entry.money, ADMIN_GRANT_MONEY) : INITIAL_PLAYER_MONEY)
+            ? (isEntryAdmin ? Math.max(entry.money, ADMIN_GRANT_MONEY) : Math.max(0, entry.money))
             : (isEntryAdmin ? ADMIN_GRANT_MONEY : INITIAL_PLAYER_MONEY);
           clean[id] = {
             id,
             uniqueId: lockedUniqueId,
+            gmail: typeof entry.gmail === "string" ? entry.gmail : "",
             name: entryName,
             totalPlaySeconds: Math.max(0, entry.totalPlaySeconds),
             scooterId: scObj.id,
@@ -1617,6 +1864,7 @@
     }
 
     function saveLocalRealPlayerEntry() {
+      if (!state.isAuthenticated || !state.gmail) return;
       try {
         const sc = getCurrentScooter();
         const isAdmin = isAdminAccount(state.playerName);
@@ -1625,11 +1873,12 @@
         map[state.playerId] = {
           id: state.playerId,
           uniqueId: state.playerId,
+          gmail: state.gmail,
           name: state.playerName,
           totalPlaySeconds: Math.max(0, state.totalPlaySeconds),
           scooterId: publicScooter.id,
           scooterName: sanitizePublicScooterLabel(publicScooter),
-          money: isAdmin ? Math.max(state.money, ADMIN_GRANT_MONEY) : INITIAL_PLAYER_MONEY,
+          money: isAdmin ? Math.max(state.money, ADMIN_GRANT_MONEY) : Math.max(0, state.money),
           updatedAt: Date.now()
         };
         localStorage.setItem(LOCAL_PLAYERS_KEY, JSON.stringify(map));
@@ -1641,6 +1890,7 @@
     }
 
     async function syncWithSharedLeaderboard() {
+      if (!state.isAuthenticated || !state.gmail) return;
       saveLocalRealPlayerEntry();
       const dbUrl = getCleanLeaderboardDbUrl();
       if (!dbUrl) {
@@ -1654,11 +1904,12 @@
       const payload = {
         id: state.playerId,
         uniqueId: state.playerId,
+        gmail: state.gmail,
         name: state.playerName,
         totalPlaySeconds: Math.floor(state.totalPlaySeconds),
         scooterId: publicScooter.id,
         scooterName: sanitizePublicScooterLabel(publicScooter),
-        money: isAdmin ? Math.floor(Math.max(state.money, ADMIN_GRANT_MONEY)) : INITIAL_PLAYER_MONEY,
+        money: isAdmin ? Math.floor(Math.max(state.money, ADMIN_GRANT_MONEY)) : Math.floor(Math.max(0, state.money)),
         updatedAt: Date.now()
       };
 
@@ -1689,8 +1940,7 @@
                     body: JSON.stringify({
                       uniqueId: lockedUniqueId,
                       scooterId: starterScooter.id,
-                      scooterName: starterScooter.name,
-                      money: INITIAL_PLAYER_MONEY
+                      scooterName: starterScooter.name
                     })
                   });
                 } catch (_) {}
@@ -1703,11 +1953,12 @@
               nextRemote[id] = {
                 id,
                 uniqueId: lockedUniqueId,
+                gmail: typeof entry.gmail === "string" ? entry.gmail : "",
                 name: entryName,
                 totalPlaySeconds: Math.max(0, entry.totalPlaySeconds),
                 scooterId: scObj.id,
                 scooterName: sanitizePublicScooterLabel(scObj),
-                money: isEntryAdmin ? Math.max(Number(entry.money) || ADMIN_GRANT_MONEY, ADMIN_GRANT_MONEY) : INITIAL_PLAYER_MONEY,
+                money: isEntryAdmin ? Math.max(Number(entry.money) || ADMIN_GRANT_MONEY, ADMIN_GRANT_MONEY) : Math.max(0, Number(entry.money) || INITIAL_PLAYER_MONEY),
                 updatedAt: typeof entry.updatedAt === "number" ? entry.updatedAt : 0
               };
             }
@@ -1754,20 +2005,23 @@
         }
       });
 
-      merged.set(state.playerId, {
-        id: state.playerId,
-        uniqueId: state.playerId,
-        name: state.playerName,
-        totalPlaySeconds: Math.max(0, state.totalPlaySeconds),
-        scooterId: myPublicScooter.id,
-        scooterName: sanitizePublicScooterLabel(myPublicScooter),
-        updatedAt: Date.now()
-      });
+      if (state.isAuthenticated) {
+        merged.set(state.playerId, {
+          id: state.playerId,
+          uniqueId: state.playerId,
+          gmail: state.gmail,
+          name: state.playerName,
+          totalPlaySeconds: Math.max(0, state.totalPlaySeconds),
+          scooterId: myPublicScooter.id,
+          scooterName: sanitizePublicScooterLabel(myPublicScooter),
+          updatedAt: Date.now()
+        });
+      }
 
       const sorted = Array.from(merged.values()).sort((a, b) => b.totalPlaySeconds - a.totalPlaySeconds);
 
       listEl.innerHTML = sorted.map((player, index) => {
-        const isMe = player.id === state.playerId;
+        const isMe = state.isAuthenticated && player.id === state.playerId;
         const badgeId = sanitizeUniquePlayerId(player.uniqueId, player.id);
         return `
           <div class="leader-row ${isMe ? "is-me" : ""}">
@@ -1916,13 +2170,14 @@
     }
 
     async function pushMyRoomPresence() {
-      if (!state.currentRoomId || state.mapMode !== "online") return;
+      if (!state.isAuthenticated || !state.currentRoomId || state.mapMode !== "online") return;
       const sc = getCurrentScooter();
       const isAdmin = isAdminAccount(state.playerName);
       const publicScooter = (sc.ownerOnly && !isAdmin) ? starterScooter : sc;
       const presenceData = {
         id: state.playerId,
         uniqueId: state.playerId,
+        gmail: state.gmail,
         name: state.playerName,
         scooterId: publicScooter.id,
         scooterName: sanitizePublicScooterLabel(publicScooter),
@@ -2062,6 +2317,7 @@
 
     createRoomForm.addEventListener("submit", async (e) => {
       e.preventDefault();
+      if (!state.isAuthenticated) return;
       const rName = roomNameInput.value.trim().slice(0, 28);
       const rPass = roomPasswordInput.value.trim().slice(0, 20);
       if (!rName) return;
@@ -2120,6 +2376,8 @@
 
     roomNameInput.addEventListener("keydown", (e) => e.stopPropagation());
     roomPasswordInput.addEventListener("keydown", (e) => e.stopPropagation());
+    gmailInput.addEventListener("keydown", (e) => e.stopPropagation());
+    loginNickInput.addEventListener("keydown", (e) => e.stopPropagation());
 
     const chatForm = document.getElementById("chatForm");
     const chatMessageInput = document.getElementById("chatMessageInput");
@@ -2164,7 +2422,7 @@
       }
 
       chatMessagesList.innerHTML = sortedMsgs.map(msg => {
-        const isMe = msg.senderId === state.playerId;
+        const isMe = state.isAuthenticated && msg.senderId === state.playerId;
         const author = msg.senderName || "Oyuncu";
         const senderUniqueId = sanitizeUniquePlayerId(msg.senderUniqueId, msg.senderId);
         const safeScooter = sanitizePublicScooterLabel({ name: msg.scooterName });
@@ -2224,6 +2482,7 @@
     }
 
     async function sendChatMessage(rawText) {
+      if (!state.isAuthenticated) return;
       const cleanedText = String(rawText || "").trim().slice(0, 160);
       if (!cleanedText) return;
 
@@ -2277,13 +2536,11 @@
         .replace(/"/g, "&quot;");
     }
 
-    const playerNameInput = document.getElementById("playerNameInput");
-    const savePlayerNameBtn = document.getElementById("savePlayerNameBtn");
-
     function applyPlayerName() {
+      if (!state.isAuthenticated) return;
       const cleaned = playerNameInput.value.trim().slice(0, 20);
       const prevName = state.playerName;
-      state.playerName = cleaned || "Oyuncu";
+      state.playerName = cleaned || getDefaultNickFromGmail(state.gmail);
       playerNameInput.value = state.playerName;
       const nameChanged = prevName.toLowerCase() !== state.playerName.toLowerCase();
       applyAdminPrivilegesIfMatched(nameChanged);
@@ -2294,9 +2551,7 @@
       renderLeaderboard();
       syncWithSharedLeaderboard();
       pushMyRoomPresence();
-      if (!nameChanged) {
-        showToast(`Adın kaydedildi: ${state.playerName} (${state.playerId})`);
-      }
+      showToast(`Adın kaydedildi: ${state.playerName} (${state.playerId})`);
     }
 
     savePlayerNameBtn.addEventListener("click", applyPlayerName);
@@ -2306,12 +2561,14 @@
     });
 
     function saveProgress() {
+      if (!state.isAuthenticated || !state.gmail) return;
       try {
         const isAdmin = isAdminAccount(state.playerName);
         const payload = {
+          gmail: state.gmail,
           playerId: state.playerId,
           playerName: state.playerName,
-          money: isAdmin ? Math.max(state.money, ADMIN_GRANT_MONEY) : INITIAL_PLAYER_MONEY,
+          money: isAdmin ? Math.max(state.money, ADMIN_GRANT_MONEY) : Math.max(0, state.money),
           ownedIds: Array.from(state.ownedIds).filter(id => validShopIds.has(id)),
           selectedId: (!isAdmin && state.selectedId === PERSONAL_SCOOTER.id) ? starterScooter.id : state.selectedId,
           batteryByScooter: state.batteryByScooter,
@@ -2323,7 +2580,7 @@
           soundEnabled: state.soundEnabled,
           completedCount: state.mission.completedCount
         };
-        localStorage.setItem(SAVE_KEY, JSON.stringify(payload));
+        localStorage.setItem(SAVE_PREFIX + state.gmail, JSON.stringify(payload));
         saveLocalRealPlayerEntry();
       } catch (_) {}
     }
@@ -2447,7 +2704,7 @@
     }
 
     function openBonusPuzzle() {
-      if (state.puzzle.isOpen) return;
+      if (state.puzzle.isOpen || !state.isAuthenticated) return;
       stopSustainedHorn();
       const q = pickNextUniquePuzzle();
       state.askedPuzzleIds.add(q.id);
@@ -2497,7 +2754,7 @@
     };
 
     function ensureAudio() {
-      if (!state.soundEnabled) return;
+      if (!state.soundEnabled || !state.isAuthenticated) return;
       if (!audioCtxHolder.ctx) {
         const AudioContextClass = window.AudioContext || window.webkitAudioContext;
         if (!AudioContextClass) return;
@@ -2566,7 +2823,7 @@
     }
 
     function playNpcCarHornSound() {
-      if (!state.soundEnabled || state.puzzle.isOpen) return;
+      if (!state.soundEnabled || state.puzzle.isOpen || !state.isAuthenticated) return;
       ensureAudio();
       if (!audioCtxHolder.ctx) return;
       const ctx = audioCtxHolder.ctx;
@@ -2598,7 +2855,7 @@
     }
 
     function playChargeSound() {
-      if (!state.soundEnabled) return;
+      if (!state.soundEnabled || !state.isAuthenticated) return;
       ensureAudio();
       if (!audioCtxHolder.ctx) return;
       const ctx = audioCtxHolder.ctx;
@@ -2633,7 +2890,7 @@
     }
 
     function playBrakeSound() {
-      if (!state.soundEnabled || state.puzzle.isOpen) return;
+      if (!state.soundEnabled || state.puzzle.isOpen || !state.isAuthenticated) return;
       ensureAudio();
       if (!audioCtxHolder.ctx) return;
       const ctx = audioCtxHolder.ctx;
@@ -2784,6 +3041,7 @@
     function renderHUD() {
       const sc = getCurrentScooter();
       document.getElementById("playerIdPill").textContent = `ID: #${state.playerId}`;
+      document.getElementById("playerEmailPill").textContent = `Gmail: ${state.gmail || "-"}`;
       document.getElementById("moneyPill").textContent = formatMoney(state.money);
       const rankLabel = sc.ownerOnly ? "ADMIN ÖZEL" : `#${sc.rank}`;
       document.getElementById("activeScooterPill").textContent = `Araç: ${rankLabel} ${sc.name} (${sc.powerW}W)`;
@@ -2860,7 +3118,7 @@
     }
 
     window.buyScooter = function(id) {
-      if (state.puzzle.isOpen || !validShopIds.has(id)) return;
+      if (!state.isAuthenticated || state.puzzle.isOpen || !validShopIds.has(id)) return;
       ensureAudio();
       const sc = SHOP_SCOOTERS.find(s => s.id === id);
       if (!sc || state.ownedIds.has(id) || state.money < sc.price) return;
@@ -2881,7 +3139,7 @@
     };
 
     window.selectScooter = function(id) {
-      if (state.puzzle.isOpen || !validAllIds.has(id)) return;
+      if (!state.isAuthenticated || state.puzzle.isOpen || !validAllIds.has(id)) return;
       if (id === PERSONAL_SCOOTER.id && !isAdminAccount(state.playerName)) return;
       if (id !== PERSONAL_SCOOTER.id && !state.ownedIds.has(id)) return;
       ensureAudio();
@@ -2899,7 +3157,7 @@
     };
 
     window.sellScooter = function(id) {
-      if (state.puzzle.isOpen || id === PERSONAL_SCOOTER.id || id === starterScooter.id || state.ownedIds.size <= 1) return;
+      if (!state.isAuthenticated || state.puzzle.isOpen || id === PERSONAL_SCOOTER.id || id === starterScooter.id || state.ownedIds.size <= 1) return;
       ensureAudio();
       const sc = SHOP_SCOOTERS.find(s => s.id === id);
       if (!sc || !state.ownedIds.has(id)) return;
@@ -2927,7 +3185,7 @@
     const onlineMapBtn = document.getElementById("onlineMapBtn");
 
     function setMapMode(mode) {
-      if (state.puzzle.isOpen) return;
+      if (!state.isAuthenticated || state.puzzle.isOpen) return;
       ensureAudio();
       state.mapMode = mode;
       freeMapBtn.classList.toggle("active", mode === "free");
@@ -2959,7 +3217,7 @@
     });
 
     function changeLane(targetLane) {
-      if (state.puzzle.isOpen) return;
+      if (!state.isAuthenticated || state.puzzle.isOpen) return;
       ensureAudio();
       state.lane = Math.max(0, Math.min(1, targetLane));
     }
@@ -2974,7 +3232,7 @@
     function bindHold(btn, prop, onPressExtra) {
       const press = (e) => {
         e.preventDefault();
-        if (state.puzzle.isOpen) return;
+        if (!state.isAuthenticated || state.puzzle.isOpen) return;
         ensureAudio();
         state.controls[prop] = true;
         btn.classList.add("pressed");
@@ -2995,7 +3253,7 @@
 
     hornBtn.addEventListener("pointerdown", (e) => {
       e.preventDefault();
-      if (state.puzzle.isOpen) return;
+      if (!state.isAuthenticated || state.puzzle.isOpen) return;
       hornBtn.classList.add("pressed");
       startSustainedHorn();
     });
@@ -3004,6 +3262,7 @@
     hornBtn.addEventListener("pointercancel", stopSustainedHorn);
 
     window.addEventListener("keydown", (e) => {
+      if (!state.isAuthenticated) return;
       if (
         document.activeElement === playerNameInput ||
         document.activeElement === chatMessageInput ||
@@ -3868,19 +4127,29 @@
 
     window.addEventListener("resize", resizeCanvas);
     resizeCanvas();
-    playerNameInput.value = state.playerName;
-    saveLocalRealPlayerEntry();
     initInitialScenery();
     syncNpcControlUI();
     syncSoundBtnUI();
-    renderHUD();
     renderLeaderboard();
     syncWithSharedLeaderboard();
     renderChatMessages();
     syncChatMessages();
     renderRoomsList();
     fetchRoomsFromFirebase();
-    renderGarage();
+
+    let savedActiveGmail = "";
+    try {
+      savedActiveGmail = localStorage.getItem(ACTIVE_GMAIL_KEY) || "";
+    } catch (_) {}
+
+    if (normalizeGmail(savedActiveGmail)) {
+      activateGmailSession(savedActiveGmail);
+    } else {
+      gmailAuthOverlay.classList.add("open");
+      renderHUD();
+      renderGarage();
+    }
+
     requestAnimationFrame(loop);
   </script>
 </body>
