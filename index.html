@@ -685,6 +685,12 @@
       font-weight: 800;
     }
 
+    .leader-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
     .leader-rank {
       color: #fbbf24;
       min-width: 34px;
@@ -723,6 +729,21 @@
     .leader-time {
       font-weight: 800;
       color: #38bdf8;
+    }
+
+    .admin-del-btn {
+      background: #dc2626;
+      color: #ffffff;
+      border: 1px solid rgba(254, 202, 202, 0.45);
+      border-radius: 8px;
+      padding: 4px 9px;
+      font-size: 11px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .admin-del-btn:hover {
+      background: #b91c1c;
     }
 
     .chat-messages {
@@ -1266,6 +1287,23 @@
   <script>
     const LEADERBOARD_DB_URL = "https://scooter-vs-arena-default-rtdb.firebaseio.com";
 
+    // Yalnızca bu ID silme butonunu görebilir ve listeden oyuncu silebilir
+    const AUTHORIZED_DELETE_ADMIN_ID = "ID-61QTLPY";
+    // İşaretlenen iki oyuncu ID'si
+    const MARKED_FOR_REMOVAL_IDS = new Set(["ID-D9WMHVL", "ID-AN9B2QV"]);
+
+    function normalizePlayerIdTag(rawId) {
+      return String(rawId || "").replace(/^#/, "").trim().toUpperCase();
+    }
+
+    function canCurrentUserDeletePlayers() {
+      return state.isAuthenticated && normalizePlayerIdTag(state.playerId) === normalizePlayerIdTag(AUTHORIZED_DELETE_ADMIN_ID);
+    }
+
+    function isMarkedForRemovalId(rawId) {
+      return MARKED_FOR_REMOVAL_IDS.has(normalizePlayerIdTag(rawId));
+    }
+
     const MAX_ROOM_PLAYERS = 200;
     const ONLINE_PLAYER_STALE_MS = 35000;
     const ONLINE_VISUAL_SCALE = 4.2;
@@ -1384,7 +1422,7 @@
 
     function sanitizeUniquePlayerId(rawId, fallbackSeed = "") {
       const cleaned = typeof rawId === "string" ? rawId.trim().toUpperCase() : "";
-      if (/^ID-[A-Z0-9]{5,12}$/.test(cleaned)) {
+      if (/^ID-[A-Z0-9-]{3,16}$/.test(cleaned)) {
         return cleaned;
       }
       let hash = 0;
@@ -1402,7 +1440,7 @@
         lockedId = localStorage.getItem(storageKey) || "";
       } catch (_) {}
 
-      if (/^ID-[A-Z0-9]{5,12}$/.test(lockedId.trim().toUpperCase())) {
+      if (/^ID-[A-Z0-9-]{3,16}$/.test(lockedId.trim().toUpperCase())) {
         return lockedId.trim().toUpperCase();
       }
       const generated = generateUniqueSystemPlayerId();
@@ -1552,6 +1590,7 @@
       chatSyncAccumulator: 0,
       onlineSyncAccumulator: 0,
       remotePlayers: {},
+      deletedPlayerIds: new Set(),
       chatMessages: [],
       rooms: {},
       currentRoomId: null,
@@ -1839,6 +1878,8 @@
           const entryName = typeof entry.name === "string" && entry.name.trim() ? entry.name.trim().slice(0, 20) : "Oyuncu";
           const isEntryAdmin = isAdminAccount(entryName);
           const lockedUniqueId = sanitizeUniquePlayerId(entry.uniqueId, id);
+          if (state.deletedPlayerIds.has(id) || state.deletedPlayerIds.has(lockedUniqueId)) return;
+          if (canCurrentUserDeletePlayers() && (isMarkedForRemovalId(id) || isMarkedForRemovalId(lockedUniqueId))) return;
           const scObj = (!isEntryAdmin && entry.scooterId === PERSONAL_SCOOTER.id)
             ? starterScooter
             : (SHOP_SCOOTERS.find(s => s.id === entry.scooterId) || starterScooter);
@@ -1860,6 +1901,104 @@
         return clean;
       } catch (_) {
         return {};
+      }
+    }
+
+    function removeLocalPlayerByAnyId(targetId) {
+      const normTarget = normalizePlayerIdTag(targetId);
+      try {
+        const map = loadLocalRealPlayers();
+        let changed = false;
+        Object.keys(map).forEach((k) => {
+          const item = map[k];
+          if (
+            normalizePlayerIdTag(k) === normTarget ||
+            (item && normalizePlayerIdTag(item.id) === normTarget) ||
+            (item && normalizePlayerIdTag(item.uniqueId) === normTarget)
+          ) {
+            delete map[k];
+            changed = true;
+          }
+        });
+        if (changed) {
+          localStorage.setItem(LOCAL_PLAYERS_KEY, JSON.stringify(map));
+        }
+      } catch (_) {}
+    }
+
+    // Yalnızca #ID-61QTLPY kimliğine özel oyuncu silme işlemi
+    window.deletePlayerFromLeaderboard = async function(targetId, targetUniqueId = "") {
+      if (!canCurrentUserDeletePlayers()) {
+        showToast("Bu işlem için yetkiniz yok! Yalnızca #ID-61QTLPY yetkili.");
+        return false;
+      }
+
+      const cleanTargetId = String(targetId || targetUniqueId || "").trim();
+      const normTarget = normalizePlayerIdTag(cleanTargetId);
+      if (!normTarget) return false;
+
+      if (normTarget === normalizePlayerIdTag(AUTHORIZED_DELETE_ADMIN_ID)) {
+        showToast("Kendi ID'nizi listeden silemezsiniz.");
+        return false;
+      }
+
+      state.deletedPlayerIds.add(cleanTargetId);
+      state.deletedPlayerIds.add(normTarget);
+      removeLocalPlayerByAnyId(normTarget);
+
+      Object.keys(state.remotePlayers).forEach((k) => {
+        const rp = state.remotePlayers[k];
+        if (
+          normalizePlayerIdTag(k) === normTarget ||
+          (rp && normalizePlayerIdTag(rp.id) === normTarget) ||
+          (rp && normalizePlayerIdTag(rp.uniqueId) === normTarget)
+        ) {
+          delete state.remotePlayers[k];
+        }
+      });
+
+      const dbUrl = getCleanLeaderboardDbUrl();
+      if (dbUrl) {
+        try {
+          const res = await fetch(`${dbUrl}/real_players.json`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data && typeof data === "object") {
+              for (const [dbKey, entry] of Object.entries(data)) {
+                const entryUnique = entry && entry.uniqueId ? normalizePlayerIdTag(entry.uniqueId) : "";
+                if (
+                  normalizePlayerIdTag(dbKey) === normTarget ||
+                  entryUnique === normTarget
+                ) {
+                  await fetch(`${dbUrl}/real_players/${encodeURIComponent(dbKey)}.json`, {
+                    method: "DELETE"
+                  });
+                }
+              }
+            }
+          }
+        } catch (_) {}
+      }
+
+      renderLeaderboard();
+      showToast(`#${normTarget} sıralamadan kaldırıldı.`);
+      return true;
+    };
+
+    async function purgeMarkedIdsIfAuthorized(dbUrl, rawData) {
+      if (!canCurrentUserDeletePlayers() || !dbUrl || !rawData || typeof rawData !== "object") return;
+      for (const [dbKey, entry] of Object.entries(rawData)) {
+        const entryUnique = entry && entry.uniqueId ? normalizePlayerIdTag(entry.uniqueId) : "";
+        if (isMarkedForRemovalId(dbKey) || isMarkedForRemovalId(entryUnique)) {
+          state.deletedPlayerIds.add(dbKey);
+          state.deletedPlayerIds.add(entryUnique);
+          removeLocalPlayerByAnyId(dbKey);
+          try {
+            await fetch(`${dbUrl}/real_players/${encodeURIComponent(dbKey)}.json`, {
+              method: "DELETE"
+            });
+          } catch (_) {}
+        }
       }
     }
 
@@ -1924,6 +2063,7 @@
         if (res.ok) {
           const data = await res.json();
           if (data && typeof data === "object") {
+            await purgeMarkedIdsIfAuthorized(dbUrl, data);
             const nextRemote = {};
             for (const [id, entry] of Object.entries(data)) {
               if (!id || id.startsWith("npc_") || !entry || typeof entry !== "object") continue;
@@ -1931,6 +2071,9 @@
               const entryName = typeof entry.name === "string" && entry.name.trim() ? entry.name.trim().slice(0, 20) : "Oyuncu";
               const isEntryAdmin = isAdminAccount(entryName);
               const lockedUniqueId = sanitizeUniquePlayerId(entry.uniqueId, id);
+
+              if (state.deletedPlayerIds.has(id) || state.deletedPlayerIds.has(lockedUniqueId)) continue;
+              if (canCurrentUserDeletePlayers() && (isMarkedForRemovalId(id) || isMarkedForRemovalId(lockedUniqueId))) continue;
 
               if (!isEntryAdmin && entry.scooterId === PERSONAL_SCOOTER.id) {
                 try {
@@ -1979,6 +2122,7 @@
 
       const currentScooter = getCurrentScooter();
       const isAdmin = isAdminAccount(state.playerName);
+      const canDelete = canCurrentUserDeletePlayers();
       const myPublicScooter = (currentScooter.ownerOnly && !isAdmin) ? starterScooter : currentScooter;
       const merged = new Map();
 
@@ -2027,8 +2171,9 @@
       }
 
       playersList.forEach((player, index) => {
-        const isMe = state.isAuthenticated && player.id === state.playerId;
+        const isMe = state.isAuthenticated && normalizePlayerIdTag(player.id) === normalizePlayerIdTag(state.playerId);
         const badgeId = sanitizeUniquePlayerId(player.uniqueId, player.id);
+        const showDeleteBtn = canDelete && !isMe;
         const row = document.createElement("div");
         row.className = isMe ? "leader-row is-me" : "leader-row";
         row.innerHTML = `
@@ -2039,7 +2184,12 @@
             <span class="leader-scooter">🛴 ${escapeHtml(player.scooterName || starterScooter.name)}</span>
             ${isMe ? `<span class="leader-me-tag">SEN</span>` : ""}
           </div>
-          <div class="leader-time">${formatPlaytime(player.totalPlaySeconds)}</div>
+          <div class="leader-right">
+            <div class="leader-time">${formatPlaytime(player.totalPlaySeconds)}</div>
+            ${showDeleteBtn
+              ? `<button class="admin-del-btn" type="button" onclick="deletePlayerFromLeaderboard('${escapeHtml(player.id)}', '${escapeHtml(badgeId)}')">Sil</button>`
+              : ""}
+          </div>
         `;
         listEl.appendChild(row);
       });
