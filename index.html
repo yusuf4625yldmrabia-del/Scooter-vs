@@ -960,7 +960,7 @@
     <div class="hud-top">
       <div class="title-group">
         <div class="brand">SCOOTER RIDE</div>
-        <div id="moneyPill" class="pill money">₺1.000.000.000,00</div>
+        <div id="moneyPill" class="pill money">₺15.000,00</div>
         <div id="batteryPill" class="pill battery-ok">Şarj: %100</div>
         <div id="scooterKmPill" class="pill odo" title="Bu scooter ile yaptığın toplam kilometre">Araç KM: 0,0 km</div>
         <div id="biomePill" class="pill biome" title="Harita bölgesi ve rota bilgisi">Harita: İstanbul</div>
@@ -1100,9 +1100,9 @@
 
     const ADMIN_NAME = "ADMIN";
     const ADMIN_GRANT_MONEY = 1000000000;
-    const INITIAL_PLAYER_MONEY = 2000000;
+    const INITIAL_PLAYER_MONEY = 15000;
 
-    const SAVE_KEY = "scooter_ride_save_v7";
+    const SAVE_KEY = "scooter_ride_save_v8";
     const LOCAL_PLAYERS_KEY = "scooter_ride_real_players_v1";
     const LOCAL_CHAT_KEY = "scooter_ride_chat_messages_v1";
     const LOCAL_ROOMS_KEY = "scooter_ride_local_rooms_v1";
@@ -1387,13 +1387,24 @@
           state.selectedId = starterScooter.id;
           state.speedKmh = Math.min(state.speedKmh, starterScooter.topSpeedKmh);
         }
+        if (state.money > INITIAL_PLAYER_MONEY && (!saved || !isAdminAccount(saved.playerName))) {
+          state.money = INITIAL_PLAYER_MONEY;
+        }
+        if (announce) {
+          showToast(`Diğer oyuncular için 15.000 TL bakiye ve özel scooter kısıtlaması uygulandı.`);
+        }
       }
     }
 
     applyAdminPrivilegesIfMatched(false);
 
     function getCurrentScooter() {
-      return ALL_KNOWN_SCOOTERS.find(s => s.id === state.selectedId) || starterScooter;
+      const sc = ALL_KNOWN_SCOOTERS.find(s => s.id === state.selectedId) || starterScooter;
+      if (sc.ownerOnly && !isAdminAccount(state.playerName)) {
+        state.selectedId = starterScooter.id;
+        return starterScooter;
+      }
+      return sc;
     }
 
     function getActiveCityTheme() {
@@ -1513,13 +1524,20 @@
           if (!id || typeof id !== "string" || id.startsWith("npc_")) return;
           if (!entry || typeof entry !== "object") return;
           if (typeof entry.totalPlaySeconds !== "number" || !Number.isFinite(entry.totalPlaySeconds)) return;
-          const scObj = SHOP_SCOOTERS.find(s => s.id === entry.scooterId) || starterScooter;
+          const isEntryAdmin = isAdminAccount(entry.name);
+          const scObj = (!isEntryAdmin && entry.scooterId === PERSONAL_SCOOTER.id)
+            ? starterScooter
+            : (SHOP_SCOOTERS.find(s => s.id === entry.scooterId) || starterScooter);
+          const safeMoney = typeof entry.money === "number" && Number.isFinite(entry.money)
+            ? (isEntryAdmin ? Math.max(entry.money, ADMIN_GRANT_MONEY) : INITIAL_PLAYER_MONEY)
+            : (isEntryAdmin ? ADMIN_GRANT_MONEY : INITIAL_PLAYER_MONEY);
           clean[id] = {
             id,
             name: typeof entry.name === "string" && entry.name.trim() ? entry.name.trim().slice(0, 20) : "Oyuncu",
             totalPlaySeconds: Math.max(0, entry.totalPlaySeconds),
             scooterId: scObj.id,
             scooterName: sanitizePublicScooterLabel(scObj),
+            money: safeMoney,
             updatedAt: typeof entry.updatedAt === "number" ? entry.updatedAt : Date.now()
           };
         });
@@ -1532,7 +1550,8 @@
     function saveLocalRealPlayerEntry() {
       try {
         const sc = getCurrentScooter();
-        const publicScooter = sc.ownerOnly ? starterScooter : sc;
+        const isAdmin = isAdminAccount(state.playerName);
+        const publicScooter = (sc.ownerOnly && !isAdmin) ? starterScooter : sc;
         const map = loadLocalRealPlayers();
         map[state.playerId] = {
           id: state.playerId,
@@ -1540,6 +1559,7 @@
           totalPlaySeconds: Math.max(0, state.totalPlaySeconds),
           scooterId: publicScooter.id,
           scooterName: sanitizePublicScooterLabel(publicScooter),
+          money: isAdmin ? Math.max(state.money, ADMIN_GRANT_MONEY) : INITIAL_PLAYER_MONEY,
           updatedAt: Date.now()
         };
         localStorage.setItem(LOCAL_PLAYERS_KEY, JSON.stringify(map));
@@ -1559,14 +1579,15 @@
       }
 
       const sc = getCurrentScooter();
-      const publicScooter = sc.ownerOnly ? starterScooter : sc;
+      const isAdmin = isAdminAccount(state.playerName);
+      const publicScooter = (sc.ownerOnly && !isAdmin) ? starterScooter : sc;
       const payload = {
         id: state.playerId,
         name: state.playerName,
         totalPlaySeconds: Math.floor(state.totalPlaySeconds),
         scooterId: publicScooter.id,
         scooterName: sanitizePublicScooterLabel(publicScooter),
-        money: Math.floor(state.money),
+        money: isAdmin ? Math.floor(Math.max(state.money, ADMIN_GRANT_MONEY)) : INITIAL_PLAYER_MONEY,
         updatedAt: Date.now()
       };
 
@@ -1582,19 +1603,40 @@
           const data = await res.json();
           if (data && typeof data === "object") {
             const nextRemote = {};
-            Object.entries(data).forEach(([id, entry]) => {
-              if (!id || id.startsWith("npc_") || !entry || typeof entry !== "object") return;
-              if (typeof entry.totalPlaySeconds !== "number" || !Number.isFinite(entry.totalPlaySeconds)) return;
-              const scObj = SHOP_SCOOTERS.find(s => s.id === entry.scooterId) || starterScooter;
+            for (const [id, entry] of Object.entries(data)) {
+              if (!id || id.startsWith("npc_") || !entry || typeof entry !== "object") continue;
+              if (typeof entry.totalPlaySeconds !== "number" || !Number.isFinite(entry.totalPlaySeconds)) continue;
+              const entryName = typeof entry.name === "string" && entry.name.trim() ? entry.name.trim().slice(0, 20) : "Oyuncu";
+              const isEntryAdmin = isAdminAccount(entryName);
+
+              if (!isEntryAdmin && entry.scooterId === PERSONAL_SCOOTER.id) {
+                try {
+                  await fetch(`${dbUrl}/real_players/${encodeURIComponent(id)}.json`, {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      scooterId: starterScooter.id,
+                      scooterName: starterScooter.name,
+                      money: INITIAL_PLAYER_MONEY
+                    })
+                  });
+                } catch (_) {}
+              }
+
+              const scObj = (!isEntryAdmin && entry.scooterId === PERSONAL_SCOOTER.id)
+                ? starterScooter
+                : (SHOP_SCOOTERS.find(s => s.id === entry.scooterId) || starterScooter);
+
               nextRemote[id] = {
                 id,
-                name: typeof entry.name === "string" && entry.name.trim() ? entry.name.trim().slice(0, 20) : "Oyuncu",
+                name: entryName,
                 totalPlaySeconds: Math.max(0, entry.totalPlaySeconds),
                 scooterId: scObj.id,
                 scooterName: sanitizePublicScooterLabel(scObj),
+                money: isEntryAdmin ? Math.max(Number(entry.money) || ADMIN_GRANT_MONEY, ADMIN_GRANT_MONEY) : INITIAL_PLAYER_MONEY,
                 updatedAt: typeof entry.updatedAt === "number" ? entry.updatedAt : 0
               };
-            });
+            }
             state.remotePlayers = nextRemote;
           }
         }
@@ -1611,7 +1653,8 @@
       syncPill.textContent = hasSharedDb ? "Mod: Firebase Ortak Liste" : "Mod: Yerel Cihaz";
 
       const currentScooter = getCurrentScooter();
-      const myPublicScooter = currentScooter.ownerOnly ? starterScooter : currentScooter;
+      const isAdmin = isAdminAccount(state.playerName);
+      const myPublicScooter = (currentScooter.ownerOnly && !isAdmin) ? starterScooter : currentScooter;
       const merged = new Map();
 
       const localMap = loadLocalRealPlayers();
@@ -1796,7 +1839,8 @@
     async function pushMyRoomPresence() {
       if (!state.currentRoomId || state.mapMode !== "online") return;
       const sc = getCurrentScooter();
-      const publicScooter = sc.ownerOnly ? starterScooter : sc;
+      const isAdmin = isAdminAccount(state.playerName);
+      const publicScooter = (sc.ownerOnly && !isAdmin) ? starterScooter : sc;
       const presenceData = {
         id: state.playerId,
         name: state.playerName,
@@ -1830,7 +1874,13 @@
             Object.entries(playersData).forEach(([pid, p]) => {
               if (!p || typeof p !== "object") return;
               if (pid !== state.playerId && now - (p.updatedAt || 0) <= ONLINE_PLAYER_STALE_MS) {
-                activePlayers[pid] = p;
+                const isOtherAdmin = isAdminAccount(p.name);
+                const safeSc = (!isOtherAdmin && p.scooterId === PERSONAL_SCOOTER.id) ? starterScooter : p;
+                activePlayers[pid] = {
+                  ...p,
+                  scooterId: safeSc.scooterId || starterScooter.id,
+                  scooterName: sanitizePublicScooterLabel({ id: safeSc.scooterId, name: safeSc.scooterName })
+                };
                 activeCount += 1;
               }
             });
@@ -2092,7 +2142,8 @@
       if (!cleanedText) return;
 
       const sc = getCurrentScooter();
-      const publicScooter = sc.ownerOnly ? starterScooter : sc;
+      const isAdmin = isAdminAccount(state.playerName);
+      const publicScooter = (sc.ownerOnly && !isAdmin) ? starterScooter : sc;
       const msgObj = {
         id: "msg_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7),
         senderId: state.playerId,
@@ -2148,7 +2199,7 @@
       state.playerName = cleaned || "Oyuncu";
       playerNameInput.value = state.playerName;
       const nowAdmin = isAdminAccount(state.playerName);
-      applyAdminPrivilegesIfMatched(!wasAdmin && nowAdmin);
+      applyAdminPrivilegesIfMatched(wasAdmin !== nowAdmin);
       saveProgress();
       saveLocalRealPlayerEntry();
       renderHUD();
@@ -2167,11 +2218,12 @@
 
     function saveProgress() {
       try {
+        const isAdmin = isAdminAccount(state.playerName);
         const payload = {
           playerName: state.playerName,
-          money: state.money,
+          money: isAdmin ? Math.max(state.money, ADMIN_GRANT_MONEY) : state.money,
           ownedIds: Array.from(state.ownedIds).filter(id => validShopIds.has(id)),
-          selectedId: state.selectedId,
+          selectedId: (!isAdmin && state.selectedId === PERSONAL_SCOOTER.id) ? starterScooter.id : state.selectedId,
           batteryByScooter: state.batteryByScooter,
           kmByScooter: state.kmByScooter,
           askedPuzzleIds: Array.from(state.askedPuzzleIds),
@@ -3682,7 +3734,7 @@
       }
 
       const px = roadLeft + laneW * (state.laneVisualX + 0.5);
-      drawScooterSprite(ctx, px, playerY, sc.color, true, state.controls.horn, Boolean(sc.is3000Light));
+      drawScooterSprite(ctx, px, playerY, sc.color, true, state.controls.horn, Boolean(sc.is3000Light && isAdminAccount(state.playerName)));
 
       drawOnlineRightSidePanel(ctx, w, h, roadRight, w - roadRight, playerY);
 
