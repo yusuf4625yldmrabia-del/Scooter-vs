@@ -555,7 +555,7 @@
       background: linear-gradient(135deg, #d97706, #f59e0b);
     }
 
-    .leaderboard-section, .chat-section {
+    .leaderboard-section, .chat-section, .mod-section {
       background: #131c31;
       border: 1px solid rgba(52, 211, 153, 0.25);
       border-radius: 14px;
@@ -565,11 +565,15 @@
       gap: 10px;
     }
 
+    .mod-section {
+      border-color: rgba(251, 146, 60, 0.35);
+    }
+
     .chat-section {
       border-color: rgba(56, 189, 248, 0.28);
     }
 
-    .leaderboard-head, .chat-head {
+    .leaderboard-head, .chat-head, .mod-head {
       display: flex;
       flex-wrap: wrap;
       align-items: center;
@@ -583,15 +587,64 @@
       color: #34d399;
     }
 
+    .mod-title {
+      font-size: 14px;
+      font-weight: 800;
+      color: #fb923c;
+    }
+
     .chat-title {
       font-size: 14px;
       font-weight: 800;
       color: #38bdf8;
     }
 
-    .leaderboard-sub, .chat-sub {
+    .leaderboard-sub, .chat-sub, .mod-sub {
       font-size: 11px;
       color: #94a3b8;
+    }
+
+    .mod-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(225px, 1fr));
+      gap: 8px;
+    }
+
+    .mod-card {
+      background: #1e293b;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 11px;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .mod-card.glow-active {
+      border-color: rgba(232, 121, 249, 0.55);
+      box-shadow: 0 0 14px rgba(232, 121, 249, 0.14);
+    }
+
+    .mod-lvl {
+      font-size: 10px;
+      font-weight: 800;
+      color: #fbbf24;
+      text-transform: uppercase;
+    }
+
+    .mod-name {
+      font-size: 13px;
+      font-weight: 800;
+      color: #f8fafc;
+      margin-top: 2px;
+    }
+
+    .mod-desc {
+      font-size: 11px;
+      color: #cbd5e1;
+      margin-top: 3px;
+      line-height: 1.35;
     }
 
     .name-form, .chat-form {
@@ -694,6 +747,67 @@
     .leader-rank {
       color: #fbbf24;
       min-width: 34px;
+    }
+
+    .rank-badge {
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0.3px;
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      background: rgba(15, 23, 42, 0.75);
+      color: #f8fafc;
+    }
+
+    .rank-badge.tier-bronz {
+      color: #fdba74;
+      border-color: rgba(253, 186, 116, 0.45);
+      background: rgba(124, 45, 18, 0.35);
+    }
+
+    .rank-badge.tier-gumus {
+      color: #e2e8f0;
+      border-color: rgba(226, 232, 240, 0.5);
+      background: rgba(71, 85, 105, 0.45);
+    }
+
+    .rank-badge.tier-altin {
+      color: #fde047;
+      border-color: rgba(253, 224, 71, 0.55);
+      background: rgba(133, 77, 14, 0.42);
+    }
+
+    .rank-badge.tier-yakut {
+      color: #fda4af;
+      border-color: rgba(251, 113, 133, 0.6);
+      background: rgba(159, 18, 57, 0.45);
+    }
+
+    .rank-badge.tier-elmas {
+      color: #7dd3fc;
+      border-color: rgba(125, 211, 252, 0.65);
+      background: rgba(3, 105, 161, 0.45);
+    }
+
+    .rank-badge.tier-evren {
+      color: #e879f9;
+      border-color: rgba(232, 121, 249, 0.7);
+      background: rgba(112, 26, 117, 0.48);
+    }
+
+    .rank-badge.tier-kuru-kafa {
+      color: #ff6b35;
+      border-color: rgba(255, 107, 53, 0.85);
+      background: linear-gradient(90deg, rgba(127, 29, 29, 0.75), rgba(154, 52, 18, 0.75));
+      box-shadow: 0 0 10px rgba(255, 107, 53, 0.35);
+    }
+
+    .rank-badge.tier-boss {
+      color: #fef08a;
+      border-color: rgba(250, 204, 21, 0.9);
+      background: linear-gradient(90deg, rgba(147, 51, 234, 0.65), rgba(225, 29, 72, 0.65), rgba(234, 179, 8, 0.65));
+      box-shadow: 0 0 14px rgba(250, 204, 21, 0.45);
     }
 
     .player-id-tag {
@@ -1117,7 +1231,7 @@
     <div class="auth-card">
       <div id="authTitle" class="auth-brand">SCOOTER RIDE — GMAIL GİRİŞİ</div>
       <div class="auth-sub">
-        Oyuna girmek için <strong>@gmail.com</strong> veya <strong>@googlemail.com</strong> adresini yaz. Her Gmail hesabının parası, scooterları ve oynama süresi kendi hesabına ayrı kaydedilir.
+        Oyuna girmek için <strong>@gmail.com</strong> veya <strong>@googlemail.com</strong> adresini yaz. Her Gmail hesabının parası, scooterları, modifiyeleri ve oynama süresi kendi hesabına ayrı kaydedilir.
       </div>
       <form id="gmailLoginForm" class="auth-form">
         <label class="auth-label" for="gmailInput">Gmail Adresin</label>
@@ -1228,11 +1342,22 @@
       </div>
     </div>
 
+    <div class="mod-section">
+      <div class="mod-head">
+        <div>
+          <div class="mod-title">Modifiye Dükkanı (Gerçekçi Parça &amp; Performans Yükseltmeleri)</div>
+          <div class="mod-sub">Hız yükseltme, ek batarya ve VSC diğer parçalara göre bir tık daha maliyetlidir • Işıklı kaporta sürüşte neon ışık verir</div>
+        </div>
+        <div id="modTargetScooterPill" class="sync-status">Araç: -</div>
+      </div>
+      <div id="modShopList" class="mod-grid"></div>
+    </div>
+
     <div class="leaderboard-section">
       <div class="leaderboard-head">
         <div>
           <div class="leaderboard-title">En Çok Oynayanlar Sıralaması (Sadece Gerçek Oyuncular)</div>
-          <div class="leaderboard-sub">Her Gmail hesabına sistem tarafından kilitli eşsiz ID verilir • NPC'ler listeye girmez</div>
+          <div class="leaderboard-sub">Oynama sürene göre rütben otomatik güncellenir • Yeni rütbe gelince eski rütbe silinir</div>
         </div>
         <div id="syncStatusPill" class="sync-status">Mod: Yerel Cihaz</div>
       </div>
@@ -1313,7 +1438,7 @@
     const INITIAL_PLAYER_MONEY = 15000;
 
     const ACTIVE_GMAIL_KEY = "scooter_ride_active_gmail_v1";
-    const SAVE_PREFIX = "scooter_ride_save_v9_";
+    const SAVE_PREFIX = "scooter_ride_save_v10_";
     const ID_PREFIX = "scooter_ride_id_v1_";
     const LOCAL_PLAYERS_KEY = "scooter_ride_real_players_v2";
     const LOCAL_CHAT_KEY = "scooter_ride_chat_messages_v2";
@@ -1323,6 +1448,80 @@
     const BIOME_INTERVAL_M = 3000;
     const PUZZLE_INTERVAL_SEC = 300;
     const PUZZLE_DURATION_SEC = 15;
+
+    // Sürpriz rütbe eşikleri (saat cinsinden) — arayüzde hangi saatte ne çıkacağı yazılmaz
+    const RANK_TIERS = [
+      { minHours: 100, label: "👑⚡ BOSS", cssClass: "tier-boss" },
+      { minHours: 50, label: "💀🔥 Yanan Kuru Kafa", cssClass: "tier-kuru-kafa" },
+      { minHours: 25, label: "🌌 Evrendeki En Değerli Taş", cssClass: "tier-evren" },
+      { minHours: 20, label: "💎 Elmas", cssClass: "tier-elmas" },
+      { minHours: 15, label: "♦️ Yakut", cssClass: "tier-yakut" },
+      { minHours: 10, label: "🥇 Altın", cssClass: "tier-altin" },
+      { minHours: 5, label: "🥈 Gümüş", cssClass: "tier-gumus" },
+      { minHours: 0, label: "🥉 Bronz", cssClass: "tier-bronz" }
+    ];
+
+    function getRankInfoBySeconds(totalSeconds) {
+      const hours = Math.max(0, Number(totalSeconds) || 0) / 3600;
+      for (let i = 0; i < RANK_TIERS.length; i++) {
+        if (hours >= RANK_TIERS[i].minHours) {
+          return RANK_TIERS[i];
+        }
+      }
+      return RANK_TIERS[RANK_TIERS.length - 1];
+    }
+
+    // Gerçekçi piyasa dengesine göre modifiye parçaları (Hız, Ek Batarya ve VSC bir tık daha pahalı)
+    const MOD_DEFINITIONS = [
+      {
+        key: "speedBoost",
+        name: "Hız Yükseltme (ECU & Kontrolcü)",
+        basePrice: 14500,
+        stepMult: 1.42,
+        maxLevel: 5,
+        heavyTier: true,
+        getDesc: (lvl) => lvl === 0
+          ? "Son hızı +6 km/h ve ivmeyi artırır"
+          : `Aktif: +${lvl * 6} km/h son hız & daha güçlü kalkış`
+      },
+      {
+        key: "extraBattery",
+        name: "Ek Batarya Paketi",
+        basePrice: 18500,
+        stepMult: 1.45,
+        maxLevel: 5,
+        heavyTier: true,
+        getDesc: (lvl) => lvl === 0
+          ? "Menzili +%25 genişletir, şarj tüketimini düşürür"
+          : `Aktif: %${100 + lvl * 25} menzil verimliliği`
+      },
+      {
+        key: "vscSystem",
+        name: "VSC Denge & Şerit Kontrolü",
+        basePrice: 12000,
+        stepMult: 1.38,
+        maxLevel: 5,
+        heavyTier: true,
+        getDesc: (lvl) => lvl === 0
+          ? "Şerit geçişini hızlandırır, çarpışma hız kaybını azaltır"
+          : `Aktif: %${Math.min(75, lvl * 15)} daha yumuşak denge & koruma`
+      },
+      {
+        key: "lightBody",
+        name: "Işıklı Kaporta (LED Şasi)",
+        basePrice: 8500,
+        stepMult: 1.35,
+        maxLevel: 5,
+        heavyTier: false,
+        getDesc: (lvl) => lvl === 0
+          ? "Kaporta altına parlak neon şeritler ekler"
+          : `Aktif: Seviye ${lvl} Işıklı Kaporta (Parlak Neon)`
+      }
+    ];
+
+    function getModPrice(modDef, currentLevel) {
+      return Math.round(modDef.basePrice * Math.pow(modDef.stepMult, currentLevel));
+    }
 
     const ISTANBUL_SUBREGIONS = [
       "İstanbul • Boğaz Sahili",
@@ -1465,6 +1664,47 @@
     const validShopIds = new Set(SHOP_SCOOTERS.map(s => s.id));
     const validAllIds = new Set(ALL_KNOWN_SCOOTERS.map(s => s.id));
 
+    function createDefaultMods() {
+      return {
+        speedBoost: 0,
+        extraBattery: 0,
+        vscSystem: 0,
+        lightBody: 0
+      };
+    }
+
+    function sanitizeMods(rawMods) {
+      const base = createDefaultMods();
+      if (!rawMods || typeof rawMods !== "object") return base;
+      MOD_DEFINITIONS.forEach(def => {
+        const val = rawMods[def.key];
+        if (typeof val === "number" && Number.isFinite(val)) {
+          base[def.key] = Math.max(0, Math.min(def.maxLevel, Math.floor(val)));
+        }
+      });
+      return base;
+    }
+
+    function getModsForScooterId(scooterId) {
+      return sanitizeMods(state.modsByScooter[scooterId]);
+    }
+
+    function getEffectiveScooterStats(scooter, mods) {
+      const m = sanitizeMods(mods);
+      const topSpeedKmh = scooter.topSpeedKmh + m.speedBoost * 6;
+      const rangeKm = scooter.rangeKm * (1 + m.extraBattery * 0.25);
+      const vscFactor = Math.min(0.75, m.vscSystem * 0.15);
+      return {
+        topSpeedKmh,
+        rangeKm,
+        vscFactor,
+        lightBodyLevel: m.lightBody,
+        speedBoostLevel: m.speedBoost,
+        extraBatteryLevel: m.extraBattery,
+        vscLevel: m.vscSystem
+      };
+    }
+
     function sanitizePublicScooterLabel(scooterObj) {
       if (!scooterObj || scooterObj.ownerOnly || scooterObj.id === PERSONAL_SCOOTER.id) {
         return starterScooter.name;
@@ -1476,8 +1716,9 @@
       return Math.round((scooter.price * 3) / 4);
     }
 
-    function getAchievableMissionSpeed(scooter) {
-      const top = Math.max(8, Number(scooter.topSpeedKmh) || 15);
+    function getAchievableMissionSpeed(scooter, mods) {
+      const stats = getEffectiveScooterStats(scooter, mods);
+      const top = Math.max(8, Number(stats.topSpeedKmh) || 15);
       const safeCeiling = Math.max(6, top - 2);
       const target = Math.round(top * 0.7);
       return Math.max(6, Math.min(safeCeiling, target));
@@ -1534,14 +1775,17 @@
 
         const rawBatteries = parsed.batteryByScooter && typeof parsed.batteryByScooter === "object" ? parsed.batteryByScooter : {};
         const rawKms = parsed.kmByScooter && typeof parsed.kmByScooter === "object" ? parsed.kmByScooter : {};
+        const rawModsMap = parsed.modsByScooter && typeof parsed.modsByScooter === "object" ? parsed.modsByScooter : {};
 
         const batteryByScooter = {};
         const kmByScooter = {};
+        const modsByScooter = {};
         ALL_KNOWN_SCOOTERS.forEach(s => {
           batteryByScooter[s.id] = typeof rawBatteries[s.id] === "number" && Number.isFinite(rawBatteries[s.id])
             ? Math.max(0, Math.min(100, rawBatteries[s.id])) : 100;
           kmByScooter[s.id] = typeof rawKms[s.id] === "number" && Number.isFinite(rawKms[s.id])
             ? Math.max(0, rawKms[s.id]) : 0;
+          modsByScooter[s.id] = sanitizeMods(rawModsMap[s.id]);
         });
 
         const baseMoney = adminActive
@@ -1555,6 +1799,7 @@
           selectedId: savedSelected,
           batteryByScooter,
           kmByScooter,
+          modsByScooter,
           askedPuzzleIds: new Set(Array.isArray(parsed.askedPuzzleIds) ? parsed.askedPuzzleIds : []),
           puzzleDynamicCounter: typeof parsed.puzzleDynamicCounter === "number" ? Math.max(0, parsed.puzzleDynamicCounter) : 0,
           totalPlaySeconds: typeof parsed.totalPlaySeconds === "number" && Number.isFinite(parsed.totalPlaySeconds)
@@ -1570,7 +1815,12 @@
 
     const defaultBatteries = {};
     const defaultKms = {};
-    ALL_KNOWN_SCOOTERS.forEach(s => { defaultBatteries[s.id] = 100; defaultKms[s.id] = 0; });
+    const defaultModsMap = {};
+    ALL_KNOWN_SCOOTERS.forEach(s => {
+      defaultBatteries[s.id] = 100;
+      defaultKms[s.id] = 0;
+      defaultModsMap[s.id] = createDefaultMods();
+    });
 
     const state = {
       gmail: "",
@@ -1582,9 +1832,11 @@
       selectedId: starterScooter.id,
       batteryByScooter: { ...defaultBatteries },
       kmByScooter: { ...defaultKms },
+      modsByScooter: { ...defaultModsMap },
       askedPuzzleIds: new Set(),
       puzzleDynamicCounter: 0,
       totalPlaySeconds: 0,
+      lastRankLabel: "",
       playSaveAccumulator: 0,
       leaderboardSyncAccumulator: 0,
       chatSyncAccumulator: 0,
@@ -1650,7 +1902,8 @@
         state.ownedIds.delete(PERSONAL_SCOOTER.id);
         if (state.selectedId === PERSONAL_SCOOTER.id) {
           state.selectedId = starterScooter.id;
-          state.speedKmh = Math.min(state.speedKmh, starterScooter.topSpeedKmh);
+          const stats = getEffectiveScooterStats(starterScooter, getModsForScooterId(starterScooter.id));
+          state.speedKmh = Math.min(state.speedKmh, stats.topSpeedKmh);
         }
       }
     }
@@ -1681,6 +1934,7 @@
         state.selectedId = loaded.selectedId;
         state.batteryByScooter = loaded.batteryByScooter;
         state.kmByScooter = loaded.kmByScooter;
+        state.modsByScooter = loaded.modsByScooter;
         state.askedPuzzleIds = loaded.askedPuzzleIds;
         state.puzzleDynamicCounter = loaded.puzzleDynamicCounter;
         state.totalPlaySeconds = loaded.totalPlaySeconds;
@@ -1694,12 +1948,14 @@
         state.selectedId = starterScooter.id;
         state.batteryByScooter = { ...defaultBatteries };
         state.kmByScooter = { ...defaultKms };
+        state.modsByScooter = { ...defaultModsMap };
         state.askedPuzzleIds = new Set();
         state.puzzleDynamicCounter = 0;
         state.totalPlaySeconds = 0;
         state.mission.completedCount = 0;
       }
 
+      state.lastRankLabel = getRankInfoBySeconds(state.totalPlaySeconds).label;
       state.speedKmh = 0;
       state.distanceM = 0;
       state.nextChargeCheckpointM = CHARGE_INTERVAL_M;
@@ -1713,6 +1969,7 @@
       syncNpcControlUI();
       syncSoundBtnUI();
       renderHUD();
+      renderModShop();
       renderGarage();
       renderLeaderboard();
       syncWithSharedLeaderboard();
@@ -2174,12 +2431,14 @@
         const isMe = state.isAuthenticated && normalizePlayerIdTag(player.id) === normalizePlayerIdTag(state.playerId);
         const badgeId = sanitizeUniquePlayerId(player.uniqueId, player.id);
         const showDeleteBtn = canDelete && !isMe;
+        const activeRank = getRankInfoBySeconds(player.totalPlaySeconds);
         const row = document.createElement("div");
         row.className = isMe ? "leader-row is-me" : "leader-row";
         row.innerHTML = `
           <div class="leader-left">
             <span class="leader-rank">#${index + 1}</span>
             <strong>${escapeHtml(player.name)}</strong>
+            <span class="rank-badge ${escapeHtml(activeRank.cssClass)}">${escapeHtml(activeRank.label)}</span>
             <span class="player-id-tag">#${escapeHtml(badgeId)}</span>
             <span class="leader-scooter">🛴 ${escapeHtml(player.scooterName || starterScooter.name)}</span>
             ${isMe ? `<span class="leader-me-tag">SEN</span>` : ""}
@@ -2194,6 +2453,79 @@
         listEl.appendChild(row);
       });
     }
+
+    const modShopListEl = document.getElementById("modShopList");
+    const modTargetScooterPill = document.getElementById("modTargetScooterPill");
+
+    function renderModShop() {
+      const sc = getCurrentScooter();
+      const mods = getModsForScooterId(sc.id);
+      modTargetScooterPill.textContent = `Araç: ${sc.name}`;
+
+      modShopListEl.innerHTML = MOD_DEFINITIONS.map(modDef => {
+        const lvl = mods[modDef.key] || 0;
+        const isMax = lvl >= modDef.maxLevel;
+        const price = getModPrice(modDef, lvl);
+        const canAfford = !isMax && state.money >= price;
+        const isGlow = modDef.key === "lightBody" && lvl > 0;
+
+        return `
+          <div class="mod-card ${isGlow ? "glow-active" : ""}">
+            <div>
+              <div class="mod-lvl">${modDef.heavyTier ? "⚡ YÜKSEK PERFORMANS PARÇASI" : "💡 KİTLİ PARÇA"} • SEVİYE ${lvl}/${modDef.maxLevel}</div>
+              <div class="mod-name">${escapeHtml(modDef.name)}</div>
+              <div class="mod-desc">${escapeHtml(modDef.getDesc(lvl))}</div>
+            </div>
+            <div class="card-footer">
+              <div class="price-tag">${isMax ? "MAKSİMUM" : formatMoney(price)}</div>
+              <div class="card-actions">
+                <button
+                  class="action-mini btn-buy"
+                  type="button"
+                  ${isMax || !canAfford ? "disabled" : ""}
+                  onclick="buyScooterMod('${escapeHtml(modDef.key)}')"
+                >
+                  ${isMax ? "Tamamlandı" : "Modifiye Et"}
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    window.buyScooterMod = function(modKey) {
+      if (!state.isAuthenticated || state.puzzle.isOpen) return;
+      ensureAudio();
+      const modDef = MOD_DEFINITIONS.find(m => m.key === modKey);
+      if (!modDef) return;
+
+      const sc = getCurrentScooter();
+      const mods = getModsForScooterId(sc.id);
+      const currentLvl = mods[modKey] || 0;
+      if (currentLvl >= modDef.maxLevel) return;
+
+      const cost = getModPrice(modDef, currentLvl);
+      if (state.money < cost) {
+        showToast("Bu modifiye için yeterli bakiyen yok!");
+        return;
+      }
+
+      state.money -= cost;
+      mods[modKey] = currentLvl + 1;
+      state.modsByScooter[sc.id] = mods;
+
+      if (modKey === "speedBoost") {
+        syncActiveMissionSpeedIfNeeded(sc);
+      }
+
+      playChargeSound();
+      saveProgress();
+      renderHUD();
+      renderModShop();
+      renderGarage();
+      showToast(`${sc.name}: ${modDef.name} (Seviye ${mods[modKey]}) uygulandı!`);
+    };
 
     const roomsSection = document.getElementById("roomsSection");
     const roomListEl = document.getElementById("roomList");
@@ -2329,6 +2661,7 @@
     async function pushMyRoomPresence() {
       if (!state.isAuthenticated || !state.currentRoomId || state.mapMode !== "online") return;
       const sc = getCurrentScooter();
+      const mods = getModsForScooterId(sc.id);
       const isAdmin = isAdminAccount(state.playerName);
       const publicScooter = (sc.ownerOnly && !isAdmin) ? starterScooter : sc;
       const presenceData = {
@@ -2339,6 +2672,7 @@
         scooterId: publicScooter.id,
         scooterName: sanitizePublicScooterLabel(publicScooter),
         scooterColor: publicScooter.color,
+        lightBodyLevel: (sc.ownerOnly && !isAdmin) ? 0 : mods.lightBody,
         lane: state.lane,
         laneVisualX: state.laneVisualX,
         speedKmh: Math.round(state.speedKmh),
@@ -2706,6 +3040,7 @@
       saveProgress();
       saveLocalRealPlayerEntry();
       renderHUD();
+      renderModShop();
       renderGarage();
       renderLeaderboard();
       syncWithSharedLeaderboard();
@@ -2732,6 +3067,7 @@
           selectedId: (!isAdmin && state.selectedId === PERSONAL_SCOOTER.id) ? starterScooter.id : state.selectedId,
           batteryByScooter: state.batteryByScooter,
           kmByScooter: state.kmByScooter,
+          modsByScooter: state.modsByScooter,
           askedPuzzleIds: Array.from(state.askedPuzzleIds),
           puzzleDynamicCounter: state.puzzleDynamicCounter,
           totalPlaySeconds: state.totalPlaySeconds,
@@ -2844,6 +3180,7 @@
         puzzleFeedbackText.style.color = "#4ade80";
         puzzleFeedbackText.textContent = `Doğru cevap! +${formatMoney(q.reward)} bonus hesabına eklendi!`;
         renderHUD();
+        renderModShop();
         renderGarage();
       } else {
         puzzleFeedbackText.style.color = "#f87171";
@@ -3108,11 +3445,12 @@
     function assignNextMission() {
       const mIndex = state.mission.completedCount;
       const sc = getCurrentScooter();
+      const stats = getEffectiveScooterStats(sc, getModsForScooterId(sc.id));
       state.passedNpcsInMission = 0;
 
       const baseReward = 650 + Math.min(1800, mIndex * 110);
       const eventPattern = mIndex % 4;
-      const speedScale = Math.max(0.55, Math.min(1, sc.topSpeedKmh / 35));
+      const speedScale = Math.max(0.55, Math.min(1, stats.topSpeedKmh / 35));
 
       if (eventPattern === 0) {
         const dist = Math.round((320 + Math.min(480, mIndex * 25)) * speedScale);
@@ -3123,7 +3461,7 @@
         };
       } else if (eventPattern === 1) {
         const dist = Math.round((300 + Math.min(420, mIndex * 25)) * speedScale);
-        const minSpeed = getAchievableMissionSpeed(sc);
+        const minSpeed = getAchievableMissionSpeed(sc, getModsForScooterId(sc.id));
         state.mission = {
           active: true, type: "speed_pass", targetM: state.distanceM + dist, missionDistM: dist,
           minSpeedKmh: minSpeed, targetOvertakes: 0, reward: Math.round(baseReward * 1.2), completedCount: mIndex,
@@ -3149,7 +3487,7 @@
 
     function syncActiveMissionSpeedIfNeeded(sc) {
       if (state.mapMode === "mission" && state.mission.active && state.mission.type === "speed_pass") {
-        const achievable = getAchievableMissionSpeed(sc);
+        const achievable = getAchievableMissionSpeed(sc, getModsForScooterId(sc.id));
         state.mission.minSpeedKmh = achievable;
         state.mission.statusText = `${state.mission.missionDistM}m boyunca en az ${achievable} km/h hızla git`;
       }
@@ -3199,11 +3537,12 @@
 
     function renderHUD() {
       const sc = getCurrentScooter();
+      const stats = getEffectiveScooterStats(sc, getModsForScooterId(sc.id));
       document.getElementById("playerIdPill").textContent = `ID: #${state.playerId}`;
       document.getElementById("playerEmailPill").textContent = `Gmail: ${state.gmail || "-"}`;
       document.getElementById("moneyPill").textContent = formatMoney(state.money);
       const rankLabel = sc.ownerOnly ? "ADMIN ÖZEL" : `#${sc.rank}`;
-      document.getElementById("activeScooterPill").textContent = `Araç: ${rankLabel} ${sc.name} (${sc.powerW}W)`;
+      document.getElementById("activeScooterPill").textContent = `Araç: ${rankLabel} ${sc.name} (${sc.powerW}W • ${stats.topSpeedKmh} km/h)`;
       updateBatteryUI();
       updateScooterKmUI();
       updateBiomeUI();
@@ -3220,13 +3559,14 @@
       const isPersonalSelected = canSeePersonal && currentSc.id === PERSONAL_SCOOTER.id;
       const personalBat = Math.round(typeof state.batteryByScooter[PERSONAL_SCOOTER.id] === "number" ? state.batteryByScooter[PERSONAL_SCOOTER.id] : 100);
       const personalKm = getScooterKm(PERSONAL_SCOOTER.id);
+      const personalStats = getEffectiveScooterStats(PERSONAL_SCOOTER, getModsForScooterId(PERSONAL_SCOOTER.id));
 
       const personalCardHtml = canSeePersonal ? `
         <div class="scooter-card chrono-vip ${isPersonalSelected ? "active" : ""}">
           <div>
-            <div class="scooter-rank">✦ SADECE ADMIN'E ÖZEL • SATILMAZ • GİZLİ • ${PERSONAL_SCOOTER.powerW}W • ${PERSONAL_SCOOTER.topSpeedKmh} km/h</div>
+            <div class="scooter-rank">✦ SADECE ADMIN'E ÖZEL • SATILMAZ • GİZLİ • ${PERSONAL_SCOOTER.powerW}W • ${personalStats.topSpeedKmh} km/h</div>
             <div class="scooter-name">${PERSONAL_SCOOTER.name}</div>
-            <div class="scooter-meta">Pil: ${PERSONAL_SCOOTER.battery} • Menzil: ${PERSONAL_SCOOTER.rangeKm} km • Şarj: %${personalBat} • KM: ${formatKm(personalKm)}</div>
+            <div class="scooter-meta">Pil: ${PERSONAL_SCOOTER.battery} • Menzil: ${Math.round(personalStats.rangeKm)} km • Şarj: %${personalBat} • KM: ${formatKm(personalKm)}</div>
           </div>
           <div class="card-footer">
             <div class="price-tag">ADMIN Garaj Aracı</div>
@@ -3246,6 +3586,7 @@
         const canAfford = state.money >= sc.price;
         const batPct = Math.round(typeof state.batteryByScooter[sc.id] === "number" ? state.batteryByScooter[sc.id] : 100);
         const scKm = getScooterKm(sc.id);
+        const stats = getEffectiveScooterStats(sc, getModsForScooterId(sc.id));
         const sellPrice = getSecondHandSellPrice(sc);
         const canSell = owned && state.ownedIds.size > 1 && sc.id !== starterScooter.id;
 
@@ -3261,9 +3602,9 @@
         return `
           <div class="scooter-card ${isSelected ? "active" : ""}">
             <div>
-              <div class="scooter-rank">Sıra #${sc.rank} • ${sc.powerW}W • ${sc.topSpeedKmh} km/h</div>
+              <div class="scooter-rank">Sıra #${sc.rank} • ${sc.powerW}W • ${stats.topSpeedKmh} km/h</div>
               <div class="scooter-name">${sc.name}</div>
-              <div class="scooter-meta">Pil: ${sc.battery} • Menzil: ${sc.rangeKm} km • Şarj: %${batPct} • KM: ${formatKm(scKm)}</div>
+              <div class="scooter-meta">Pil: ${sc.battery} • Menzil: ${Math.round(stats.rangeKm)} km • Şarj: %${batPct} • KM: ${formatKm(scKm)}</div>
             </div>
             <div class="card-footer">
               <div class="price-tag">${owned ? `2. El (4/3): ${formatMoney(sellPrice)}` : formatMoney(sc.price)}</div>
@@ -3286,7 +3627,9 @@
       state.selectedId = id;
       state.batteryByScooter[id] = 100;
       state.kmByScooter[id] = 0;
-      state.speedKmh = Math.min(state.speedKmh, sc.topSpeedKmh);
+      state.modsByScooter[id] = createDefaultMods();
+      const stats = getEffectiveScooterStats(sc, state.modsByScooter[id]);
+      state.speedKmh = Math.min(state.speedKmh, stats.topSpeedKmh);
       syncActiveMissionSpeedIfNeeded(sc);
       saveProgress();
       renderLeaderboard();
@@ -3294,6 +3637,7 @@
       pushMyRoomPresence();
       showToast(`${sc.name} sıfır olarak alındı!`);
       renderHUD();
+      renderModShop();
       renderGarage();
     };
 
@@ -3304,7 +3648,8 @@
       ensureAudio();
       const sc = ALL_KNOWN_SCOOTERS.find(s => s.id === id) || starterScooter;
       state.selectedId = sc.id;
-      state.speedKmh = Math.min(state.speedKmh, sc.topSpeedKmh);
+      const stats = getEffectiveScooterStats(sc, getModsForScooterId(sc.id));
+      state.speedKmh = Math.min(state.speedKmh, stats.topSpeedKmh);
       syncActiveMissionSpeedIfNeeded(sc);
       saveProgress();
       renderLeaderboard();
@@ -3312,6 +3657,7 @@
       pushMyRoomPresence();
       showToast(`${sc.name} seçildi.`);
       renderHUD();
+      renderModShop();
       renderGarage();
     };
 
@@ -3325,6 +3671,7 @@
       state.money += sellAmount;
       state.batteryByScooter[id] = 100;
       state.kmByScooter[id] = 0;
+      state.modsByScooter[id] = createDefaultMods();
       if (state.selectedId === id) {
         const nextOwned = SHOP_SCOOTERS.find(s => state.ownedIds.has(s.id)) || starterScooter;
         state.selectedId = nextOwned.id;
@@ -3336,6 +3683,7 @@
       pushMyRoomPresence();
       showToast(`${sc.name} ${formatMoney(sellAmount)} karşılığında satıldı!`);
       renderHUD();
+      renderModShop();
       renderGarage();
     };
 
@@ -3526,6 +3874,16 @@
       state.chatSyncAccumulator += dt;
       state.onlineSyncAccumulator += dt;
 
+      const currentRank = getRankInfoBySeconds(state.totalPlaySeconds);
+      if (state.lastRankLabel && currentRank.label !== state.lastRankLabel) {
+        state.lastRankLabel = currentRank.label;
+        showToast(`Yeni rütbe açıldı: ${currentRank.label}!`);
+        renderLeaderboard();
+        syncWithSharedLeaderboard();
+      } else if (!state.lastRankLabel) {
+        state.lastRankLabel = currentRank.label;
+      }
+
       if (state.playSaveAccumulator >= 5) { state.playSaveAccumulator = 0; saveProgress(); renderLeaderboard(); }
       if (state.leaderboardSyncAccumulator >= 10) { state.leaderboardSyncAccumulator = 0; syncWithSharedLeaderboard(); }
       if (state.chatSyncAccumulator >= 5) { state.chatSyncAccumulator = 0; syncChatMessages(); }
@@ -3559,10 +3917,11 @@
       if (state.puzzle.timeUntilNextSec <= 0) { openBonusPuzzle(); return; }
 
       const sc = getCurrentScooter();
+      const stats = getEffectiveScooterStats(sc, getModsForScooterId(sc.id));
       const currentBat = getCurrentBattery();
       const batteryFactor = currentBat > 0 ? (currentBat <= 15 ? 0.65 : 1) : 0.25;
-      const effectiveTopSpeed = sc.topSpeedKmh * batteryFactor;
-      const accelRate = (22 + (sc.powerW / 13000) * 52 + (sc.is3000Light ? 360 : 0)) * batteryFactor;
+      const effectiveTopSpeed = stats.topSpeedKmh * batteryFactor;
+      const accelRate = (22 + (sc.powerW / 13000) * 52 + stats.speedBoostLevel * 5 + (sc.is3000Light ? 360 : 0)) * batteryFactor;
       const brakeRate = sc.is3000Light ? 240 : 64;
       const coastDrag = sc.is3000Light ? 28 : 10;
 
@@ -3596,8 +3955,8 @@
         state.nextScenerySpawnM = state.distanceM + 1.7 + Math.random() * 1.4;
       }
 
-      if (deltaM > 0 && sc.rangeKm > 0) {
-        const nextBat = Math.max(0, currentBat - (deltaM / (sc.rangeKm * 1000)) * 100);
+      if (deltaM > 0 && stats.rangeKm > 0) {
+        const nextBat = Math.max(0, currentBat - (deltaM / (stats.rangeKm * 1000)) * 100);
         setCurrentBattery(nextBat);
       }
 
@@ -3611,7 +3970,8 @@
         renderGarage();
       }
 
-      state.laneVisualX += (state.lane - state.laneVisualX) * Math.min(1, dt * (sc.is3000Light ? 22 : 14));
+      const laneLerpSpeed = (sc.is3000Light ? 22 : 14) + stats.vscFactor * 8;
+      state.laneVisualX += (state.lane - state.laneVisualX) * Math.min(1, dt * laneLerpSpeed);
 
       if (state.npcDensity > 0 && Math.random() < dt * ((state.npcDensity / 100) * 3.2)) spawnNpc();
 
@@ -3680,8 +4040,9 @@
           npc.honkTimer = 1.1;
           playNpcCarHornSound();
           if (state.speedKmh > npc.speed + 4) {
-            state.speedKmh = Math.max(0, npc.speed * 0.72);
-            showToast("Araca çarptın! Araç sana korna çaldı.");
+            const retainedRatio = 0.72 + stats.vscFactor * 0.2;
+            state.speedKmh = Math.max(0, npc.speed * retainedRatio);
+            showToast(stats.vscFactor > 0 ? "VSC denge devrede! Çarpışma hız kaybı azaltıldı." : "Araca çarptın! Araç sana korna çaldı.");
           } else {
             showToast("Araç sana korna çaldı!");
           }
@@ -3710,6 +4071,7 @@
           saveProgress();
           showToast(`Kahramanmaraş görevi tamamlandı! +${formatMoney(earned)} kazandın.`);
           assignNextMission();
+          renderModShop();
           renderGarage();
         }
       }
@@ -3723,7 +4085,7 @@
       document.getElementById("moneyPill").textContent = formatMoney(state.money);
       updateBatteryUI();
       updateScooterKmUI();
-      updateMotorSound(state.speedKmh / Math.max(1, sc.topSpeedKmh), state.controls.gas, state.controls.brake);
+      updateMotorSound(state.speedKmh / Math.max(1, stats.topSpeedKmh), state.controls.gas, state.controls.brake);
     }
 
     function drawBuildingBlock(ctx, x, y, bw, bh, cityKey, baseColor) {
@@ -3882,9 +4244,22 @@
       });
     }
 
-    function drawScooterSprite(ctx, x, y, color, isPlayer, isHonking, is3000Light = false) {
+    function drawScooterSprite(ctx, x, y, color, isPlayer, isHonking, is3000Light = false, lightBodyLevel = 0) {
       ctx.save();
       ctx.translate(x, y);
+
+      if (lightBodyLevel > 0 && !is3000Light) {
+        const pulse = 0.65 + 0.35 * Math.sin(performance.now() * 0.01);
+        const radius = 20 + lightBodyLevel * 3;
+        const neonGrad = ctx.createRadialGradient(0, 0, 3, 0, 0, radius);
+        neonGrad.addColorStop(0, `rgba(56, 189, 248, ${0.42 * pulse})`);
+        neonGrad.addColorStop(0.6, `rgba(232, 121, 249, ${0.22 * pulse})`);
+        neonGrad.addColorStop(1, "rgba(56, 189, 248, 0)");
+        ctx.fillStyle = neonGrad;
+        ctx.beginPath();
+        ctx.arc(0, 0, radius, 0, Math.PI * 2);
+        ctx.fill();
+      }
 
       if (is3000Light) {
         const pulse = 0.65 + 0.35 * Math.sin(performance.now() * 0.012);
@@ -3992,6 +4367,12 @@
       ctx.beginPath();
       ctx.roundRect(-7.5, -13, 15, 26, 6);
       ctx.fill();
+
+      if (lightBodyLevel > 0) {
+        ctx.strokeStyle = lightBodyLevel >= 3 ? "#f0abfc" : "#38bdf8";
+        ctx.lineWidth = 1.6 + lightBodyLevel * 0.25;
+        ctx.stroke();
+      }
 
       ctx.fillStyle = "rgba(255, 255, 255, 0.28)";
       ctx.fillRect(-2.5, -10, 5, 20);
@@ -4177,6 +4558,7 @@
       const w = rect.width;
       const h = rect.height;
       const sc = getCurrentScooter();
+      const stats = getEffectiveScooterStats(sc, getModsForScooterId(sc.id));
       const theme = getActiveCityTheme();
       const playerY = h * 0.74;
 
@@ -4226,7 +4608,7 @@
           const rLaneX = typeof rp.laneVisualX === "number" ? rp.laneVisualX : (rp.lane || 0);
           const rx = roadLeft + laneW * (rLaneX + 0.5);
 
-          drawScooterSprite(ctx, rx, ry, rp.scooterColor || "#5eead4", false, false, false);
+          drawScooterSprite(ctx, rx, ry, rp.scooterColor || "#5eead4", false, false, false, rp.lightBodyLevel || 0);
 
           ctx.save();
           ctx.translate(rx, ry);
@@ -4245,7 +4627,16 @@
       }
 
       const px = roadLeft + laneW * (state.laneVisualX + 0.5);
-      drawScooterSprite(ctx, px, playerY, sc.color, true, state.controls.horn, Boolean(sc.is3000Light && isAdminAccount(state.playerName)));
+      drawScooterSprite(
+        ctx,
+        px,
+        playerY,
+        sc.color,
+        true,
+        state.controls.horn,
+        Boolean(sc.is3000Light && isAdminAccount(state.playerName)),
+        stats.lightBodyLevel
+      );
 
       drawOnlineRightSidePanel(ctx, w, h, roadRight, w - roadRight, playerY);
 
@@ -4256,7 +4647,7 @@
 
       ctx.fillStyle = "#38bdf8";
       ctx.font = "bold 16px sans-serif";
-      ctx.fillText(`${Math.round(state.speedKmh)} / ${sc.topSpeedKmh} km/h`, 20, 30);
+      ctx.fillText(`${Math.round(state.speedKmh)} / ${stats.topSpeedKmh} km/h`, 20, 30);
 
       ctx.fillStyle = "#cbd5e1";
       ctx.font = "bold 11px sans-serif";
@@ -4306,6 +4697,7 @@
     } else {
       gmailAuthOverlay.classList.add("open");
       renderHUD();
+      renderModShop();
       renderGarage();
     }
 
