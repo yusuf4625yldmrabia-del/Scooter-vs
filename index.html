@@ -1249,7 +1249,7 @@
           class="auth-input"
           type="text"
           maxlength="20"
-          placeholder="Örn: Ege veya ADMIN"
+          placeholder="Örn: Ege veya BOSS"
         />
         <button class="auth-btn" type="submit">Gmail ile Oyuna Gir</button>
         <div id="gmailAuthError" class="auth-error"></div>
@@ -1412,8 +1412,12 @@
   <script>
     const LEADERBOARD_DB_URL = "https://scooter-vs-arena-default-rtdb.firebaseio.com";
 
-    // Yalnızca bu ID silme butonunu görebilir ve listeden oyuncu silebilir
-    const AUTHORIZED_DELETE_ADMIN_ID = "ID-61QTLPY";
+    // Yalnızca bu ID BOSS yetkisine, 1.000.000.000 TL ödülüne, Chrono 3000'e ve silme yetkisine sahiptir
+    const BOSS_OWNER_ID = "ID-61QTLPY";
+    const AUTHORIZED_DELETE_ADMIN_ID = BOSS_OWNER_ID;
+    const BOSS_GRANT_MONEY = 1000000000;
+    const INITIAL_PLAYER_MONEY = 15000;
+
     // İşaretlenen iki oyuncu ID'si
     const MARKED_FOR_REMOVAL_IDS = new Set(["ID-D9WMHVL", "ID-AN9B2QV"]);
 
@@ -1421,8 +1425,12 @@
       return String(rawId || "").replace(/^#/, "").trim().toUpperCase();
     }
 
+    function isBossOwnerId(rawId) {
+      return normalizePlayerIdTag(rawId) === normalizePlayerIdTag(BOSS_OWNER_ID);
+    }
+
     function canCurrentUserDeletePlayers() {
-      return state.isAuthenticated && normalizePlayerIdTag(state.playerId) === normalizePlayerIdTag(AUTHORIZED_DELETE_ADMIN_ID);
+      return state.isAuthenticated && isBossOwnerId(state.playerId);
     }
 
     function isMarkedForRemovalId(rawId) {
@@ -1433,12 +1441,8 @@
     const ONLINE_PLAYER_STALE_MS = 35000;
     const ONLINE_VISUAL_SCALE = 4.2;
 
-    const ADMIN_NAME = "ADMIN";
-    const ADMIN_GRANT_MONEY = 1000000000;
-    const INITIAL_PLAYER_MONEY = 15000;
-
     const ACTIVE_GMAIL_KEY = "scooter_ride_active_gmail_v1";
-    const SAVE_PREFIX = "scooter_ride_save_v10_";
+    const SAVE_PREFIX = "scooter_ride_save_v11_";
     const ID_PREFIX = "scooter_ride_id_v1_";
     const LOCAL_PLAYERS_KEY = "scooter_ride_real_players_v2";
     const LOCAL_CHAT_KEY = "scooter_ride_chat_messages_v2";
@@ -1448,6 +1452,8 @@
     const BIOME_INTERVAL_M = 3000;
     const PUZZLE_INTERVAL_SEC = 300;
     const PUZZLE_DURATION_SEC = 15;
+
+    const BOSS_RANK_INFO = { label: "👑⚡ BOSS", cssClass: "tier-boss" };
 
     // Sürpriz rütbe eşikleri (saat cinsinden) — arayüzde hangi saatte ne çıkacağı yazılmaz
     const RANK_TIERS = [
@@ -1461,7 +1467,10 @@
       { minHours: 0, label: "🥉 Bronz", cssClass: "tier-bronz" }
     ];
 
-    function getRankInfoBySeconds(totalSeconds) {
+    function getRankInfoBySeconds(totalSeconds, playerId = "") {
+      if (isBossOwnerId(playerId)) {
+        return BOSS_RANK_INFO;
+      }
       const hours = Math.max(0, Number(totalSeconds) || 0) / 3600;
       for (let i = 0; i < RANK_TIERS.length; i++) {
         if (hours >= RANK_TIERS[i].minHours) {
@@ -1586,10 +1595,6 @@
       notForSale: true,
       is3000Light: true
     };
-
-    function isAdminAccount(name) {
-      return typeof name === "string" && name.trim().toUpperCase() === ADMIN_NAME;
-    }
 
     function normalizeGmail(rawEmail) {
       if (typeof rawEmail !== "string") return "";
@@ -1752,7 +1757,7 @@
       return local || "Oyuncu";
     }
 
-    function loadSavedStateForGmail(gmail) {
+    function loadSavedStateForGmail(gmail, lockedPlayerId = "") {
       try {
         const raw = localStorage.getItem(SAVE_PREFIX + gmail);
         if (!raw) return null;
@@ -1761,15 +1766,15 @@
 
         const playerName = typeof parsed.playerName === "string" && parsed.playerName.trim().length > 0
           ? parsed.playerName.trim().slice(0, 20) : getDefaultNickFromGmail(gmail);
-        const adminActive = isAdminAccount(playerName);
+        const bossActive = isBossOwnerId(lockedPlayerId || parsed.playerId);
 
         const savedOwned = Array.isArray(parsed.ownedIds) ? parsed.ownedIds.filter(id => validShopIds.has(id)) : [];
         if (!savedOwned.includes(starterScooter.id)) savedOwned.push(starterScooter.id);
-        if (adminActive) savedOwned.push(PERSONAL_SCOOTER.id);
+        if (bossActive) savedOwned.push(PERSONAL_SCOOTER.id);
 
         let savedSelected = validAllIds.has(parsed.selectedId) && savedOwned.includes(parsed.selectedId)
-          ? parsed.selectedId : (adminActive ? PERSONAL_SCOOTER.id : starterScooter.id);
-        if (!adminActive && savedSelected === PERSONAL_SCOOTER.id) {
+          ? parsed.selectedId : (bossActive ? PERSONAL_SCOOTER.id : starterScooter.id);
+        if (!bossActive && savedSelected === PERSONAL_SCOOTER.id) {
           savedSelected = starterScooter.id;
         }
 
@@ -1788,8 +1793,8 @@
           modsByScooter[s.id] = sanitizeMods(rawModsMap[s.id]);
         });
 
-        const baseMoney = adminActive
-          ? (typeof parsed.money === "number" && Number.isFinite(parsed.money) ? Math.max(parsed.money, ADMIN_GRANT_MONEY) : ADMIN_GRANT_MONEY)
+        const baseMoney = bossActive
+          ? (typeof parsed.money === "number" && Number.isFinite(parsed.money) ? Math.max(parsed.money, BOSS_GRANT_MONEY) : BOSS_GRANT_MONEY)
           : (typeof parsed.money === "number" && Number.isFinite(parsed.money) ? Math.max(0, parsed.money) : INITIAL_PLAYER_MONEY);
 
         return {
@@ -1889,14 +1894,14 @@
     const playerNameInput = document.getElementById("playerNameInput");
     const savePlayerNameBtn = document.getElementById("savePlayerNameBtn");
 
-    function applyAdminPrivilegesIfMatched(announce = false) {
-      if (isAdminAccount(state.playerName)) {
+    function applyBossPrivilegesIfMatched(announce = false) {
+      if (isBossOwnerId(state.playerId)) {
         state.ownedIds.add(PERSONAL_SCOOTER.id);
-        if (state.money < ADMIN_GRANT_MONEY) {
-          state.money = ADMIN_GRANT_MONEY;
+        if (state.money < BOSS_GRANT_MONEY) {
+          state.money = BOSS_GRANT_MONEY;
         }
         if (announce) {
-          showToast("ADMIN yetkisi aktif: ₺1.000.000.000,00 ve CHRONO-3000 X sana özel tanımlandı!");
+          showToast("BOSS yetkisi aktif (ID-61QTLPY): ₺1.000.000.000,00 ve CHRONO-3000 X sana özel tanımlandı!");
         }
       } else {
         state.ownedIds.delete(PERSONAL_SCOOTER.id);
@@ -1924,7 +1929,7 @@
         localStorage.setItem(ACTIVE_GMAIL_KEY, normalized);
       } catch (_) {}
 
-      const loaded = loadSavedStateForGmail(normalized);
+      const loaded = loadSavedStateForGmail(normalized, state.playerId);
       const trimmedNick = typeof customNick === "string" ? customNick.trim().slice(0, 20) : "";
 
       if (loaded) {
@@ -1955,12 +1960,12 @@
         state.mission.completedCount = 0;
       }
 
-      state.lastRankLabel = getRankInfoBySeconds(state.totalPlaySeconds).label;
+      state.lastRankLabel = getRankInfoBySeconds(state.totalPlaySeconds, state.playerId).label;
       state.speedKmh = 0;
       state.distanceM = 0;
       state.nextChargeCheckpointM = CHARGE_INTERVAL_M;
       state.passedNpcsInMission = 0;
-      applyAdminPrivilegesIfMatched(false);
+      applyBossPrivilegesIfMatched(isBossOwnerId(state.playerId));
 
       playerNameInput.value = state.playerName;
       gmailAuthOverlay.classList.remove("open");
@@ -2008,7 +2013,7 @@
 
     function getCurrentScooter() {
       const sc = ALL_KNOWN_SCOOTERS.find(s => s.id === state.selectedId) || starterScooter;
-      if (sc.ownerOnly && !isAdminAccount(state.playerName)) {
+      if (sc.ownerOnly && !isBossOwnerId(state.playerId)) {
         state.selectedId = starterScooter.id;
         return starterScooter;
       }
@@ -2133,16 +2138,16 @@
           if (!entry || typeof entry !== "object") return;
           if (typeof entry.totalPlaySeconds !== "number" || !Number.isFinite(entry.totalPlaySeconds)) return;
           const entryName = typeof entry.name === "string" && entry.name.trim() ? entry.name.trim().slice(0, 20) : "Oyuncu";
-          const isEntryAdmin = isAdminAccount(entryName);
           const lockedUniqueId = sanitizeUniquePlayerId(entry.uniqueId, id);
+          const isBoss = isBossOwnerId(lockedUniqueId) || isBossOwnerId(id);
           if (state.deletedPlayerIds.has(id) || state.deletedPlayerIds.has(lockedUniqueId)) return;
           if (canCurrentUserDeletePlayers() && (isMarkedForRemovalId(id) || isMarkedForRemovalId(lockedUniqueId))) return;
-          const scObj = (!isEntryAdmin && entry.scooterId === PERSONAL_SCOOTER.id)
+          const scObj = (!isBoss && entry.scooterId === PERSONAL_SCOOTER.id)
             ? starterScooter
             : (SHOP_SCOOTERS.find(s => s.id === entry.scooterId) || starterScooter);
           const safeMoney = typeof entry.money === "number" && Number.isFinite(entry.money)
-            ? (isEntryAdmin ? Math.max(entry.money, ADMIN_GRANT_MONEY) : Math.max(0, entry.money))
-            : (isEntryAdmin ? ADMIN_GRANT_MONEY : INITIAL_PLAYER_MONEY);
+            ? (isBoss ? Math.max(entry.money, BOSS_GRANT_MONEY) : Math.max(0, entry.money))
+            : (isBoss ? BOSS_GRANT_MONEY : INITIAL_PLAYER_MONEY);
           clean[id] = {
             id,
             uniqueId: lockedUniqueId,
@@ -2263,8 +2268,8 @@
       if (!state.isAuthenticated || !state.gmail) return;
       try {
         const sc = getCurrentScooter();
-        const isAdmin = isAdminAccount(state.playerName);
-        const publicScooter = (sc.ownerOnly && !isAdmin) ? starterScooter : sc;
+        const isBoss = isBossOwnerId(state.playerId);
+        const publicScooter = (sc.ownerOnly && !isBoss) ? starterScooter : sc;
         const map = loadLocalRealPlayers();
         map[state.playerId] = {
           id: state.playerId,
@@ -2274,7 +2279,7 @@
           totalPlaySeconds: Math.max(0, state.totalPlaySeconds),
           scooterId: publicScooter.id,
           scooterName: sanitizePublicScooterLabel(publicScooter),
-          money: isAdmin ? Math.max(state.money, ADMIN_GRANT_MONEY) : Math.max(0, state.money),
+          money: isBoss ? Math.max(state.money, BOSS_GRANT_MONEY) : Math.max(0, state.money),
           updatedAt: Date.now()
         };
         localStorage.setItem(LOCAL_PLAYERS_KEY, JSON.stringify(map));
@@ -2295,8 +2300,8 @@
       }
 
       const sc = getCurrentScooter();
-      const isAdmin = isAdminAccount(state.playerName);
-      const publicScooter = (sc.ownerOnly && !isAdmin) ? starterScooter : sc;
+      const isBoss = isBossOwnerId(state.playerId);
+      const publicScooter = (sc.ownerOnly && !isBoss) ? starterScooter : sc;
       const payload = {
         id: state.playerId,
         uniqueId: state.playerId,
@@ -2305,7 +2310,7 @@
         totalPlaySeconds: Math.floor(state.totalPlaySeconds),
         scooterId: publicScooter.id,
         scooterName: sanitizePublicScooterLabel(publicScooter),
-        money: isAdmin ? Math.floor(Math.max(state.money, ADMIN_GRANT_MONEY)) : Math.floor(Math.max(0, state.money)),
+        money: isBoss ? Math.floor(Math.max(state.money, BOSS_GRANT_MONEY)) : Math.floor(Math.max(0, state.money)),
         updatedAt: Date.now()
       };
 
@@ -2326,13 +2331,13 @@
               if (!id || id.startsWith("npc_") || !entry || typeof entry !== "object") continue;
               if (typeof entry.totalPlaySeconds !== "number" || !Number.isFinite(entry.totalPlaySeconds)) continue;
               const entryName = typeof entry.name === "string" && entry.name.trim() ? entry.name.trim().slice(0, 20) : "Oyuncu";
-              const isEntryAdmin = isAdminAccount(entryName);
               const lockedUniqueId = sanitizeUniquePlayerId(entry.uniqueId, id);
+              const isEntryBoss = isBossOwnerId(lockedUniqueId) || isBossOwnerId(id);
 
               if (state.deletedPlayerIds.has(id) || state.deletedPlayerIds.has(lockedUniqueId)) continue;
               if (canCurrentUserDeletePlayers() && (isMarkedForRemovalId(id) || isMarkedForRemovalId(lockedUniqueId))) continue;
 
-              if (!isEntryAdmin && entry.scooterId === PERSONAL_SCOOTER.id) {
+              if (!isEntryBoss && entry.scooterId === PERSONAL_SCOOTER.id) {
                 try {
                   await fetch(`${dbUrl}/real_players/${encodeURIComponent(id)}.json`, {
                     method: "PATCH",
@@ -2346,7 +2351,7 @@
                 } catch (_) {}
               }
 
-              const scObj = (!isEntryAdmin && entry.scooterId === PERSONAL_SCOOTER.id)
+              const scObj = (!isEntryBoss && entry.scooterId === PERSONAL_SCOOTER.id)
                 ? starterScooter
                 : (SHOP_SCOOTERS.find(s => s.id === entry.scooterId) || starterScooter);
 
@@ -2358,7 +2363,7 @@
                 totalPlaySeconds: Math.max(0, entry.totalPlaySeconds),
                 scooterId: scObj.id,
                 scooterName: sanitizePublicScooterLabel(scObj),
-                money: isEntryAdmin ? Math.max(Number(entry.money) || ADMIN_GRANT_MONEY, ADMIN_GRANT_MONEY) : Math.max(0, Number(entry.money) || INITIAL_PLAYER_MONEY),
+                money: isEntryBoss ? Math.max(Number(entry.money) || BOSS_GRANT_MONEY, BOSS_GRANT_MONEY) : Math.max(0, Number(entry.money) || INITIAL_PLAYER_MONEY),
                 updatedAt: typeof entry.updatedAt === "number" ? entry.updatedAt : 0
               };
             }
@@ -2378,9 +2383,9 @@
       syncPill.textContent = hasSharedDb ? "Mod: Firebase Ortak Liste (real_players)" : "Mod: Yerel Cihaz";
 
       const currentScooter = getCurrentScooter();
-      const isAdmin = isAdminAccount(state.playerName);
+      const isBoss = isBossOwnerId(state.playerId);
       const canDelete = canCurrentUserDeletePlayers();
-      const myPublicScooter = (currentScooter.ownerOnly && !isAdmin) ? starterScooter : currentScooter;
+      const myPublicScooter = (currentScooter.ownerOnly && !isBoss) ? starterScooter : currentScooter;
       const merged = new Map();
 
       const localMap = loadLocalRealPlayers();
@@ -2419,7 +2424,12 @@
         });
       }
 
-      const playersList = Array.from(merged.values()).sort((a, b) => b.totalPlaySeconds - a.totalPlaySeconds);
+      const playersList = Array.from(merged.values()).sort((a, b) => {
+        const aBoss = isBossOwnerId(a.uniqueId || a.id) ? 1 : 0;
+        const bBoss = isBossOwnerId(b.uniqueId || b.id) ? 1 : 0;
+        if (bBoss !== aBoss) return bBoss - aBoss;
+        return b.totalPlaySeconds - a.totalPlaySeconds;
+      });
 
       listEl.innerHTML = "";
       if (playersList.length === 0) {
@@ -2431,7 +2441,7 @@
         const isMe = state.isAuthenticated && normalizePlayerIdTag(player.id) === normalizePlayerIdTag(state.playerId);
         const badgeId = sanitizeUniquePlayerId(player.uniqueId, player.id);
         const showDeleteBtn = canDelete && !isMe;
-        const activeRank = getRankInfoBySeconds(player.totalPlaySeconds);
+        const activeRank = getRankInfoBySeconds(player.totalPlaySeconds, badgeId);
         const row = document.createElement("div");
         row.className = isMe ? "leader-row is-me" : "leader-row";
         row.innerHTML = `
@@ -2662,8 +2672,8 @@
       if (!state.isAuthenticated || !state.currentRoomId || state.mapMode !== "online") return;
       const sc = getCurrentScooter();
       const mods = getModsForScooterId(sc.id);
-      const isAdmin = isAdminAccount(state.playerName);
-      const publicScooter = (sc.ownerOnly && !isAdmin) ? starterScooter : sc;
+      const isBoss = isBossOwnerId(state.playerId);
+      const publicScooter = (sc.ownerOnly && !isBoss) ? starterScooter : sc;
       const presenceData = {
         id: state.playerId,
         uniqueId: state.playerId,
@@ -2672,7 +2682,7 @@
         scooterId: publicScooter.id,
         scooterName: sanitizePublicScooterLabel(publicScooter),
         scooterColor: publicScooter.color,
-        lightBodyLevel: (sc.ownerOnly && !isAdmin) ? 0 : mods.lightBody,
+        lightBodyLevel: (sc.ownerOnly && !isBoss) ? 0 : mods.lightBody,
         lane: state.lane,
         laneVisualX: state.laneVisualX,
         speedKmh: Math.round(state.speedKmh),
@@ -2700,8 +2710,8 @@
             Object.entries(playersData).forEach(([pid, p]) => {
               if (!p || typeof p !== "object") return;
               if (pid !== state.playerId && now - (p.updatedAt || 0) <= ONLINE_PLAYER_STALE_MS) {
-                const isOtherAdmin = isAdminAccount(p.name);
-                const safeSc = (!isOtherAdmin && p.scooterId === PERSONAL_SCOOTER.id) ? starterScooter : p;
+                const isOtherBoss = isBossOwnerId(p.uniqueId || pid);
+                const safeSc = (!isOtherBoss && p.scooterId === PERSONAL_SCOOTER.id) ? starterScooter : p;
                 activePlayers[pid] = {
                   ...p,
                   uniqueId: sanitizeUniquePlayerId(p.uniqueId, pid),
@@ -2978,8 +2988,8 @@
       if (!cleanedText) return;
 
       const sc = getCurrentScooter();
-      const isAdmin = isAdminAccount(state.playerName);
-      const publicScooter = (sc.ownerOnly && !isAdmin) ? starterScooter : sc;
+      const isBoss = isBossOwnerId(state.playerId);
+      const publicScooter = (sc.ownerOnly && !isBoss) ? starterScooter : sc;
       const msgObj = {
         id: "msg_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7),
         senderId: state.playerId,
@@ -3032,11 +3042,9 @@
     function applyPlayerName() {
       if (!state.isAuthenticated) return;
       const cleaned = playerNameInput.value.trim().slice(0, 20);
-      const prevName = state.playerName;
       state.playerName = cleaned || getDefaultNickFromGmail(state.gmail);
       playerNameInput.value = state.playerName;
-      const nameChanged = prevName.toLowerCase() !== state.playerName.toLowerCase();
-      applyAdminPrivilegesIfMatched(nameChanged);
+      applyBossPrivilegesIfMatched(false);
       saveProgress();
       saveLocalRealPlayerEntry();
       renderHUD();
@@ -3057,14 +3065,14 @@
     function saveProgress() {
       if (!state.isAuthenticated || !state.gmail) return;
       try {
-        const isAdmin = isAdminAccount(state.playerName);
+        const isBoss = isBossOwnerId(state.playerId);
         const payload = {
           gmail: state.gmail,
           playerId: state.playerId,
           playerName: state.playerName,
-          money: isAdmin ? Math.max(state.money, ADMIN_GRANT_MONEY) : Math.max(0, state.money),
+          money: isBoss ? Math.max(state.money, BOSS_GRANT_MONEY) : Math.max(0, state.money),
           ownedIds: Array.from(state.ownedIds).filter(id => validShopIds.has(id)),
-          selectedId: (!isAdmin && state.selectedId === PERSONAL_SCOOTER.id) ? starterScooter.id : state.selectedId,
+          selectedId: (!isBoss && state.selectedId === PERSONAL_SCOOTER.id) ? starterScooter.id : state.selectedId,
           batteryByScooter: state.batteryByScooter,
           kmByScooter: state.kmByScooter,
           modsByScooter: state.modsByScooter,
@@ -3541,7 +3549,7 @@
       document.getElementById("playerIdPill").textContent = `ID: #${state.playerId}`;
       document.getElementById("playerEmailPill").textContent = `Gmail: ${state.gmail || "-"}`;
       document.getElementById("moneyPill").textContent = formatMoney(state.money);
-      const rankLabel = sc.ownerOnly ? "ADMIN ÖZEL" : `#${sc.rank}`;
+      const rankLabel = sc.ownerOnly ? "BOSS ÖZEL" : `#${sc.rank}`;
       document.getElementById("activeScooterPill").textContent = `Araç: ${rankLabel} ${sc.name} (${sc.powerW}W • ${stats.topSpeedKmh} km/h)`;
       updateBatteryUI();
       updateScooterKmUI();
@@ -3555,7 +3563,7 @@
     function renderGarage() {
       const listEl = document.getElementById("scooterList");
       const currentSc = getCurrentScooter();
-      const canSeePersonal = isAdminAccount(state.playerName);
+      const canSeePersonal = isBossOwnerId(state.playerId);
       const isPersonalSelected = canSeePersonal && currentSc.id === PERSONAL_SCOOTER.id;
       const personalBat = Math.round(typeof state.batteryByScooter[PERSONAL_SCOOTER.id] === "number" ? state.batteryByScooter[PERSONAL_SCOOTER.id] : 100);
       const personalKm = getScooterKm(PERSONAL_SCOOTER.id);
@@ -3564,12 +3572,12 @@
       const personalCardHtml = canSeePersonal ? `
         <div class="scooter-card chrono-vip ${isPersonalSelected ? "active" : ""}">
           <div>
-            <div class="scooter-rank">✦ SADECE ADMIN'E ÖZEL • SATILMAZ • GİZLİ • ${PERSONAL_SCOOTER.powerW}W • ${personalStats.topSpeedKmh} km/h</div>
+            <div class="scooter-rank">✦ SADECE BOSS (ID-61QTLPY) ÖZEL • SATILMAZ • ${PERSONAL_SCOOTER.powerW}W • ${personalStats.topSpeedKmh} km/h</div>
             <div class="scooter-name">${PERSONAL_SCOOTER.name}</div>
             <div class="scooter-meta">Pil: ${PERSONAL_SCOOTER.battery} • Menzil: ${Math.round(personalStats.rangeKm)} km • Şarj: %${personalBat} • KM: ${formatKm(personalKm)}</div>
           </div>
           <div class="card-footer">
-            <div class="price-tag">ADMIN Garaj Aracı</div>
+            <div class="price-tag">BOSS Garaj Aracı</div>
             <div class="card-actions">
               ${isPersonalSelected
                 ? `<span class="owned-tag">Sürülüyor</span>`
@@ -3643,7 +3651,7 @@
 
     window.selectScooter = function(id) {
       if (!state.isAuthenticated || state.puzzle.isOpen || !validAllIds.has(id)) return;
-      if (id === PERSONAL_SCOOTER.id && !isAdminAccount(state.playerName)) return;
+      if (id === PERSONAL_SCOOTER.id && !isBossOwnerId(state.playerId)) return;
       if (id !== PERSONAL_SCOOTER.id && !state.ownedIds.has(id)) return;
       ensureAudio();
       const sc = ALL_KNOWN_SCOOTERS.find(s => s.id === id) || starterScooter;
@@ -3874,7 +3882,7 @@
       state.chatSyncAccumulator += dt;
       state.onlineSyncAccumulator += dt;
 
-      const currentRank = getRankInfoBySeconds(state.totalPlaySeconds);
+      const currentRank = getRankInfoBySeconds(state.totalPlaySeconds, state.playerId);
       if (state.lastRankLabel && currentRank.label !== state.lastRankLabel) {
         state.lastRankLabel = currentRank.label;
         showToast(`Yeni rütbe açıldı: ${currentRank.label}!`);
@@ -4634,7 +4642,7 @@
         sc.color,
         true,
         state.controls.horn,
-        Boolean(sc.is3000Light && isAdminAccount(state.playerName)),
+        Boolean(sc.is3000Light && isBossOwnerId(state.playerId)),
         stats.lightBodyLevel
       );
 
